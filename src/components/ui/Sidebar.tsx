@@ -1,28 +1,34 @@
 'use client'
 
 import { Avatar, Box, IconButton, List, Paper, Stack, Typography } from '@mui/material';
-import { ReactNode, useState } from 'react';
-import BankData from '../icon/BankData';
-import { ChevronLeft, FolderOpen, Home } from 'lucide-react';
+import { useState } from 'react';
+import { Archive, ChevronLeft, FolderOpen, History, Home, Info, Share2, Trash } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from './MenuItem';
 import MenuGroup from './MenuGroup';
 import ThemeToggle from './ThemeToggle';
 import { motion } from "framer-motion";
+import Ediska from '../icon/Ediska';
 
 
 const MENU: IMenu[] = [
     {
         type: "link",
-        label: "Beranda",
-        icon: <Home />,
+        label: "Drive",
+        icon: <FolderOpen />,
         href: "/"
     },
     {
         type: "link",
-        label: "Drive Saya",
-        icon: <FolderOpen />,
-        href: "/"
+        label: "Histori",
+        icon: <History />,
+        href: "/history"
+    },
+    {
+        type: "link",
+        label: "Arsip",
+        icon: <Archive />,
+        href: "/archive"
     },
     {
         type: 'group',
@@ -30,36 +36,25 @@ const MENU: IMenu[] = [
         children: [
             {
                 type: "link",
-                label: "Beranda",
-                icon: <Home />,
-                href: "/"
+                label: "Di Hapus",
+                icon: <Trash />,
+                href: "/others/deleted"
             },
             {
                 type: "link",
-                label: "Drive Saya",
-                icon: <FolderOpen />,
-                href: "/"
+                label: "Di Bagikan",
+                icon: <Share2 />,
+                href: "/others/sharing"
             },
-            {
-                type: 'group',
-                label: "Lain-Lain",
-                children: [
-                    {
-                        type: "link",
-                        label: "Beranda",
-                        icon: <Home />,
-                        href: "/"
-                    },
-                    {
-                        type: "link",
-                        label: "Drive Saya",
-                        icon: <FolderOpen />,
-                        href: "/"
-                    },
-                ]
-            }
+
         ]
-    }
+    },
+    {
+        type: "link",
+        label: "Tentang",
+        icon: <Info />,
+        href: "/about"
+    },
 ]
 
 
@@ -90,15 +85,17 @@ export default function Sidebar() {
                             direction={"row"}
                             spacing={1}
                             alignItems={"flex-end"}
-                            sx={{ pl: open ? 0 : 0.4 }}>
-                            <BankData />
+                            sx={{ pl: open ? 0 : 0.4, opacity: 0.8 }}>
+                            <Ediska
+                                width={open ? "3rem" : "2rem"}
+                                height={open ? "3rem" : "2rem"} />
                             {open && (
                                 <Typography
                                     component={"div"}
                                     fontSize={24}
                                     fontWeight={900}
                                     whiteSpace={"nowrap"}>
-                                    Bank Data
+                                    SiMADiS
                                 </Typography>
                             )}
                         </Stack>

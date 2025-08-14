@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import Theme from "@/theme/Theme";
-
 
 export const metadata: Metadata = {
     title: "Create Next App",

@@ -1,3 +1,5 @@
+'use client'
+
 import ContextInjector from '@/components/context/ContextInjector';
 import Sidebar from '@/components/ui/Sidebar';
 import { Stack } from '@mui/material';
@@ -9,7 +11,7 @@ export interface layoutProps {
 export default function layout({ children }: layoutProps) {
     return (
         <ContextInjector>
-            <Stack flex={1} direction={"row"} maxHeight={'100vh'}>
+            <Stack flex={1} direction={"row"} maxHeight={'100vh'} onContextMenu={(e) => e.preventDefault()}>
                 <Sidebar />
                 <Stack flex={1} overflow={"hidden"}>
                     {children}

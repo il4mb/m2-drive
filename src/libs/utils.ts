@@ -1,15 +1,15 @@
 import { randomBytes } from "crypto";
 
 export function formatFileSize(bytes: number, decimals = 2): string {
-    if (bytes === 0) return "0 B";
+	if (bytes === 0) return "0 B";
 
-    const k = 1024;
-    const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+	const k = 1024;
+	const units = ["B", "KB", "MB", "GB", "TB", "PB"];
 
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals));
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	const size = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals));
 
-    return `${size} ${units[i]}`;
+	return `${size} ${units[i]}`;
 }
 
 
@@ -28,7 +28,11 @@ export const formatLocaleDate = (time: number, locale: string = 'en-US') => {
 	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(timestamp));
 }
 
-export function generateObjKey(length = 16) {
+export function currentTime(): number {
+	return Math.floor(Date.now() / 1000 - DATE_EPOCH);
+}
+
+export function generateKey(length = 16) {
 	return randomBytes(length).toString('hex');
 }
 

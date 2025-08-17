@@ -1,18 +1,11 @@
 'use client';
 
-import {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, } from 'react';
 import { TaskQueue } from '@/libs/TaskQueue';
 import { useUploadsIdb } from './IDBMProvider';
-import { DriveUpload } from '@/types';
+import { Upload } from '@/types';
 import { useUploads } from './UploadsProvider';
+import useRequest from '../hooks/useRequest';
 
 export const CHUNK_SIZE = 5 * 1024 * 1024;
 
@@ -21,7 +14,7 @@ type Props = {
 };
 
 type UploadManagerContext = {
-    uploads: DriveUpload[];
+    uploads: Upload[];
     pauseUpload: (id: string) => Promise<void>;
     resumeUpload: (id: string) => Promise<void>;
     removeUpload: (id: string) => Promise<void>;
@@ -35,8 +28,24 @@ export default function UploadManager({ children }: Props) {
     const db = useUploadsIdb();
     const { uploads } = useUploads();
 
+    const initRequest = useRequest<{ data: { Key: string; UploadId: string } }>({
+        endpoint: "/api/drive/upload",
+        method: "POST"
+    });
+
+    const presignRequest = useRequest<{ data: { url: string } }>({
+        endpoint: "/api/drive/upload",
+        method: "GET"
+    });
+
+    const completeRequest = useRequest({
+        endpoint: "/api/drive/upload/complete",
+        method: "POST"
+    });
+
+
     /** Update upload entry in DB */
-    const updateUpload = useCallback((id: string, data: Partial<DriveUpload>) => db.update({ id }, data), [db]);
+    const updateUpload = useCallback((id: string, data: Partial<Upload>) => db.update({ id }, data), [db]);
 
     /** Upload handler for each file */
     const uploadHandler = useCallback(
@@ -45,54 +54,79 @@ export default function UploadManager({ children }: Props) {
                 const upload = await db.get({ id });
                 if (!upload) return resolve();
 
-                updateUpload(id, { status: "uploading" });
-
-                const totalChunks = upload.totalChunks;
-
                 try {
-                    
+
+                    const response = await initRequest.send({
+                        body: {
+                            fileType: upload.fileType,
+                            Key: upload.Key,
+                            UploadId: upload.UploadId
+                        }
+                    }, signal);
+                    if (!response.data.Key || !response.data.UploadId) throw new Error("Failed init upload");
+
+                    updateUpload(id, {
+                        status: "uploading",
+                        Key: response.data.Key,
+                        UploadId: response.data.UploadId
+                    });
+
+                    upload.Key = response.data.Key;
+                    upload.UploadId = response.data.UploadId;
+                    const totalChunks = upload.totalChunks;
+                    const chunks = upload.chunks;
+                    const etags = upload.etags || [];
+
                     for (let i = upload.chunkIndex; i < totalChunks; i++) {
                         // check abort before processing
                         if (signal.aborted) throw new DOMException("Aborted", "AbortError");
 
-                        await new Promise<void>((acc, rej) => {
-                            const timer = setTimeout(() => {
-                                updateUpload(id, { chunkIndex: i + 1 });
-                                acc();
-                            }, 2000);
+                        const PartNumber = i + 1;
+                        const presign = await presignRequest.send({
+                            queryParams: {
+                                Key: upload.Key,
+                                UploadId: upload.UploadId,
+                                PartNumber
+                            }
+                        }, signal);
 
-                            // cancel timer if aborted mid-chunk
-                            signal.addEventListener(
-                                "abort",
-                                () => {
-                                    clearTimeout(timer);
-                                    rej(new DOMException("Aborted", "AbortError"));
-                                },
-                                { once: true }
-                            );
-                        });
+                        if (!presign.data.url) throw new Error("Failed get presign url");
+
+
+                        const chunk = chunks[i];
+
+                        // do upload to presign-url
+                        const uploadRes = await fetch(presign.data.url, { method: "PUT", body: chunk, signal });
+                        if (!uploadRes.ok) throw new Error(`Chunk ${PartNumber} upload failed`);
+
+                        // get etag
+                        const etag = uploadRes.headers.get("ETag")?.replace(/"/g, "");
+                        if (!etag) throw new Error(`ETag missing for chunk ${PartNumber}`);
+
+                        etags.push({ ETag: etag, PartNumber });
+
+                        // update progress
+                        await updateUpload(id, { chunkIndex: PartNumber, etags });
                     }
 
                     // finishing phase
                     updateUpload(id, { status: "finishing", chunkIndex: upload.totalChunks });
 
-                    await new Promise<void>((acc, rej) => {
-                        const timer = setTimeout(() => {
-                            updateUpload(id, { status: "done" });
-                            acc();
-                        }, 4000);
+                    await completeRequest.send({
+                        body: {
+                            fileName: upload.fileName,
+                            fileType: upload.fileType,
+                            fileSize: upload.fileSize,
+                            fId: upload.fId,
+                            Key: upload.Key,
+                            UploadId: upload.UploadId,
+                            etags
+                        }
+                    }, signal);
 
-                        signal.addEventListener(
-                            "abort",
-                            () => {
-                                clearTimeout(timer);
-                                rej(new DOMException("Aborted", "AbortError"));
-                            },
-                            { once: true }
-                        );
-                    });
-
+                    updateUpload(id, { status: "done" });
                     resolve();
+
                 } catch (err) {
                     updateUpload(id, { status: signal.aborted ? "pause" : "error" });
                     reject(err);
@@ -148,21 +182,21 @@ export default function UploadManager({ children }: Props) {
     }, [uploads, db, startUpload]);
 
 
-    useEffect(() => {
+    // useEffect(() => {
 
-        const fixBack = async (statutes: DriveUpload['status'][]) => {
-            await Promise.all(
-                statutes.map(async (status) => {
-                    const uploads = await db.getAll("status", "==", status);
-                    uploads.forEach(u => {
-                        updateUpload(u.id, { status: 'pending' });
-                    })
-                })
-            )
-        }
-        fixBack(['finishing', 'uploading']);
+    //     const fixBack = async (statutes: DriveUpload['status'][]) => {
+    //         await Promise.all(
+    //             statutes.map(async (status) => {
+    //                 const uploads = await db.getAll("status", "==", status);
+    //                 uploads.forEach(u => {
+    //                     updateUpload(u.id, { status: 'pending' });
+    //                 })
+    //             })
+    //         )
+    //     }
+    //     fixBack(['finishing', 'uploading']);
 
-    }, [db, startUpload]);
+    // }, [db, startUpload]);
 
     return (
         <UploadContext.Provider value={{ uploads, removeUpload, pauseUpload, resumeUpload }}>

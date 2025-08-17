@@ -2,21 +2,21 @@
 
 import { Alert, Checkbox, FormControlLabel, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { Trash } from 'lucide-react';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ConfirmPopup from '../../dialog/ConfirmPopup';
 import { DriveFile } from '@/entity/DriveFile';
-import { useRequest } from '@/components/hooks/useRequest';
-import { useDriveRoot } from '../DriveRoot';
+import useRequest from '@/components/hooks/useRequest';
 import { motion } from 'motion/react';
+import { getColor } from '@/theme/colors';
 
 
 export interface ActionDeleteProps {
     file: DriveFile;
     onClose?: () => void;
+    refresh?: () => void;
 }
-export default function ActionDelete({ file, onClose }: ActionDeleteProps) {
+export default function ActionDelete({ file, onClose, refresh }: ActionDeleteProps) {
 
-    const { refresh } = useDriveRoot();
     const inputRef = useRef<HTMLInputElement>(null);
     const checkboxRef = useRef<HTMLInputElement>(null);
     const [text, setText] = useState('');
@@ -26,10 +26,10 @@ export default function ActionDelete({ file, onClose }: ActionDeleteProps) {
     const deleteFolder = useRequest({
         endpoint: "/api/drive/folder",
         method: "DELETE",
-        search: { id: file.id, confirm: text },
-        onResult() {
+        queryParams: { id: file.id, confirm: text },
+        onSuccess() {
+            refresh?.();
             onClose?.();
-            refresh();
         },
     });
 
@@ -49,7 +49,8 @@ export default function ActionDelete({ file, onClose }: ActionDeleteProps) {
     const handleClear = () => {
         setChecked(false);
         setText('');
-        deleteFolder.errorClear();
+        deleteFolder.clearError();
+        deleteFolder.clearData();
     }
 
     useEffect(() => {
@@ -87,7 +88,14 @@ export default function ActionDelete({ file, onClose }: ActionDeleteProps) {
                         text: "Batal"
                     }
                 }}>
-                <MenuItem>
+                <MenuItem
+                    color='error'
+                    sx={(theme) => ({
+                        color: getColor("error")[400],
+                        ...theme.applyStyles("dark", {
+                            color: getColor("error")[300],
+                        })
+                    })}>
                     <Trash size={14} />
                     <Typography ml={1}>
                         Hapus

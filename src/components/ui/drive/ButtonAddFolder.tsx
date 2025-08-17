@@ -1,18 +1,17 @@
 'use client'
 
-import { useActionPending } from '@/components/hooks/useActionPending';
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Tooltip, Typography } from '@mui/material';
 import { FolderPlus } from 'lucide-react';
-import { ChangeEvent, ClipboardEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react';
 import { useDriveRoot } from './DriveRoot';
 import { IDriveFile } from '@/entity/DriveFile';
-import { useRequest } from '@/components/hooks/useRequest';
+import useRequest from '@/components/hooks/useRequest';
 import { AnimatePresence, motion } from 'motion/react';
 
-export interface ActionAddFolderProps {
+export interface ButtonAddFolderProps {
     folder: IDriveFile | null;
 }
-export default function ActionAddFolder({ folder }: ActionAddFolderProps) {
+export default function ButtonAddFolder({ folder }: ButtonAddFolderProps) {
 
     const MAX_LENGTH = 34;
     const { refresh } = useDriveRoot();
@@ -34,7 +33,7 @@ export default function ActionAddFolder({ folder }: ActionAddFolderProps) {
             }
             return true;
         },
-        onResult() {
+        onSuccess() {
             refresh();
             handleDialogClose();
         },
@@ -62,7 +61,8 @@ export default function ActionAddFolder({ folder }: ActionAddFolderProps) {
     };
 
     useEffect(() => {
-        createFolder.errorClear();
+        createFolder.clearError();
+        createFolder.clearData();
     }, [open]);
 
     return (
@@ -90,7 +90,7 @@ export default function ActionAddFolder({ folder }: ActionAddFolderProps) {
                                         severity='error'
                                         variant='outlined'
                                         sx={{ mb: 1 }}
-                                        onClose={createFolder.errorClear}>
+                                        onClose={createFolder.clearError}>
                                         <AlertTitle>{createFolder.error.type}</AlertTitle>
                                         {createFolder.error.message}
                                     </Alert>
@@ -119,7 +119,7 @@ export default function ActionAddFolder({ folder }: ActionAddFolderProps) {
                         <Button color='secondary' sx={{ opacity: 0.7 }} onClick={handleDialogClose}>
                             Batal
                         </Button>
-                        <Button loading={createFolder.pending} onClick={createFolder.send}>
+                        <Button loading={createFolder.pending} onClick={() => createFolder.send()}>
                             Buat Folder
                         </Button>
                     </DialogActions>

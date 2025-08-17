@@ -33,7 +33,7 @@ export default function AboutPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}>
                 <Typography variant="h4" fontWeight="bold" gutterBottom color="primary">
-                    Tentang SiMADiS
+                    Tentang SIP
                 </Typography>
             </motion.div>
 
@@ -43,10 +43,10 @@ export default function AboutPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}>
                 <Typography variant="body1" color="text.secondary" component={"p"}>
-                    <strong>SiMADiS</strong> adalah singkatan dari <em>Sistem MAN 2 Data & Storage</em>.
+                    <strong>SIP</strong> adalah singkatan dari <em>Sistem Integrasi Penyimpanan</em>.
                     Aplikasi ini dikembangkan khusus untuk <strong>MAN 2 Kota Pekanbaru</strong> sebagai
                     solusi penyimpanan dan pengelolaan dokumen digital.
-                    Dengan antarmuka yang modern dan mudah digunakan, <strong>SiMADiS</strong> memudahkan guru, staf, dan siswa
+                    Dengan antarmuka yang modern dan mudah digunakan, <strong>SIP</strong> memudahkan guru, staf, dan siswa
                     dalam mengatur, mencari, dan berbagi file secara aman di lingkungan sekolah.
                 </Typography>
             </motion.div>

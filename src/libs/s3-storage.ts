@@ -1,7 +1,5 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
-import crypto from "crypto";
-import { Readable } from "stream";
 import * as https from "https";
 
 const S3_ENDPOINT = process.env.S3_ENDPOINT;

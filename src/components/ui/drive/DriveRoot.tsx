@@ -7,7 +7,8 @@ import { motion } from 'motion/react';
 import { ChevronLeft, CircleAlert, CloudUpload, FolderOpen } from 'lucide-react';
 import { IDriveFile } from '@/entity/DriveFile';
 import Link from 'next/link';
-import ActionAddFolder from './ActionAddFolder';
+import ActionAddFolder from './ButtonAddFolder';
+import FileItem from './FileItem';
 
 
 export default function DriveRoot() {
@@ -97,7 +98,7 @@ export default function DriveRoot() {
                 setFolder: handleSetFolder,
                 refresh: fetchFiles
             }}>
-            <Stack flex={1}>
+            <Stack flex={1} overflow={"hidden"}>
                 <Box>
                     <Stack
                         component={motion.div}
@@ -150,19 +151,33 @@ export default function DriveRoot() {
                     </Box>
                 )}
 
-                <List component={motion.div} layout>
-                    {!loading && files.length == 0 && (
-                        <ListItem>
-                            <ListItemIcon>
-                                <CircleAlert />
-                            </ListItemIcon>
-                            <ListItemText sx={{ ml: 1 }}>
-                                Tidak ada file!
-                            </ListItemText>
-                        </ListItem>
-                    )}
-                    {files.map((file, i) => <DriveFile key={i} index={i} file={file} />)}
-                </List>
+                <Stack flex={1} overflow={"auto"} pb={2}>
+                    <Stack
+                        component={motion.div}
+                        flexDirection={"row"}
+                        flexWrap={"wrap"}
+                        justifyContent={"start"}
+                        alignItems={"start"}
+                        gap={2}
+                        sx={{
+                            // flex: 1,
+                            borderRadius: 2,
+                            bgcolor: 'background.paper'
+                        }}
+                        layout>
+                        {!loading && files.length == 0 && (
+                            <ListItem>
+                                <ListItemIcon>
+                                    <CircleAlert />
+                                </ListItemIcon>
+                                <ListItemText sx={{ ml: 1 }}>
+                                    Tidak ada file!
+                                </ListItemText>
+                            </ListItem>
+                        )}
+                        {files.map((file, i) => <FileItem key={i} index={i} file={file} />)}
+                    </Stack>
+                </Stack>
             </Stack>
         </Context>
     );

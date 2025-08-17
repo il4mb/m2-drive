@@ -43,7 +43,7 @@ const MENU: IMenu[] = [
         children: [
             {
                 type: "link",
-                label: "Di Hapus",
+                label: "Tempat Sampah",
                 icon: <Trash />,
                 href: "/others/deleted"
             },
@@ -103,16 +103,17 @@ export default function Sidebar() {
                             spacing={1}
                             alignItems={"flex-end"}
                             sx={{ pl: open ? 0 : 0.4, opacity: 0.8 }}>
-                            <Ediska
-                                width={open ? "3rem" : "2rem"}
-                                height={open ? "3rem" : "2rem"} />
+                            {/* <Ediska
+                                width={open ? "2rem" : "2rem"}
+                                height={open ? "2rem" : "2rem"} /> */}
                             {open && (
                                 <Typography
                                     component={"div"}
-                                    fontSize={24}
+                                    fontSize={14}
                                     fontWeight={900}
+                                    pl={1}
                                     whiteSpace={"nowrap"}>
-                                    SiMADiS
+                                    Sistem Integrasi Penyimpanan
                                 </Typography>
                             )}
                         </Stack>

@@ -8,17 +8,18 @@ import { IDriveFile } from '@/entity/DriveFile';
 export interface FolderPickerDialogProps {
     title?: ReactNode;
     open: boolean;
+    disabled?: boolean | string[];
     onClose?: () => void;
     onSelect?: (file: IDriveFile | null) => void;
 
 }
-export default function FolderPickerDialog({ title, onClose, onSelect, open = false }: FolderPickerDialogProps) {
+export default function FolderPickerDialog({ title, onClose, onSelect, disabled = false, open = false }: FolderPickerDialogProps) {
 
     const [folder, setFolder] = useState<IDriveFile | null>(null);
     const handleOnClose = () => {
         onClose?.();
     }
-    
+
     const handleOnSelect = () => {
         onSelect?.(folder);
         handleOnClose();
@@ -29,14 +30,21 @@ export default function FolderPickerDialog({ title, onClose, onSelect, open = fa
             maxWidth={"sm"}
             fullWidth
             open={open}
-            onClose={handleOnClose}>
-            <DialogContent>
+            onClose={handleOnClose}
+            slotProps={{
+                paper: {
+                    sx: {
+                        maxHeight: '500px'
+                    }
+                }
+            }}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', pb: 0 }}>
                 {title && (
                     <Typography component={'div'} fontSize={18} fontWeight={600} mb={1}>
                         {title}
                     </Typography>
                 )}
-                <FolderPicker onSelectedChange={setFolder} />
+                <FolderPicker onSelectedChange={setFolder} disabled={disabled} />
             </DialogContent>
             <DialogActions>
                 <Button

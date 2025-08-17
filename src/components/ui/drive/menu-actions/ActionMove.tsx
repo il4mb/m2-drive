@@ -4,22 +4,22 @@ import { useDrive } from "@/components/context/DriveProvider";
 import useRequest from "@/components/hooks/useRequest";
 import { DriveFile } from "@/entity/DriveFile";
 import { MenuItem, Typography } from "@mui/material";
-import { Copy, RefreshCw } from "lucide-react";
+import { Move, RefreshCw } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { useDriveRoot } from "../DriveRoot";
 
-export interface ActionCopyProps {
+export interface ActionMoveProps {
     file: DriveFile;
     onClose?: () => void;
 }
 
-export default function ActionCopy({ file, onClose }: ActionCopyProps) {
+export default function ActionMove({ file, onClose }: ActionMoveProps) {
 
     const { enqueueSnackbar } = useSnackbar();
     const { openFolderPicker } = useDrive();
     const { refresh } = useDriveRoot();
 
-    const copy = useRequest({
+    const move = useRequest({
         endpoint: "/api/drive",
         method: "POST",
         onError(err) {
@@ -30,37 +30,37 @@ export default function ActionCopy({ file, onClose }: ActionCopyProps) {
             if (!body) return false;
 
             if (body.fId === file.id) {
-                enqueueSnackbar("Tidak dapat menyalin ke folder yang sama!", { variant: 'warning' });
-                console.warn("Tidak dapat menyalin ke folder yang sama!");
+                enqueueSnackbar("Tidak dapat memindah ke folder yang sama!", { variant: 'warning' });
+                console.warn("Tidak dapat memindah ke folder yang sama!");
                 return false;
             }
 
             if (body?.fId === file.fId) {
-                enqueueSnackbar("Tidak dapat menyalin ke folder asal!", { variant: 'warning' });
-                console.warn("Tidak dapat menyalin ke folder asal!");
+                enqueueSnackbar("Tidak dapat memindah ke folder asal!", { variant: 'warning' });
+                console.warn("Tidak dapat memindah ke folder asal!");
                 return false;
             }
             return true;
         },
         onSuccess() {
-            enqueueSnackbar("File berhasil disalin!", { variant: "success" });
+            enqueueSnackbar("File berhasil dipindah!", { variant: "success" });
             refresh();
             onClose?.();
         },
     });
 
     const handleClick = async () => {
-        const picked = await openFolderPicker("Salin ke...", [file.id]);
-        copy.send({ body: { targetId: picked?.id || null, sourceId: file.id }, queryParams: { act: "copy" } });
+        const picked = await openFolderPicker("Pindah ke...", [file.id]);
+        move.send({ body: { targetId: picked?.id || null, sourceId: file.id }, queryParams: { act: "move" } });
     }
 
     return (
-        <MenuItem onClick={handleClick} disabled={copy.pending}>
-            {copy.pending
+        <MenuItem onClick={handleClick} disabled={move.pending}>
+            {move.pending
                 ? <RefreshCw size={14} className="animate-spin" />
-                : <Copy size={14} />}
+                : <Move size={14} />}
             <Typography ml={1}>
-                Salin ke...
+                Pindah ke...
             </Typography>
         </MenuItem>
     );

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useUploadsIdb } from './IDBMProvider';
-import { DriveUpload } from '@/types';
+import { Upload } from '@/types';
 import { randomBytes } from 'crypto';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { CloudUpload } from 'lucide-react';
@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 import UploadManager from './UploadManager';
 
 interface UploadProviderState {
-    uploads: DriveUpload[];
+    uploads: Upload[];
     addUpload: (file: File, fId: string | null) => void;
     hideBadge: () => void;
 }
@@ -28,7 +28,7 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
     const pathname = usePathname();
     const db = useUploadsIdb();
     const [showBadge, setShowBadge] = useState(true);
-    const [uploads, setUploads] = useState<DriveUpload[]>([]);
+    const [uploads, setUploads] = useState<Upload[]>([]);
 
     const CHUNK_SIZE = 5 * 1024 * 1024;
 
@@ -45,9 +45,9 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
             chunks.push(chunk);
         }
 
-        const upload: DriveUpload = {
+        const upload: Upload = {
             id,
-            uid: '1',
+            uId: '1',
             status: "pending",
             fId,
             fileName: file.name,

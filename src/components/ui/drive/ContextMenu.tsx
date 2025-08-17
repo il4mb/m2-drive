@@ -1,10 +1,13 @@
+'use client'
+
 import { DriveFile } from '@/entity/DriveFile';
 import { Divider, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
-import { Copy, Edit, Folder, FolderOpen, MoveDiagonal, Pencil, Share2, SquareArrowOutUpRight, Trash } from 'lucide-react';
+import { Folder, FolderOpen, Pencil, Share2, SquareArrowOutUpRight } from 'lucide-react';
 import { useDriveRoot } from './DriveRoot';
-import ActionDelete from './menu-actions/ActionDelete';
+import ActionTrash from './menu-actions/ActionTrash';
 import ActionCopy from './menu-actions/ActionCopy';
+import ActionMove from './menu-actions/ActionMove';
 
 export interface ContextMenuProps {
     file: DriveFile;
@@ -91,14 +94,8 @@ export default function ContextMenu({ file, position, onClose }: ContextMenuProp
             </MenuItem>
 
             <ActionCopy file={file} onClose={onClose}/>
-
-            <MenuItem>
-                <MoveDiagonal size={14} />
-                <Typography ml={1}>
-                    Pindah ke...
-                </Typography>
-            </MenuItem>
-            <ActionDelete file={file} onClose={onClose} />
+            <ActionMove file={file} onClose={onClose}/>
+            <ActionTrash file={file} onClose={onClose} />
 
         </Menu>
     );

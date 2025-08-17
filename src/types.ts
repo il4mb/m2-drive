@@ -51,9 +51,9 @@ export function isFolder(file: IFile): file is TypeFolder {
 
 
 
-export type DriveUpload = {
+export type Upload = {
     id: string;
-    uid: string;
+    uId: string;
     status: "pending" | "uploading" | "pause" | "error" | "finishing" | "done";
     error?: string;
     fId: string | null;
@@ -63,8 +63,18 @@ export type DriveUpload = {
     chunkIndex: number;
     totalChunks: number;
     chunks: Blob[];
+
+    UploadId?: string;
+    Key?: string;
     etags?: {
         ETag: string,
         PartNumber: number
     }[];
+}
+
+
+export type Cache = {
+    key: string;
+    value: string;
+    exp: number;
 }

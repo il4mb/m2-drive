@@ -22,7 +22,7 @@ export default function UploadPage() {
         try {
             const folder = await openFolderPicker("Pilih Folder Tujuan Unggah");
             Array.from(files).forEach((file) => {
-                addUpload(file, folder?.fId || null);
+                addUpload(file, folder?.id || null);
             })
         } catch (e) {
             console.warn(e);

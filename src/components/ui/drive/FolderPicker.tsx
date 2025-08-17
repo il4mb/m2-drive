@@ -19,9 +19,21 @@ import { useEffect, useRef, useState } from 'react';
 
 export interface FolderPickerProps {
     onSelectedChange?: (file: DriveFile | null) => void;
+    disabled?: boolean | string[];
 }
 
-export default function FolderPicker({ onSelectedChange }: FolderPickerProps) {
+const ARCHIVE: IDriveFile = {
+    id: "@archive",
+    name: "Archive",
+    fId: null,
+    uId: 'system',
+    meta: null,
+    createdAt: 0,
+    type: 'folder',
+    updatedAt: null
+}
+
+export default function FolderPicker({ onSelectedChange, disabled }: FolderPickerProps) {
 
     const [openedFolders, setOpenedFolders] = useState<IDriveFile[]>([]);
     const [selected, setSelected] = useState<DriveFile | null>(null);
@@ -75,7 +87,7 @@ export default function FolderPicker({ onSelectedChange }: FolderPickerProps) {
     }, [folder?.id]);
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} flex={1} overflow={"hidden"}>
 
             {/* Breadcrumbs */}
             <Breadcrumbs separator={<ChevronRight size={14} strokeWidth={2} />}>
@@ -110,9 +122,10 @@ export default function FolderPicker({ onSelectedChange }: FolderPickerProps) {
             {/* File List */}
             <Box
                 sx={{
+                    flex: 1,
                     // border: (theme) => `1px solid #aaa8`,
                     borderRadius: 2,
-                    overflow: 'hidden',
+                    overflow: 'auto',
                 }}>
                 {loading ? (
                     <Stack
@@ -140,20 +153,24 @@ export default function FolderPicker({ onSelectedChange }: FolderPickerProps) {
                     <List sx={{ p: 0 }}>
                         {files.map((file, i) => {
                             const active = file.id === selected?.id;
+                            const disable = Array.isArray(disabled) ? disabled.includes(file.id) : disabled;
                             return (
                                 <ListItem
                                     key={file.id}
-                                    onClick={() => handleSelected(file)}
-                                    onDoubleClick={() => handleOpenFolder(file)}
+                                    onClick={() => !disable && handleSelected(file)}
+                                    onDoubleClick={() => !disable && handleOpenFolder(file)}
                                     sx={{
                                         cursor: 'pointer',
                                         px: 2,
                                         py: 1,
-                                        bgcolor: active
-                                            ? getColor('primary')[100]
-                                            : 'background.paper',
+                                        opacity: disable ? 0.5 : 1,
+                                        bgcolor: disable
+                                            ? 'action.hover'
+                                            : active
+                                                ? getColor('primary')[100]
+                                                : 'background.paper',
                                         '&:hover': {
-                                            bgcolor: active
+                                            bgcolor: !disable && active
                                                 ? getColor('primary')[200]
                                                 : 'action.hover',
                                         },

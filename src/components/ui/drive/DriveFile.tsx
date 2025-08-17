@@ -1,20 +1,18 @@
 "use client"
 
-import { getColor } from '@/theme/colors';
-import { TypeFile } from '@/types';
-import { Avatar, Box, ListItem, ListItemIcon, ListItemText, Stack } from '@mui/material';
+import { Box, ListItem, ListItemIcon, ListItemText, Stack } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
-import { Folder, Globe } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import { useDriveRoot } from './DriveRoot';
 import { motion } from 'motion/react';
 import { IDriveFile } from '@/entity/DriveFile';
-import { MouseEvent, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ContextMenu from './ContextMenu';
+import usePresignUrl from '@/components/hooks/usePresignUrl';
 
 export interface DriveFileProps {
     file: IDriveFile;
     index: number;
-
 }
 
 export default function DriveFile({ file, index }: DriveFileProps) {
@@ -58,7 +56,7 @@ export default function DriveFile({ file, index }: DriveFileProps) {
                 layoutId={file.id}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
+                transition={{ delay: 0.03 * index }}
                 onMouseUp={handleMouseUp}
                 onContextMenu={handleContextMenu}
                 onClick={handleClick}
@@ -67,7 +65,7 @@ export default function DriveFile({ file, index }: DriveFileProps) {
                 <ListItemIcon>
                     {file.type == "folder"
                         ? <Folder strokeWidth={1} />
-                        : <FileIcon variant='default' size={22} type={file.type} />
+                        : <FileIcon variant='default' size={22} type={file.meta?.mimeType || file.type} />
                     }
                 </ListItemIcon>
                 <Stack direction={"row"} flex={1}>
@@ -77,12 +75,7 @@ export default function DriveFile({ file, index }: DriveFileProps) {
                         </ListItemText>
                     </Box>
                     <Stack direction={"row"} spacing={-1}>
-                        {/* <Avatar sx={{ width: 20, height: 20 }} />
-                    <Avatar sx={{ width: 20, height: 20 }} />
-                    <Avatar sx={{ width: 20, height: 20 }} />
-                    <Avatar sx={{ width: 20, height: 20 }} >
-                        <Globe size={14} stroke={getColor("secondary")[600]} />
-                    </Avatar> */}
+
                     </Stack>
                 </Stack>
             </ListItem>

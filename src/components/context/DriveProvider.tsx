@@ -5,12 +5,13 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import FolderPickerDialog from '../ui/drive/FolderPickerDialog';
 
 interface DriveProviderState {
-    openFolderPicker: (title?: string) => Promise<DriveFile | null>;
+    openFolderPicker: (title?: string, disabled?: boolean | string[]) => Promise<DriveFile | null>;
 }
 
 type FolderPicker = {
     id: string;
     title?: string;
+    disabled?: boolean | string[];
     onClose: () => void;
     onSelect: (file: IDriveFile | null) => void;
 };
@@ -23,13 +24,14 @@ export const DriveProvider = ({ children }: DriveProviderProps) => {
 
     const [folderPickers, setFolderPickers] = useState<FolderPicker[]>([]);
 
-    const openFolderPicker = async (title?: string): Promise<IDriveFile | null> => {
+    const openFolderPicker = async (title?: string, disabled?: boolean | string[]): Promise<IDriveFile | null> => {
         return new Promise((resolve, reject) => {
             const id = crypto.randomUUID();
 
             const picker: FolderPicker = {
                 id,
                 title,
+                disabled,
                 onClose: () => {
                     setFolderPickers((prev) => prev.filter((p) => p.id !== id));
                     reject(null);
@@ -52,6 +54,7 @@ export const DriveProvider = ({ children }: DriveProviderProps) => {
                 <FolderPickerDialog
                     key={picker.id}
                     title={picker.title}
+                    disabled={picker.disabled}
                     open
                     onClose={picker.onClose}
                     onSelect={picker.onSelect}

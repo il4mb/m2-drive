@@ -4,7 +4,7 @@ import { LinearProgress, Stack, Typography, Tooltip, Button } from "@mui/materia
 import { motion } from "framer-motion";
 import { getColor } from "@/theme/colors";
 import { useEffect, useMemo, useState } from "react";
-import { DriveUpload } from "@/types";
+import { Upload } from "@/types";
 import { formatFileSize } from "@/libs/utils";
 import { Pause, Trash, RefreshCcw, Play } from "lucide-react";
 import { FileIcon } from "@untitledui/file-icons";
@@ -18,7 +18,7 @@ type ActionState = {
     [key in ActionName]?: () => Promise<void>;
 }
 export interface Props extends ActionState {
-    upload: DriveUpload;
+    upload: Upload;
     index: number;
 }
 

@@ -9,11 +9,11 @@ import { getColor } from '@/theme/colors';
 export interface MenuItemProps {
     menu: IMenu<"link">;
     shouldExpand?: boolean;
+    active: boolean;
 }
-export default function MenuItem({ menu, shouldExpand }: MenuItemProps) {
+export default function MenuItem({ menu, shouldExpand, active }: MenuItemProps) {
 
     const pathname = usePathname();
-    const active = menu.href == pathname;
 
     return (
         <ListItem

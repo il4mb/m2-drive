@@ -5,6 +5,7 @@ import { Collapse, List, Stack, Typography } from '@mui/material';
 import MenuItem from './MenuItem';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export interface MenuGroupProps {
     menu: IMenu<"group">;
@@ -12,7 +13,17 @@ export interface MenuGroupProps {
 }
 export default function MenuGroup({ menu, shouldExpand }: MenuGroupProps) {
 
+    const pathname = usePathname();
     const [open, setOpen] = useState(true);
+
+    const allHrefs = menu.children.flatMap(item =>
+        // @ts-ignore
+        item.type === "group" ? item.children.map(c => c.href) : item.href ? [item.href] : []
+    );
+    const matched = allHrefs
+        .filter(href => pathname.startsWith(href))
+        .sort((a, b) => b.length - a.length);
+    const currentActivePath = matched[0] || null;
 
     useEffect(() => {
         if (!open) setOpen(true);
@@ -47,7 +58,7 @@ export default function MenuGroup({ menu, shouldExpand }: MenuGroupProps) {
             <Collapse in={open}>
                 <List sx={{ padding: shouldExpand ? 1 : 0 }}>
                     {menu.children.map((child, i) => child.type == "link"
-                        ? <MenuItem key={i} menu={child} shouldExpand={shouldExpand} />
+                        ? <MenuItem key={i} menu={child} shouldExpand={shouldExpand} active={currentActivePath == child.href}/>
                         : <MenuGroup key={i} menu={child} />)}
                 </List>
             </Collapse>

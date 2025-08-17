@@ -1,3 +1,4 @@
+import ContextInjector from '@/components/context/ContextInjector';
 import Sidebar from '@/components/ui/Sidebar';
 import { Stack } from '@mui/material';
 import { ReactNode } from 'react';
@@ -7,14 +8,13 @@ export interface layoutProps {
 }
 export default function layout({ children }: layoutProps) {
     return (
-        <Stack flex={1} direction={"row"}>
-
-            <Sidebar />
-
-            <Stack flex={1}>
-                {children}
+        <ContextInjector>
+            <Stack flex={1} direction={"row"} maxHeight={'100vh'}>
+                <Sidebar />
+                <Stack flex={1} overflow={"hidden"}>
+                    {children}
+                </Stack>
             </Stack>
-
-        </Stack>
+        </ContextInjector>
     );
 }

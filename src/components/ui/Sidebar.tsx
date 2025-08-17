@@ -9,14 +9,21 @@ import MenuGroup from './MenuGroup';
 import ThemeToggle from './ThemeToggle';
 import { motion } from "framer-motion";
 import Ediska from '../icon/Ediska';
+import { usePathname } from 'next/navigation';
 
 
 const MENU: IMenu[] = [
     {
         type: "link",
+        label: "Beranda",
+        icon: <Home />,
+        href: "/"
+    },
+    {
+        type: "link",
         label: "Drive",
         icon: <FolderOpen />,
-        href: "/"
+        href: "/drive"
     },
     {
         type: "link",
@@ -60,7 +67,17 @@ const MENU: IMenu[] = [
 
 export default function Sidebar() {
 
+    const pathname = usePathname();
     const [open, setOpen] = useState(true);
+
+    const allHrefs = MENU.flatMap(item =>
+        // @ts-ignore
+        item.type === "group" ? item.children.map(c => c.href) : item.href ? [item.href] : []
+    );
+    const matched = allHrefs
+        .filter(href => pathname.startsWith(href))
+        .sort((a, b) => b.length - a.length);
+    const currentActivePath = matched[0] || null;
 
     return (
         <Stack
@@ -112,9 +129,13 @@ export default function Sidebar() {
 
                     <Stack flex={1} mt={2}>
                         <List sx={{ p: 0, m: 0, ml: open ? 0 : -1 }}>
-                            {MENU.map((child, i) => child.type == "link"
-                                ? <MenuItem key={i} menu={child} shouldExpand={open} />
-                                : <MenuGroup key={i} menu={child} shouldExpand={open} />)}
+                            {MENU.map((child, i) => {
+                                return (
+                                    child.type == "link"
+                                        ? <MenuItem key={i} menu={child} shouldExpand={open} active={currentActivePath == child.href} />
+                                        : <MenuGroup key={i} menu={child} shouldExpand={open} />
+                                )
+                            })}
                         </List>
                     </Stack>
 

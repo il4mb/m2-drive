@@ -8,6 +8,7 @@ import { toggleButtonClasses } from "@mui/material/ToggleButton";
 // import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import { gray, green, orange, purple, red } from "../themePrimitives";
 import { blue } from "@mui/material/colors";
+import { Circle, CircleCheck, CircleX, Square, SquareCheck } from "lucide-react";
 
 const colors = { primary: purple, secondary: gray, success: green, error: red, warning: orange, info: blue } as const;
 type ColorName = keyof typeof colors;
@@ -244,55 +245,92 @@ export const inputsCustomizations: Components<Theme> = {
     MuiCheckbox: {
         defaultProps: {
             disableRipple: true,
-            // icon: (
-            //     <CheckBoxOutlineBlankRoundedIcon
-            //         sx={{ color: "hsla(210, 0%, 0%, 0.0)" }}
-            //     />
-            // ),
-            // checkedIcon: <CheckRoundedIcon sx={{ height: 14, width: 14 }} />,
-            // indeterminateIcon: <RemoveRoundedIcon sx={{ height: 14, width: 14 }} />,
+            icon: (
+                <Square
+                    size={22}
+                    style={{
+                        position: "absolute",
+                    }}
+                />
+            ),
+            checkedIcon: (
+                <SquareCheck
+                    size={22}
+                    style={{
+                        position: "absolute",
+                    }}
+                />
+            ),
+            // indeterminateIcon: <CircleX />,
         },
         styleOverrides: {
             root: ({ theme }) => ({
                 margin: 10,
                 height: 16,
                 width: 16,
-                borderRadius: theme.shape.borderRadius,
-                border: "1px solid ",
-                borderColor: alpha(gray[300], 0.8),
-                boxShadow: "0 0 0 1.5px hsla(210, 0%, 0%, 0.04) inset",
+                borderRadius: 2,
+                border: "none",
                 backgroundColor: alpha(gray[100], 0.4),
                 transition: "border-color, background-color, 120ms ease-in",
-                "&:hover": {
-                    borderColor: purple[300],
-                },
+
                 "&.Mui-focusVisible": {
                     outline: `3px solid ${alpha(purple[500], 0.5)}`,
                     outlineOffset: "2px",
-                    borderColor: purple[400],
                 },
                 "&.Mui-checked": {
-                    color: "white",
-                    backgroundColor: purple[500],
-                    borderColor: purple[500],
                     boxShadow: `none`,
+                    backgroundColor: purple[100],
                     "&:hover": {
-                        backgroundColor: purple[600],
+                        backgroundColor: purple[100],
                     },
                 },
                 ...theme.applyStyles("dark", {
-                    borderColor: alpha(gray[700], 0.8),
-                    boxShadow: "0 0 0 1.5px hsl(210, 0%, 0%) inset",
                     backgroundColor: alpha(gray[900], 0.8),
-                    "&:hover": {
-                        borderColor: purple[300],
-                    },
                     "&.Mui-focusVisible": {
-                        borderColor: purple[400],
                         outline: `3px solid ${alpha(purple[500], 0.5)}`,
                         outlineOffset: "2px",
                     },
+                    "&.Mui-checked": {
+                        boxShadow: `none`,
+                        backgroundColor: purple[800],
+                        "&:hover": {
+                            backgroundColor: purple[800],
+                        },
+                    },
                 }),
+                variants: [
+                    ...colorsName.map((name) => {
+                        const colors = getColor(name);
+                        const color = colors[["error", "primary"].includes(name) ? 300 : 400];
+
+                        return {
+                            props: {
+                                color: name
+                            },
+                            style: {
+                                backgroundColor: alpha(color, 0.05),
+                                color: color,
+                                fill: color,
+                                border: '1px solid',
+                                borderColor: alpha(color, 0.4),
+                                "&:hover": {
+                                    backgroundColor: alpha(color, 0.5),
+                                },
+                                "&.Mui-checked": {
+                                    boxShadow: `none`,
+                                    backgroundColor: alpha(color, 0.05),
+                                    "&:hover": {
+                                        backgroundColor: alpha(color, 0.5),
+                                    },
+                                },
+                                "&.Mui-focusVisible": {
+                                    outline: `3px solid ${alpha(color, 0.5)}`,
+                                    outlineOffset: "2px",
+                                },
+                            }
+                        }
+                    })
+                ]
             }),
         },
     },

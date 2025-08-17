@@ -46,5 +46,25 @@ export type IFile = TypeFolder | TypeFile<string>;
 
 // types.ts
 export function isFolder(file: IFile): file is TypeFolder {
-  return file.type === 'folder';
+    return file.type === 'folder';
+}
+
+
+
+export type DriveUpload = {
+    id: string;
+    uid: string;
+    status: "pending" | "uploading" | "pause" | "error" | "finishing" | "done";
+    error?: string;
+    fId: string | null;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    chunkIndex: number;
+    totalChunks: number;
+    chunks: Blob[];
+    etags?: {
+        ETag: string,
+        PartNumber: number
+    }[];
 }

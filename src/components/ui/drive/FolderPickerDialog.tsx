@@ -3,19 +3,19 @@
 import { Button, Dialog, DialogActions, DialogContent, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
 import FolderPicker from './FolderPicker';
-import { IDriveFile } from '@/entity/DriveFile';
+import { IFiles } from '@/entity/File';
 
 export interface FolderPickerDialogProps {
     title?: ReactNode;
     open: boolean;
     disabled?: boolean | string[];
     onClose?: () => void;
-    onSelect?: (file: IDriveFile | null) => void;
+    onSelect?: (file: IFiles | null) => void;
 
 }
 export default function FolderPickerDialog({ title, onClose, onSelect, disabled = false, open = false }: FolderPickerDialogProps) {
 
-    const [folder, setFolder] = useState<IDriveFile | null>(null);
+    const [folder, setFolder] = useState<IFiles | null>(null);
     const handleOnClose = () => {
         onClose?.();
     }

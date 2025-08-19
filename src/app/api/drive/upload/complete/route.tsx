@@ -1,5 +1,5 @@
 import { getSource } from "@/data-source";
-import { DriveFile } from "@/entity/DriveFile";
+import { File } from "@/entity/File";
 import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
 import { withApi } from "@/libs/withApi";
@@ -60,12 +60,12 @@ export const POST = withApi(async (req) => {
 
 
     const source = await getSource();
-    const repository = source.getRepository(DriveFile);
-    const file = new DriveFile();
+    const repository = source.getRepository(File);
+    const file = new File();
 
     file.id = generateKey(12);
     file.uId = uId;
-    file.fId = fId;
+    file.pId = fId;
     file.name = fileName;
     file.type = "file";
     file.createdAt = currentTime();

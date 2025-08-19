@@ -1,11 +1,11 @@
 import { Column, Entity, PrimaryColumn, Unique, Index } from "typeorm";
 
 @Entity('files')
-@Unique(['id', 'uId', 'name', 'fId'])
-@Index(['uId', 'fId']) // For faster folder queries
+@Unique(['id', 'uId', 'name', 'pId'])
+@Index(['uId', 'pId']) // For faster folder queries
 @Index(['uId', 'type']) // For faster type filtering
 @Index(['uId', 'createdAt']) // For sorting
-export class DriveFile {
+export class File {
     @PrimaryColumn()
     id!: string;
 
@@ -13,7 +13,8 @@ export class DriveFile {
     uId!: string;
 
     @Column({ type: 'varchar', nullable: true })
-    fId: string | null = null;
+    // parent id is an folder 
+    pId: string | null = null;
 
     @Column()
     name!: string;
@@ -22,7 +23,7 @@ export class DriveFile {
     type!: "file" | "folder";
 
     @Column({ type: "json", default: null, nullable: true })
-    meta: FileMeta | null = null;
+    meta: Meta | null = null;
 
     @Column({ type: 'int' })
     createdAt!: number;
@@ -31,12 +32,12 @@ export class DriveFile {
     updatedAt: number | null = null;
 }
 
-type FileMeta = {
+type Meta = {
     starred?: boolean;
     trashed?: boolean;
     trashedAt?: number;
-    sharedWith?: string[]; // User IDs
-    sharePermissions?: 'view' | 'edit' | 'manage';
+    shared?: boolean;
+    generalPermit?: 'viewer' | 'editor';
     description?: string;
     size?: number; // File size in bytes
     mimeType?: string;
@@ -47,4 +48,4 @@ type FileMeta = {
     // Add any other custom metadata fields
 };
 
-export type IDriveFile = InstanceType<typeof DriveFile>;
+export type IFiles = InstanceType<typeof File>;

@@ -1,7 +1,8 @@
 import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { DriveFile } from "./entity/DriveFile"
+import { File } from "./entity/File"
 import { Options } from "./entity/Options";
+import Contributor from "./entity/Contributor";
 
 const source = new DataSource({
     type: "sqlite",
@@ -9,8 +10,9 @@ const source = new DataSource({
     synchronize: true,
     logging: false,
     entities: [
-        DriveFile,
-        Options
+        File,
+        Options,
+        Contributor
     ],
     cache: true
 });

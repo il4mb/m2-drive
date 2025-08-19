@@ -1,5 +1,5 @@
 import { getSource } from "@/data-source";
-import { DriveFile } from "@/entity/DriveFile";
+import { File } from "@/entity/File";
 import { withApi } from "@/libs/withApi";
 import { NextRequest } from "next/server";
 import { Brackets } from "typeorm";
@@ -8,7 +8,7 @@ export const GET = withApi(async (req: NextRequest) => {
 
     const uId = "1";
     const source = await getSource();
-    const repository = source.getRepository(DriveFile);
+    const repository = source.getRepository(File);
 
     const notTrashed = new Brackets(qb => {
         qb.where("file.meta IS NULL")

@@ -89,7 +89,7 @@ export default function Sidebar() {
                 overflow: 'hidden'
             }}
             boxShadow={4}>
-            <Paper sx={{ flex: 1, display: 'flex' }}>
+            <Paper sx={{ flex: 1, display: 'flex' }} elevation={1}>
                 <Stack flex={1} p={open ? 4 : 2}>
 
                     <Stack

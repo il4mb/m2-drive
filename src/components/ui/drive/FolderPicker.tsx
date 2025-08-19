@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionPending } from '@/components/hooks/useActionPending';
-import { DriveFile, IDriveFile } from '@/entity/DriveFile';
+import { File, IFiles } from '@/entity/File';
 import { getColor } from '@/theme/colors';
 import {
     Breadcrumbs,
@@ -18,14 +18,14 @@ import { Folder, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FolderPickerProps {
-    onSelectedChange?: (file: DriveFile | null) => void;
+    onSelectedChange?: (file: File | null) => void;
     disabled?: boolean | string[];
 }
 
-const ARCHIVE: IDriveFile = {
+const ARCHIVE: IFiles = {
     id: "@archive",
     name: "Archive",
-    fId: null,
+    pId: null,
     uId: 'system',
     meta: null,
     createdAt: 0,
@@ -35,10 +35,10 @@ const ARCHIVE: IDriveFile = {
 
 export default function FolderPicker({ onSelectedChange, disabled }: FolderPickerProps) {
 
-    const [openedFolders, setOpenedFolders] = useState<IDriveFile[]>([]);
-    const [selected, setSelected] = useState<DriveFile | null>(null);
-    const [files, setFiles] = useState<IDriveFile[]>([]);
-    const [folder, setFolder] = useState<IDriveFile | null>(null);
+    const [openedFolders, setOpenedFolders] = useState<IFiles[]>([]);
+    const [selected, setSelected] = useState<File | null>(null);
+    const [files, setFiles] = useState<IFiles[]>([]);
+    const [folder, setFolder] = useState<IFiles | null>(null);
     const abortRef = useRef<AbortController | null>(null);
 
     const [loading, fetchFiles] = useActionPending(async () => {
@@ -60,12 +60,12 @@ export default function FolderPicker({ onSelectedChange, disabled }: FolderPicke
         }
     });
 
-    const handleSelected = (file: DriveFile) => {
+    const handleSelected = (file: File) => {
         setSelected(file);
         onSelectedChange?.(file);
     }
 
-    const handleOpenFolder = (file: DriveFile | null) => {
+    const handleOpenFolder = (file: File | null) => {
         if (!file) {
             setFolder(null);
             setOpenedFolders([]);

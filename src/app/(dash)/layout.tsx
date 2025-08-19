@@ -1,6 +1,7 @@
 'use client'
 
 import ContextInjector from '@/components/context/ContextInjector';
+import { SimpleMediaViewerProvider } from '@/components/context/SimpleMediaViewer';
 import Sidebar from '@/components/ui/Sidebar';
 import { Stack } from '@mui/material';
 import { ReactNode } from 'react';
@@ -11,12 +12,15 @@ export interface layoutProps {
 export default function layout({ children }: layoutProps) {
     return (
         <ContextInjector>
-            <Stack flex={1} direction={"row"} maxHeight={'100vh'} onContextMenu={(e) => e.preventDefault()}>
-                <Sidebar />
-                <Stack flex={1} overflow={"hidden"}>
-                    {children}
+            <SimpleMediaViewerProvider>
+                <Stack flex={1} direction={"row"} maxHeight={'100vh'} onContextMenu={(e) => e.preventDefault()}>
+                    <Sidebar />
+                    <Stack flex={1} overflow={"hidden"}>
+                        {children}
+                    </Stack>
                 </Stack>
-            </Stack>
+            </SimpleMediaViewerProvider>
         </ContextInjector>
     );
 }
+

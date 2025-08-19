@@ -4,12 +4,12 @@ import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, Dialog
 import { FolderPlus } from 'lucide-react';
 import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react';
 import { useDriveRoot } from './DriveRoot';
-import { IDriveFile } from '@/entity/DriveFile';
+import { IFiles } from '@/entity/File';
 import useRequest from '@/components/hooks/useRequest';
 import { AnimatePresence, motion } from 'motion/react';
 
 export interface ButtonAddFolderProps {
-    folder: IDriveFile | null;
+    folder: IFiles | null;
 }
 export default function ButtonAddFolder({ folder }: ButtonAddFolderProps) {
 

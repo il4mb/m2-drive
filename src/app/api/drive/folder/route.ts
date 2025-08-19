@@ -1,5 +1,5 @@
 import { getSource } from "@/data-source";
-import { DriveFile } from "@/entity/DriveFile";
+import { File } from "@/entity/File";
 import { DATE_EPOCH } from "@/libs/utils";
 import { withApi } from "@/libs/withApi";
 import { randomBytes } from "crypto";
@@ -17,19 +17,19 @@ export const POST = withApi(async (req) => {
     if (name.length > 64) throw new Error("400: Folder name should not more than 64 characters!");
 
     const source = await getSource();
-    const repo = source.getRepository(DriveFile);
+    const repo = source.getRepository(File);
     const exist = await repo.existsBy({
         uId,
         name,
-        fId: fId ? fId : IsNull()
+        pId: fId ? fId : IsNull()
     });
 
     if (exist) throw new Error("400: Folder with same name alredy exist!");
 
-    const file = new DriveFile();
+    const file = new File();
     file.id = randomBytes(12).toString('hex');
     file.uId = uId;
-    file.fId = fId || null;
+    file.pId = fId || null;
     file.name = name;
     file.type = "folder";
     file.createdAt = (Date.now() / 1000) - DATE_EPOCH;
@@ -74,7 +74,7 @@ export const DELETE = withApi(async (req) => {
 
     const uId = "1";
     const source = await getSource();
-    const repo = source.getRepository(DriveFile);
+    const repo = source.getRepository(File);
 
     const folder = await repo.findOne({ where: { id, uId, type: "folder" } });
     if (!folder) throw new Error("404: Folder not found!");

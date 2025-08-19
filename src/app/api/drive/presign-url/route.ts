@@ -1,5 +1,5 @@
 import { getSource } from "@/data-source";
-import { DriveFile } from "@/entity/DriveFile";
+import { File } from "@/entity/File";
 import { withApi } from "@/libs/withApi";
 import { s3Client, bucketName } from "@/libs/s3-storage";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -12,7 +12,7 @@ export const GET = withApi(async (req) => {
     if (!id) throw new Error("400: Invalid request!" + req.url);
 
     const source = await getSource();
-    const repository = source.getRepository(DriveFile);
+    const repository = source.getRepository(File);
     const file = await repository.findOneBy({ id });
 
     if (!file) throw new Error("404: File object not found!");

@@ -1,7 +1,7 @@
 "use client";
 
 import useRequest from '@/components/hooks/useRequest';
-import { IDriveFile } from '@/entity/DriveFile';
+import { IFiles } from '@/entity/File';
 import { formatFileSize, formatLocaleDate } from '@/libs/utils';
 import {
     Alert,
@@ -24,12 +24,13 @@ import { CircleAlert, Folder, RotateCcw, Shredder, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import ContextMenu from '@/components/ui/ContextMenu';
-import ActionDelete from '@/components/ui/drive/menu-actions/ActionDelete';
+import ActionRestore from '@/components/ui/menu-actions/ActionRestore';
+import ActionDelete from '@/components/ui/menu-actions/ActionDelete';
 
 export default function Page() {
 
-    const [files, setFiles] = useState<IDriveFile[]>([]);
-    const refresh = useRequest({
+    const [files, setFiles] = useState<IFiles[]>([]);
+    const request = useRequest({
         endpoint: "/api/drive",
         method: "GET",
         queryParams: { trashed: true, recursive: true },
@@ -38,8 +39,12 @@ export default function Page() {
         },
     });
 
+    const refresh = () => {
+        request.send();
+    }
+
     useEffect(() => {
-        refresh.send();
+        refresh();
     }, []);
 
     return (
@@ -59,10 +64,10 @@ export default function Page() {
             </Container>
 
             <Container sx={{ overflow: 'auto', flex: 1 }}>
-                {refresh.error && (
-                    <Alert severity="error" onClose={refresh.clearError} sx={{ mb: 1 }}>
-                        <AlertTitle>{refresh.error.type}</AlertTitle>
-                        {refresh.error.message}
+                {request.error && (
+                    <Alert severity="error" onClose={request.clearError} sx={{ mb: 1 }}>
+                        <AlertTitle>{request.error.type}</AlertTitle>
+                        {request.error.message}
                     </Alert>
                 )}
 
@@ -77,7 +82,7 @@ export default function Page() {
                         </TableHead>
                         <TableBody sx={{ overflow: 'auto' }}>
                             <AnimatePresence>
-                                {!refresh.pending && files.length === 0 && (
+                                {!request.pending && files.length === 0 && (
                                     <motion.tr
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
@@ -92,14 +97,10 @@ export default function Page() {
                                 )}
                                 {files.map((file, i) => (
                                     <ContextMenu
+                                        payload={{ file, refresh }}
                                         key={file.id}
-                                        items={[
-                                            <MenuItem>
-                                                <RotateCcw size={14} />
-                                                <Typography ml={1}>Pulihkan</Typography>
-                                            </MenuItem>,
-                                            <ActionDelete file={file} refresh={refresh.send} />,
-                                        ]}>
+                                        menu={[ActionRestore, ActionDelete]}
+                                        highlight>
                                         <motion.tr
                                             initial={{ opacity: 0, y: -8 }}
                                             animate={{ opacity: 1, y: 0 }}

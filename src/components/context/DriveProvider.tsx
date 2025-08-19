@@ -1,11 +1,11 @@
 'use client'
 
-import { DriveFile, IDriveFile } from '@/entity/DriveFile';
+import { File, IFiles } from '@/entity/File';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import FolderPickerDialog from '../ui/drive/FolderPickerDialog';
 
 interface DriveProviderState {
-    openFolderPicker: (title?: string, disabled?: boolean | string[]) => Promise<DriveFile | null>;
+    openFolderPicker: (title?: string, disabled?: boolean | string[]) => Promise<File | null>;
 }
 
 type FolderPicker = {
@@ -13,7 +13,7 @@ type FolderPicker = {
     title?: string;
     disabled?: boolean | string[];
     onClose: () => void;
-    onSelect: (file: IDriveFile | null) => void;
+    onSelect: (file: IFiles | null) => void;
 };
 
 type DriveProviderProps = {
@@ -24,7 +24,7 @@ export const DriveProvider = ({ children }: DriveProviderProps) => {
 
     const [folderPickers, setFolderPickers] = useState<FolderPicker[]>([]);
 
-    const openFolderPicker = async (title?: string, disabled?: boolean | string[]): Promise<IDriveFile | null> => {
+    const openFolderPicker = async (title?: string, disabled?: boolean | string[]): Promise<IFiles | null> => {
         return new Promise((resolve, reject) => {
             const id = crypto.randomUUID();
 

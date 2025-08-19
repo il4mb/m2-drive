@@ -1,84 +1,61 @@
 'use client'
 
-import { Alert, AlertTitle, Box, Button, IconButton, LinearProgress, List, ListItem, ListItemIcon, ListItemText, Stack, Tooltip, Typography } from '@mui/material';
-import DriveFile from './DriveFile';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Alert, AlertTitle, Box, Button, IconButton, LinearProgress, ListItem, ListItemIcon, ListItemText, Stack, Tooltip, Typography } from '@mui/material';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, CircleAlert, CloudUpload, FolderOpen } from 'lucide-react';
-import { IDriveFile } from '@/entity/DriveFile';
+import { IFiles } from '@/entity/File';
 import Link from 'next/link';
 import ActionAddFolder from './ButtonAddFolder';
 import FileItem from './FileItem';
+import ActionRename from '../menu-actions/ActionRename';
+import ActionOpen from '../menu-actions/ActionOpen';
+import ActionCopy from '../menu-actions/ActionCopy';
+import useRequest from '@/components/hooks/useRequest';
+import ActionMove from '../menu-actions/ActionMove';
+import ActionTrash from '../menu-actions/ActionTrash';
+import ActionDivider from '../menu-actions/ActionDivider';
+import ActionShare from '../menu-actions/ActionShare';
+import { useSimpleMediaViewer } from '@/components/context/SimpleMediaViewer';
 
+type Props = {
+    layout?: "grid" | "list";
+    sortBy?: "type" | "createdAt" | "updatedAt";
+    order?: "asc" | "desc";
+}
+export default function DriveRoot({ layout = "list", sortBy, order }: Props) {
 
-export default function DriveRoot() {
+    const simpleView = useSimpleMediaViewer();
+    const [selected, setSelected] = useState<IFiles | null>(null);
+    const [folder, setFolder] = useState<IFiles | null>(null);
+    const [openedFolders, setOpenedFolders] = useState<IFiles[]>([]);
+    const [files, setFiles] = useState<IFiles[]>([]);
 
-    const [loading, setLoading] = useState(false);
-    const [selected, setSelected] = useState<IDriveFile | null>(null);
-    const [folder, setFolder] = useState<IDriveFile | null>(null);
-    const [openedFolders, setOpenedFolders] = useState<IDriveFile[]>([]);
-    const [error, setError] = useState<Error | null>(null);
-    const [files, setFiles] = useState<IDriveFile[]>([]);
-    const abortRef = useRef<AbortController | null>(null);
+    const request = useRequest({
+        endpoint: "/api/drive",
+        queryParams: {
+            pId: folder?.id,
+            sortBy,
+            order
+        },
+        onSuccess(result) {
+            setFiles(result.data);
+        },
+    });
 
-    const fetchFiles = async () => {
-        if (loading) return;
+    const refresh = () => request.send();
 
-        // Abort request sebelumnya
-        if (abortRef.current) {
-            abortRef.current.abort();
-        }
-
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const searchParams = new URLSearchParams();
-            if (folder) {
-                searchParams.set('fId', folder.id);
-            }
-
-            const response = await fetch(`/api/drive?${searchParams}`, { signal: controller.signal }).then(e => e.json());
-            if (!response.status) throw new Error(response.message);
-            setFiles(response.data);
-        } catch (e: any) {
-            if (e.name != "AbortError") {
-                setError(e);
-            }
-        } finally {
-            setTimeout(() => {
-                setLoading(false);
-            }, 600);
-        }
-    };
-
-    useEffect(() => {
-        fetchFiles();
-        return () => {
-            if (abortRef.current) {
-                abortRef.current.abort();
-            }
-        };
-    }, [folder?.id]);
-
-    const handleSetFolder = (newFolder: IDriveFile | null) => {
+    const openFolder = (newFolder: IFiles | null) => {
         if (newFolder) {
             setOpenedFolders(prev => [...prev, newFolder]);
         } else {
             setOpenedFolders([]);
         }
         setFolder(newFolder);
-    };
+    }
 
     const handleBack = () => {
-        if (loading) return;
-        // 🔹 Abort request ketika back
-        if (abortRef.current) {
-            abortRef.current.abort();
-        }
+        if (request.pending) return;
         setOpenedFolders(prev => {
             const updated = [...prev];
             updated.pop();
@@ -86,20 +63,26 @@ export default function DriveRoot() {
             setFolder(last);
             return updated;
         });
-    };
+    }
+    useEffect(() => {
+        refresh();
+    }, [folder?.id, sortBy, order]);
+
+
+
+    const stateValue = {
+        selected,
+        select: setSelected,
+        setFolder: openFolder,
+        refresh: request.send
+    }
+
 
     return (
-        <Context
-            value={{
-                selected,
-                select(file) {
-                    setSelected(file);
-                },
-                setFolder: handleSetFolder,
-                refresh: fetchFiles
-            }}>
-            <Stack flex={1} overflow={"hidden"}>
-                <Box>
+        <Context value={stateValue}>
+            <Stack flex={1} overflow={"hidden"} pb={2}>
+                {/* HEADER */}
+                <Box sx={{ position: 'relative' }}>
                     <Stack
                         component={motion.div}
                         direction={"row"}
@@ -136,36 +119,54 @@ export default function DriveRoot() {
                             </Tooltip>
                         </Stack>
                     </Stack>
-                    {loading && (
-                        <LinearProgress sx={{ height: 2, width: '100%' }} />
-                    )}
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%'
+                    }}>
+                        {request.pending && (
+                            <LinearProgress sx={{ height: 2, width: '100%' }} />
+                        )}
+                    </Box>
                 </Box>
 
-
-                {error && (
+                {request.error && (
                     <Box my={2}>
-                        <Alert severity='error' variant='outlined'>
-                            <AlertTitle>Caught an {error.name}</AlertTitle>
-                            {error.message}
+                        <Alert
+                            severity='error'
+                            variant='outlined'
+                            onClose={request.clearError}>
+                            <AlertTitle>{request.error.type}</AlertTitle>
+                            {request.error.message}
+                            <Button size='small' onClick={refresh}>
+                                Coba lagi
+                            </Button>
                         </Alert>
                     </Box>
                 )}
 
-                <Stack flex={1} overflow={"auto"} pb={2}>
+                {layout == "list" && (
+                    <Stack direction={"row"} px={4} py={1}>
+                        <Typography flexBasis={480} fontWeight={500} fontSize={16}>Nama</Typography>
+                        <Typography fontWeight={500} fontSize={16}>Terakhir Dibuka</Typography>
+                    </Stack>
+                )}
+                <Stack
+                    flex={1}
+                    overflow={"auto"}
+                    pb={2}
+                    sx={{
+                        bgcolor: 'background.paper',
+                        p: 2,
+                        borderRadius: 2,
+
+                    }}>
                     <Stack
-                        component={motion.div}
                         flexDirection={"row"}
                         flexWrap={"wrap"}
                         justifyContent={"start"}
-                        alignItems={"start"}
-                        gap={2}
-                        sx={{
-                            // flex: 1,
-                            borderRadius: 2,
-                            bgcolor: 'background.paper'
-                        }}
-                        layout>
-                        {!loading && files.length == 0 && (
+                        alignItems={"start"}>
+                        {!request.pending && files.length == 0 && (
                             <ListItem>
                                 <ListItemIcon>
                                     <CircleAlert />
@@ -175,7 +176,30 @@ export default function DriveRoot() {
                                 </ListItemText>
                             </ListItem>
                         )}
-                        {files.map((file, i) => <FileItem key={i} index={i} file={file} />)}
+                        {files.map((file, i) => (
+                            <FileItem
+                                key={i}
+                                index={i}
+                                file={file}
+                                layout={layout}
+                                onRefresh={refresh}
+                                onOpen={(file) => {
+                                    if (file.type == "folder") {
+                                        openFolder(file);
+                                    } else {
+                                        simpleView(file);
+                                    }
+                                }}
+                                menu={[
+                                    ActionOpen,
+                                    ActionShare,
+                                    ActionDivider,
+                                    ActionCopy,
+                                    ActionMove,
+                                    ActionRename,
+                                    ActionTrash
+                                ]} />
+                        ))}
                     </Stack>
                 </Stack>
             </Stack>
@@ -186,9 +210,9 @@ export default function DriveRoot() {
 
 
 interface DriveRootState {
-    setFolder: (folder: IDriveFile) => void;
-    select: (file: IDriveFile) => void;
-    selected: IDriveFile | null;
+    setFolder: (folder: IFiles) => void;
+    select: (file: IFiles) => void;
+    selected: IFiles | null;
     refresh: () => void;
 }
 

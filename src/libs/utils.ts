@@ -28,8 +28,32 @@ export const formatLocaleDate = (time: number, locale: string = 'en-US') => {
 	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(timestamp));
 }
 
-export function currentTime(): number {
-	return Math.floor(Date.now() / 1000 - DATE_EPOCH);
+export function currentTime(mod?: string): number {
+	let time = Math.floor(Date.now() / 1000 - DATE_EPOCH);
+
+	if (mod) {
+		// Match formats like "+1h", "-1.5d", "+30m", "120s"
+		const match = /^([+-]?)(\d+(\.\d+)?)([smhd])$/i.exec(mod.trim());
+		if (!match) {
+			throw new Error(`Invalid mod format: ${mod}. Use formats like "+1h", "-30m", "+2.5d".`);
+		}
+
+		const sign = match[1] === "-" ? -1 : 1;
+		const value = parseFloat(match[2]);
+		const unit = match[4].toLowerCase();
+
+		let seconds = 0;
+		switch (unit) {
+			case "s": seconds = value; break;
+			case "m": seconds = value * 60; break;
+			case "h": seconds = value * 3600; break;
+			case "d": seconds = value * 86400; break;
+		}
+
+		time += sign * Math.round(seconds);
+	}
+
+	return time;
 }
 
 export function generateKey(length = 16) {

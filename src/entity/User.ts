@@ -17,11 +17,12 @@ export default class User {
     @Column()
     name!: string;
 
-    @Column()
+    @Column({ type: "json", default: null, nullable: true })
     meta: Meta | null = null;
 }
 
 type Meta = {
     gender: "M" | "F";
     tags: string[];
+    [k: string]: any;
 }

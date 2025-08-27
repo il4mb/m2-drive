@@ -1,7 +1,10 @@
 "use client";
 
+import { handleLoginAsync, handleStartSession } from "@/actions/login";
 import useRequest from "@/components/hooks/useRequest";
 import Pattern from "@/components/icon/Pattern";
+import RequestError from "@/components/RequestError";
+import { isEmailValid } from "@/libs/validator";
 import { Button, Stack, TextField, Typography, Paper, Box, Alert, AlertTitle } from "@mui/material";
 import { AnimatePresence, motion } from "motion/react";
 import { ReactNode, useState } from "react";
@@ -14,14 +17,29 @@ export default function Page({ children }: PageProps) {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const request = useRequest({
-        endpoint: '/api/auth',
-        method: "POST",
-        body: { email, password },
-        onSuccess(result) {
+    const [tokenId, setTokenId] = useState("");
 
+    const request = useRequest({
+        action: handleLoginAsync,
+        params: { email, password },
+        validator({ email, password }) {
+            return Boolean(isEmailValid(email) && password.length >= 8);
         },
-    })
+        onSuccess(data) {
+            console.log(data)
+            setTokenId(data.data?.tokenId || "");
+            requestStartSession.send();
+        }
+    });
+
+    const requestStartSession = useRequest({
+        action: handleStartSession,
+        params: { tokenId },
+        onSuccess() {
+            // window.location.reload()
+        }
+    });
+
     const handleLogin = () => {
         request.send();
     };
@@ -49,22 +67,8 @@ export default function Page({ children }: PageProps) {
                 </Typography>
 
                 <AnimatePresence>
-                    {request.error && (
-                        <Box
-                            component={motion.div}
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -10, opacity: 0 }}
-                            my={2}>
-                            <Alert
-                                severity='error'
-                                variant='outlined'
-                                onClose={request.clearError}>
-                                <AlertTitle>{request.error.type}</AlertTitle>
-                                {request.error.message}
-                            </Alert>
-                        </Box>
-                    )}
+                    <RequestError request={request} sx={{ mb: 2 }} closable />
+                    <RequestError request={requestStartSession} sx={{ mb: 2 }} closable />
                 </AnimatePresence>
 
                 <Stack spacing={2}>
@@ -93,6 +97,7 @@ export default function Page({ children }: PageProps) {
                         variant="contained"
                         fullWidth
                         sx={{ mt: 1, borderRadius: 2 }}
+                        disabled={!request.isValid}
                         onClick={handleLogin}
                         loading={request.pending}>
                         Login

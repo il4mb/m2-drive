@@ -3,6 +3,8 @@ import { DataSource } from "typeorm"
 import { File } from "./entity/File"
 import { Options } from "./entity/Options";
 import Contributor from "./entity/Contributor";
+import Token from "./entity/Token";
+import User from "./entity/User";
 
 const source = new DataSource({
     type: "sqlite",
@@ -10,9 +12,11 @@ const source = new DataSource({
     synchronize: true,
     logging: false,
     entities: [
+        User,
         File,
         Options,
-        Contributor
+        Contributor,
+        Token
     ],
     cache: true
 });

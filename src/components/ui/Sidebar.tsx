@@ -2,13 +2,12 @@
 
 import { Avatar, Box, IconButton, List, Paper, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
-import { Archive, ChevronLeft, FolderOpen, History, Home, Info, Share2, Trash } from 'lucide-react';
+import { Archive, ChevronLeft, FolderOpen, History, Home, Info, Settings, Share2, Trash, User2, Users2 } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from './MenuItem';
 import MenuGroup from './MenuGroup';
 import ThemeToggle from './ThemeToggle';
 import { motion } from "framer-motion";
-import Ediska from '../icon/Ediska';
 import { usePathname } from 'next/navigation';
 
 
@@ -58,10 +57,23 @@ const MENU: IMenu[] = [
     },
     {
         type: "link",
+        label: "Manage Pengguna",
+        icon: <Users2 />,
+        href: "/users"
+    },
+    {
+        type: "link",
+        label: "Pengaturan",
+        icon: <Settings />,
+        href: "/settings"
+    },
+    {
+        type: "link",
         label: "Tentang",
         icon: <Info />,
         href: "/about"
     },
+
 ]
 
 
@@ -109,11 +121,11 @@ export default function Sidebar() {
                             {open && (
                                 <Typography
                                     component={"div"}
-                                    fontSize={14}
+                                    fontSize={22}
                                     fontWeight={900}
                                     pl={1}
                                     whiteSpace={"nowrap"}>
-                                    Sistem Integrasi Penyimpanan
+                                    Indak Tau Do
                                 </Typography>
                             )}
                         </Stack>

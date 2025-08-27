@@ -1,13 +1,14 @@
 "use client"
 
-import { Container, Stack, TextField, Typography } from '@mui/material';
+import Container from '@/components/Container';
+import { Paper, Stack, TextField, Typography } from '@mui/material';
 
 export default function page() {
 
 
     return (
-        <Stack flex={1} py={4}>
-            <Container>
+        <Container maxWidth='lg'>
+            <Stack component={Paper} p={4} borderRadius={4}>
                 <Typography textAlign={"center"} fontSize={26} fontWeight={600} mb={3}>
                     Selamat Datang di <strong>SIP</strong>
                 </Typography>
@@ -22,9 +23,7 @@ export default function page() {
                 <Stack>
 
                 </Stack>
-
-            </Container>
-
-        </Stack>
+            </Stack>
+        </Container>
     );
 }

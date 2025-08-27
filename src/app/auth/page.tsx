@@ -7,7 +7,8 @@ import RequestError from "@/components/RequestError";
 import { isEmailValid } from "@/libs/validator";
 import { Button, Stack, TextField, Typography, Paper, Box, Alert, AlertTitle } from "@mui/material";
 import { AnimatePresence, motion } from "motion/react";
-import { ReactNode, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
 
 export interface PageProps {
     children?: ReactNode;
@@ -15,6 +16,7 @@ export interface PageProps {
 
 export default function Page({ children }: PageProps) {
 
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [tokenId, setTokenId] = useState("");
@@ -25,10 +27,9 @@ export default function Page({ children }: PageProps) {
         validator({ email, password }) {
             return Boolean(isEmailValid(email) && password.length >= 8);
         },
-        onSuccess(data) {
+        onSuccess({ data }) {
             console.log(data)
-            setTokenId(data.data?.tokenId || "");
-            requestStartSession.send();
+            setTokenId(data?.tokenId || "");
         }
     });
 
@@ -36,9 +37,14 @@ export default function Page({ children }: PageProps) {
         action: handleStartSession,
         params: { tokenId },
         onSuccess() {
-            // window.location.reload()
+            router.push("/");
         }
     });
+
+    useEffect(() => {
+        if (!tokenId) return;
+        requestStartSession.send();
+    }, [tokenId]);
 
     const handleLogin = () => {
         request.send();
@@ -73,6 +79,7 @@ export default function Page({ children }: PageProps) {
 
                 <Stack spacing={2}>
                     <TextField
+                        disabled={request.pending || requestStartSession.pending}
                         label="Alamat Surel"
                         placeholder="contoh: jhon-doe@gmail.com"
                         type="email"
@@ -83,6 +90,7 @@ export default function Page({ children }: PageProps) {
                     />
                     <Stack>
                         <TextField
+                            disabled={request.pending || requestStartSession.pending}
                             label="Kata Sandi"
                             type="password"
                             variant="outlined"
@@ -99,7 +107,7 @@ export default function Page({ children }: PageProps) {
                         sx={{ mt: 1, borderRadius: 2 }}
                         disabled={!request.isValid}
                         onClick={handleLogin}
-                        loading={request.pending}>
+                        loading={request.pending || requestStartSession.pending}>
                         Login
                     </Button>
                 </Stack>

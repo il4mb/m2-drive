@@ -351,7 +351,7 @@ export default function useRequest<
             }
 
             setState(prev => ({ ...prev, data: responseData as T }));
-            props.onSuccess?.(responseData as T);
+            await props.onSuccess?.(responseData as T);
             return responseData as T;
 
         } catch (error: any) {

@@ -6,7 +6,6 @@ import {
     Alert,
     AlertTitle,
     Box,
-    Container,
     Stack,
     Typography,
     Paper,
@@ -15,6 +14,7 @@ import { History, FileText, Clock, Upload, Folder } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
+import Container from "@/components/Container";
 
 type Response = {
     status: boolean;
@@ -71,7 +71,7 @@ export default function Page() {
                     gap: 1,
                     width: "100%",
                 }}>
-                {file.type == "folder" ? <Folder size={28} strokeWidth={1}/> : <FileIcon variant="solid" size={28} strokeWidth={3} type={file.meta?.mimeType || file.type} />}
+                {file.type == "folder" ? <Folder size={28} strokeWidth={1} /> : <FileIcon variant="solid" size={28} strokeWidth={3} type={file.meta?.mimeType || file.type} />}
 
                 <Stack flex={1} minWidth={0}>
                     <Typography
@@ -108,34 +108,31 @@ export default function Page() {
     );
 
     return (
-        <Stack flex={1} py={4} overflow={"hidden"}>
-            <Container>
-                <Stack mb={3}>
-                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                        <History size={20} />
-                        <Typography fontSize={18} fontWeight={600}>
-                            Histori
-                        </Typography>
-                    </Stack>
+        <Container maxWidth="lg" scrollable>
+            <Stack mb={3} component={Paper} p={2} borderRadius={2}>
+                <Stack direction={"row"} spacing={1} alignItems={"center"} mb={3}>
+                    <History size={20} />
+                    <Typography fontSize={18} fontWeight={600}>
+                        Histori
+                    </Typography>
                 </Stack>
-            </Container>
 
-            <Container sx={{ p: 2, overflow: 'auto' }}>
-                {fetchHistory.error && (
-                    <Alert
-                        severity="error"
-                        onClose={fetchHistory.clearError}
-                        sx={{ mb: 2 }}>
-                        <AlertTitle>{fetchHistory.error.type}</AlertTitle>
-                        {fetchHistory.error.message}
-                    </Alert>
-                )}
+                <Stack px={2}>
+                    {fetchHistory.error && (
+                        <Alert
+                            severity="error"
+                            onClose={fetchHistory.clearError}
+                            sx={{ mb: 2 }}>
+                            <AlertTitle>{fetchHistory.error.type}</AlertTitle>
+                            {fetchHistory.error.message}
+                        </Alert>
+                    )}
 
-                <Section title="Terakhir Dibuka" icon={<Clock size={16} />} files={lastOpen} />
-                <Section title="Terakhir Diperbarui" icon={<History size={16} />} files={lastUpdate} />
-                <Section title="Baru Ditambahkan" icon={<Upload size={16} />} files={lastAdd} />
-
-            </Container>
-        </Stack>
+                    <Section title="Terakhir Dibuka" icon={<Clock size={16} />} files={lastOpen} />
+                    <Section title="Terakhir Diperbarui" icon={<History size={16} />} files={lastUpdate} />
+                    <Section title="Baru Ditambahkan" icon={<Upload size={16} />} files={lastAdd} />
+                </Stack>
+            </Stack>
+        </Container>
     );
 }

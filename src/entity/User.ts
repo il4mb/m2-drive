@@ -17,12 +17,19 @@ export default class User {
     @Column()
     name!: string;
 
+    @Column({ type: 'int', default: null, nullable: true })
+    updatedAt?: number;
+
+    @Column({ type: 'int', default: null, nullable: true })
+    createdAt!: number;
+
     @Column({ type: "json", default: null, nullable: true })
-    meta: Meta | null = null;
+    meta: Meta = {};
 }
 
 type Meta = {
-    gender: "M" | "F";
-    tags: string[];
+    gender?: "M" | "F";
+    avatar?: string;
+    role?: string;
     [k: string]: any;
 }

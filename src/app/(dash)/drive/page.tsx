@@ -1,5 +1,6 @@
 "use client";
 
+import Container from "@/components/Container";
 import useLocalStorage from "@/components/hooks/useLocalstorage";
 import ContextMenu from "@/components/ui/ContextMenu";
 import { createContextMenu } from "@/components/ui/ContextMenuItem";
@@ -7,7 +8,7 @@ import DriveRoot from "@/components/ui/drive/DriveRoot";
 import ActionDivider from "@/components/ui/menu-actions/ActionDivider";
 import ActionNewFolder from "@/components/ui/menu-actions/ActionNewFolder";
 import { getColor } from "@/theme/colors";
-import { alpha, Container, Stack } from "@mui/material";
+import { alpha, Stack } from "@mui/material";
 import { AlignJustify, ArrowDownWideNarrow, ArrowUpNarrowWide, Clock, FileDigit, Grid, } from "lucide-react";
 import { useMemo } from "react";
 
@@ -110,20 +111,13 @@ export default function DrivePage() {
 
 	return (
 		<ContextMenu payload={payload} menu={MENU} maxWidth={210}>
-			<Stack
-				flex={1}
-				p={4}
-				pb={0}
-				overflow="hidden"
-				onContextMenu={(e) => e.preventDefault()}>
-				<Container sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-					<DriveRoot
-						layout={layout}
-						order={order}
-						sortBy={sort}
-					/>
-				</Container>
-			</Stack>
+			<Container maxWidth="lg" scrollable>
+				<DriveRoot
+					layout={layout}
+					order={order}
+					sortBy={sort}
+				/>	
+			</Container>
 		</ContextMenu>
 	);
 }

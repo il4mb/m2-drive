@@ -1,6 +1,6 @@
 'use client'
 
-import { handleAddUser } from "@/actions/manage-users";
+import { getUser, handleUpdateUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
 import useRequest from "@/components/hooks/useRequest";
 import useRoles from "@/components/hooks/useRoles";
@@ -8,54 +8,85 @@ import RequestError from "@/components/RequestError";
 import AvatarPicker from "@/components/ui/AvatarPicker";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import PasswordField from "@/components/ui/PasswordField";
+import User from "@/entity/User";
 import { isEmailValid } from "@/libs/validator";
 import { Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
-import { ChevronLeft, User, UserPlus } from "lucide-react";
+import { ChevronLeft, Save, UserIcon, UserPen } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { enqueueSnackbar } from "notistack";
-import { useState } from "react";
+import { useParams } from "next/navigation";
+import { closeSnackbar, enqueueSnackbar } from "notistack";
+import { useEffect, useState } from "react";
 
 export default function page() {
 
-    const roles = useRoles();
-    const [enterPw, setEnterPw] = useState(false);
+    const { uid } = useParams<{ uid: string }>();
+    const [user, setUser] = useState<User>();
 
-    const [avatar, setAvatar] = useState<File | null>();
+    const roles = useRoles();
+    const [changePw, setChangePw] = useState(false);
+
+    const [avatar, setAvatar] = useState<File | null>(null);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [role, setRole] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('user');
 
-    const request = useRequest({
-        action: handleAddUser,
-        params: { name, email, role, avatar },
-        validator({ name, email, role }) {
+
+    const requestGetUser = useRequest({
+        action: getUser,
+        params: { uid },
+        onSuccess(result) {
+            const user = result.data?.user;
+            setUser(user);
+        },
+    });
+
+    const requestUpdate = useRequest({
+        action: handleUpdateUser,
+        params: { uid, name, email, role, avatar, ...(changePw && { password }) },
+        validator({ name, email, role, avatar, password }) {
+
             const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
             const emailValid = isEmailValid(email) && email.length >= 6 && email.length <= 64;
             const roleValid = !!role && roles.some(r => r.name === role);
 
             let passwordValid = true;
-            if (enterPw) {
-                passwordValid = password.length >= 8 && password.length <= 64;
+            if (changePw) {
+                passwordValid = (password || '').length >= 8 && (password || '').length <= 64;
             }
 
-            return nameValid && emailValid && roleValid && passwordValid;
+            return nameValid && emailValid && roleValid && passwordValid && (
+                Boolean(avatar
+                    || user?.name != name
+                    || user.email != email
+                    || user.meta.role != role
+                    || (password && password.length >= 8)
+                )
+            );
         },
-        onSuccess() {
+        async onSuccess() {
+            await requestGetUser.send();
             setAvatar(null);
-            setName('');
-            setEmail("");
-            setRole("");
-            setPassword("");
-            setEnterPw(false);
-            enqueueSnackbar('Pengguna berhasil ditambahkan', {
+            setPassword('');
+            setChangePw(false);
+            enqueueSnackbar('Pengguna berhasil diperbarui', {
                 variant: 'success',
                 action: CloseSnackbar
-
             })
         },
-    });
+    })
+
+    useEffect(() => {
+        requestGetUser.send();
+    }, [uid]);
+
+    useEffect(() => {
+        setName(user?.name || "");
+        setEmail(user?.email || '');
+        setRole(user?.meta.role || '');
+    }, [user])
+
 
     return (
         <Container>
@@ -67,27 +98,29 @@ export default function page() {
                                 <ChevronLeft size={18} />
                             </IconButton>
                         </Tooltip>
-                        <UserPlus size={28} />
+                        <UserPen size={28} />
                         <Typography fontSize={22} fontWeight={600}>
-                            Tambah Pengguna
+                            Sunting Pengguna
                         </Typography>
                     </Stack>
                 </Stack>
             </Stack>
-
             <Stack component={Paper} borderRadius={2} boxShadow={2}>
-
-                <Stack spacing={2} mt={2} p={[2, 2, 4]}>
+                <Stack gap={2} p={[2, 2, 4]}>
 
                     <RequestError
-                        request={request}
+                        request={requestGetUser}
+                        tryagain />
+
+                    <RequestError
+                        request={requestUpdate}
                         closable />
 
                     <AvatarPicker
-                        value={avatar}
-                        onChange={setAvatar}
-                        size={{ width: 100, height: 100 }}>
-                        <User />
+                        src={user?.meta.avatar}
+                        size={{ width: 100, height: 100 }}
+                        value={avatar} onChange={setAvatar}>
+                        <UserIcon />
                     </AvatarPicker>
 
                     <Stack>
@@ -133,10 +166,10 @@ export default function page() {
 
                     <Stack>
                         <FormControlLabel
-                            control={<Checkbox checked={enterPw} onChange={e => setEnterPw(e.target.checked)} />}
-                            label={"Buat Kata Sandi?"} />
+                            control={<Checkbox checked={changePw} onChange={e => setChangePw(e.target.checked)} />}
+                            label={"Ubah Kata Sandi?"} />
                         <AnimatePresence>
-                            {enterPw && (
+                            {changePw && (
                                 <motion.div
                                     initial={{ y: 10, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
@@ -159,19 +192,21 @@ export default function page() {
 
 
                     <Button
-                        loading={request.pending}
-                        disabled={!request.isValid}
-                        onClick={request.send}
+                        loading={requestUpdate.pending}
+                        disabled={!requestUpdate.isValid}
+                        onClick={requestUpdate.send}
                         variant="contained"
                         sx={{
                             alignSelf: "flex-end",
-                            justifySelf: "flex-end"
+                            justifySelf: "flex-end",
+                            mt: 4
                         }}
-                        startIcon={<UserPlus size={16} />}>
-                        Tambahkan
+                        startIcon={<Save size={16} />}>
+                        Simpan
                     </Button>
                 </Stack>
             </Stack>
+
         </Container>
-    )
+    );
 }

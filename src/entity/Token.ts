@@ -7,7 +7,7 @@ export default class Token {
     id!: string;
 
     @Column()
-    uId!: string;
+    uid!: string;
 
     @Column()
     createdAt!: number;

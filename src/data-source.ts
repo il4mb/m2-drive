@@ -5,6 +5,7 @@ import { Options } from "./entity/Options";
 import Contributor from "./entity/Contributor";
 import Token from "./entity/Token";
 import User from "./entity/User";
+import Role from "./entity/Role";
 
 const source = new DataSource({
     type: "sqlite",
@@ -16,7 +17,8 @@ const source = new DataSource({
         File,
         Options,
         Contributor,
-        Token
+        Token,
+        Role
     ],
     cache: true
 });

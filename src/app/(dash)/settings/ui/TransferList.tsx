@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Grid,
     List,
@@ -12,7 +12,8 @@ import {
     Box,
     IconButton,
     Tooltip,
-    Stack
+    Stack,
+    InputAdornment
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
 
@@ -34,43 +35,55 @@ type Props = {
     };
 };
 
-export default function TransferList({ defineList, items, onChange, showSearch = false, maxHeight = 300, disabled = false, titles = { left: 'Available', right: 'Selected' } }: Props) {
-
+export default function TransferList({
+    defineList,
+    items,
+    onChange,
+    showSearch = true,
+    maxHeight = 300,
+    disabled = false,
+    titles = { left: 'Available', right: 'Selected' }
+}: Props) {
     const [checked, setChecked] = useState<string[]>([]);
     const [left, setLeft] = useState<Item[]>([]);
     const [right, setRight] = useState<Item[]>([]);
-    const [searchLeft, setSearchLeft] = useState('');
-    const [searchRight, setSearchRight] = useState('');
+    const [leftSearch, setLeftSearch] = useState('');
+    const [rightSearch, setRightSearch] = useState('');
 
-    // Initialize lists based on props
+    // Refs to track scroll positions
+    const leftScrollRef = useRef<HTMLDivElement>(null);
+    const rightScrollRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
-        const rightItems = defineList.filter(i => items.includes(i.value));
-        const leftItems = defineList.filter(i => !items.includes(i.value));
-        setLeft(leftItems);
-        setRight(rightItems);
+        setLeft(prev => {
+            const existingMap = new Map(prev.map(i => [i.value, i]));
+            return defineList.filter(i => !items.includes(i.value))
+                .map(i => existingMap.get(i.value) || i); // keep same ref if exists
+        });
+        setRight(prev => {
+            const existingMap = new Map(prev.map(i => [i.value, i]));
+            return defineList.filter(i => items.includes(i.value))
+                .map(i => existingMap.get(i.value) || i);
+        });
     }, [defineList, items]);
 
-    // Memoize the filtered lists to prevent unnecessary re-renders
+    const leftChecked = useMemo(() => left.filter(i => checked.includes(i.value)), [left, checked]);
+    const rightChecked = useMemo(() => right.filter(i => checked.includes(i.value)), [right, checked]);
+
+    // Filter lists based on search terms
     const filteredLeft = useMemo(() => {
-        return !searchLeft
-            ? left
-            : left.filter(i =>
-                i.label.toLowerCase().includes(searchLeft.toLowerCase())
-            );
-    }, [left, searchLeft]);
+        if (!leftSearch) return left;
+        return left.filter(item =>
+            item.label.toLowerCase().includes(leftSearch.toLowerCase())
+        );
+    }, [left, leftSearch]);
 
     const filteredRight = useMemo(() => {
-        return !searchRight
-            ? right
-            : right.filter(i =>
-                i.label.toLowerCase().includes(searchRight.toLowerCase())
-            );
-    }, [right, searchRight]);
-
-    const leftChecked = useMemo(() =>
-        left.filter(i => checked.includes(i.value)), [left, checked]);
-    const rightChecked = useMemo(() =>
-        right.filter(i => checked.includes(i.value)), [right, checked]);
+        if (!rightSearch) return right;
+        return right.filter(item =>
+            item.label.toLowerCase().includes(rightSearch.toLowerCase())
+        );
+    }, [right, rightSearch]);
 
     const toggleCheck = (val: string) => {
         if (disabled) return;
@@ -79,67 +92,191 @@ export default function TransferList({ defineList, items, onChange, showSearch =
         );
     };
 
-    const handleToggleAll = (items: Item[], checkedItems: Item[]) => {
+    const handleToggleAll = (itemsToToggle: Item[], shouldCheck: boolean) => {
         if (disabled) return;
 
-        const allValues = items.map(i => i.value);
-        const allChecked = checkedItems.length === items.length;
-
-        if (allChecked) {
-            setChecked(prev => prev.filter(v => !allValues.includes(v)));
+        if (shouldCheck) {
+            // Check all items in the current list
+            const newChecked = [...checked];
+            itemsToToggle.forEach(item => {
+                if (!newChecked.includes(item.value)) {
+                    newChecked.push(item.value);
+                }
+            });
+            setChecked(newChecked);
         } else {
-            setChecked(prev => [...new Set([...prev, ...allValues])]);
+            // Uncheck all items in the current list
+            setChecked(checked.filter(val =>
+                !itemsToToggle.some(item => item.value === val)
+            ));
         }
     };
 
-    const moveAll = (from: Item[], to: Item[], setFrom: any, setTo: any) => {
-        if (disabled) return;
-        const newTo = [...to, ...from];
-        const newFrom: Item[] = [];
-
-        setTo(newTo);
-        setFrom(newFrom);
-        setChecked(prev => prev.filter(v => !from.some(f => f.value === v)));
-
-        // Call onChange with the new right values
-        onChange(newTo.map(item => item.value));
+    const selectAll = () => {
+        onChange(defineList.map(e => e.value));
+        setChecked([]);
     };
 
-    const moveChecked = (from: Item[], to: Item[], checkedItems: Item[], setFrom: any, setTo: any) => {
-        if (disabled) return;
-        const newTo = [...to, ...checkedItems];
-        const newFrom = from.filter(i => !checkedItems.some(c => c.value === i.value));
-
-        setTo(newTo);
-        setFrom(newFrom);
-        setChecked(prev => prev.filter(v => !checkedItems.some(c => c.value === v)));
-
-        // Call onChange with the new right values
-        onChange(newTo.map(item => item.value));
+    const unselectAll = () => {
+        onChange([]);
+        setChecked([]);
     };
 
-    const clearSearch = (setSearch: (s: string) => void) => {
-        setSearch('');
+    const selectChecked = () => {
+        const newItems = [...items, ...leftChecked.map(e => e.value)];
+        onChange(newItems);
+        setChecked(checked.filter(val => !leftChecked.some(item => item.value === val)));
     };
 
-    const CustomList = ({
-        title,
-        items,
-        filteredItems,
-        search,
-        setSearch,
-        checkedItems
-    }: {
-        title: string;
-        items: Item[];
-        filteredItems: Item[];
-        search: string;
-        setSearch: (s: string) => void;
-        checkedItems: Item[];
-    }) => (
+    const unselectChecked = () => {
+        const selectedValues = rightChecked.map(e => e.value);
+        const filtered = items.filter(e => !selectedValues.includes(e));
+        onChange(filtered);
+        setChecked(checked.filter(val => !rightChecked.some(item => item.value === val)));
+    };
+
+    const clearSearch = (side: 'left' | 'right') => {
+        if (side === 'left') {
+            setLeftSearch('');
+        } else {
+            setRightSearch('');
+        }
+    };
+
+
+    return (
+        <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
+            <Grid size={5.5}>
+                <CustomList
+                    checked={checked}
+                    toggleCheck={toggleCheck}
+                    disabled={disabled}
+                    maxHeight={maxHeight}
+                    title={titles.left || 'Available'}
+                    items={filteredLeft}
+                    checkedItems={leftChecked}
+                    searchTerm={leftSearch}
+                    onSearchChange={setLeftSearch}
+                    showSearch={showSearch}
+                    onToggleAll={(shouldCheck) => handleToggleAll(filteredLeft, shouldCheck)}
+                    scrollRef={leftScrollRef}
+                />
+            </Grid>
+
+            <Grid>
+                <Grid container direction="column" alignItems="center" spacing={1}>
+                    <Grid>
+                        <Tooltip title="Move all to selected">
+                            <span>
+                                <IconButton
+                                    onClick={selectAll}
+                                    disabled={disabled || left.length === 0}
+                                    color="primary"
+                                    size="large">
+                                    <ChevronsRight size={20} />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Grid>
+                    <Grid>
+                        <Tooltip title="Move selected to right">
+                            <span>
+                                <IconButton
+                                    onClick={selectChecked}
+                                    disabled={disabled || leftChecked.length === 0}
+                                    color="primary"
+                                    size="large">
+                                    <ChevronRight size={20} />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Grid>
+                    <Grid>
+                        <Tooltip title="Move selected to left">
+                            <span>
+                                <IconButton
+                                    onClick={unselectChecked}
+                                    disabled={disabled || rightChecked.length === 0}
+                                    color="primary"
+                                    size="large">
+                                    <ChevronLeft size={20} />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Grid>
+                    <Grid>
+                        <Tooltip title="Move all to available">
+                            <span>
+                                <IconButton
+                                    onClick={unselectAll}
+                                    disabled={disabled || right.length === 0}
+                                    color="primary"
+                                    size="large">
+                                    <ChevronsLeft size={20} />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <Grid size={5.5}>
+                <CustomList
+                    checked={checked}
+                    toggleCheck={toggleCheck}
+                    disabled={disabled}
+                    maxHeight={maxHeight}
+                    title={titles.right || 'Selected'}
+                    items={filteredRight}
+                    checkedItems={rightChecked}
+                    searchTerm={rightSearch}
+                    onSearchChange={setRightSearch}
+                    showSearch={showSearch}
+                    onToggleAll={(shouldCheck) => handleToggleAll(filteredRight, shouldCheck)}
+                    scrollRef={rightScrollRef}
+                />
+            </Grid>
+        </Grid>
+    );
+}
+
+type CustomProps = {
+    title: string;
+    items: Item[];
+    checkedItems: Item[];
+    searchTerm: string;
+    showSearch: boolean;
+    scrollRef: React.RefObject<HTMLDivElement | null>;
+    maxHeight?: number;
+    disabled?: boolean;
+    checked: string[];
+    onSearchChange: (term: string) => void;
+    onToggleAll: (shouldCheck: boolean) => void;
+    toggleCheck: (value: string) => void;
+};
+
+const CustomList = ({
+    title,
+    items,
+    checkedItems,
+    searchTerm,
+    showSearch,
+    scrollRef,
+    maxHeight,
+    disabled,
+    checked,
+    onToggleAll,
+    onSearchChange,
+    toggleCheck
+}: CustomProps) => {
+
+    const allChecked = items.length > 0 && checkedItems.length === items.length;
+    const indeterminate = checkedItems.length > 0 && checkedItems.length < items.length;
+
+    return (
         <Paper
             sx={{
-                width: 240,
+                width: '100%',
                 height: maxHeight,
                 display: 'flex',
                 flexDirection: 'column',
@@ -149,52 +286,66 @@ export default function TransferList({ defineList, items, onChange, showSearch =
                 <Typography variant="subtitle2" fontWeight="medium">
                     {title} ({items.length})
                 </Typography>
-            </Box>
 
-            {showSearch && (
-                <Box sx={{ p: 1, position: 'relative' }}>
+                {showSearch && (
                     <TextField
-                        variant="outlined"
-                        size="small"
-                        placeholder={`Search ${title.toLowerCase()}...`}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
                         fullWidth
-                        disabled={disabled}
-                        InputProps={{
-                            startAdornment: <Search size={16} style={{ marginRight: 8, color: 'text.secondary' }} />,
-                            endAdornment: search && (
-                                <IconButton
-                                    size="small"
-                                    onClick={() => clearSearch(setSearch)}
-                                    disabled={disabled}
-                                    sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
-                                >
-                                    <X size={16} />
-                                </IconButton>
-                            )
-                        }}
-                        sx={{
-                            '& .MuiInputBase-input': {
-                                paddingLeft: showSearch ? '40px' : '14px',
-                                paddingRight: search ? '40px' : '14px'
+                        size="small"
+                        placeholder="Search..."
+                        value={searchTerm}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        sx={{ mt: 1 }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search size={18} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: searchTerm && (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => onSearchChange('')}
+                                            disabled={disabled}>
+                                            <X size={16} />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
                             }
                         }}
                     />
-                </Box>
-            )}
+                )}
+            </Box>
 
-            {items.length > 0 && filteredItems.length === 0 && (
-                <Box sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                        No results found
+            {items.length > 0 && (
+                <Box sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    display: 'flex',
+                    alignItems: 'center',
+                    pl: 1,
+                    pr: 1,
+                    height: 48
+                }}>
+                    <Checkbox
+                        checked={allChecked}
+                        indeterminate={indeterminate}
+                        onChange={(e) => onToggleAll(e.target.checked)}
+                        disabled={disabled}
+                    />
+                    <Typography variant="body2" color="textSecondary">
+                        {checkedItems.length} selected
                     </Typography>
                 </Box>
             )}
 
-            <Stack flex={1} overflow={"auto"}>
-                <List dense>
-                    {filteredItems.map(item => {
+            <Stack
+                flex={1}
+                overflow={"auto"}
+                ref={scrollRef}>
+                <List dense sx={{ pt: 0 }}>
+                    {items.map(item => {
                         const labelId = `transfer-list-item-${item.value}`;
                         return (
                             <ListItemButton
@@ -208,16 +359,22 @@ export default function TransferList({ defineList, items, onChange, showSearch =
                                         tabIndex={-1}
                                         disableRipple
                                         disabled={disabled}
-                                        inputProps={{ 'aria-labelledby': labelId }}
+                                        slotProps={{
+                                            input: {
+                                                'aria-labelledby': labelId
+                                            }
+                                        }}
                                     />
                                 </ListItemIcon>
                                 <ListItemText
                                     id={labelId}
                                     primary={item.label}
-                                    primaryTypographyProps={{
-                                        fontSize: '0.875rem',
-                                        noWrap: true,
-                                        title: item.label
+                                    slotProps={{
+                                        primary: {
+                                            fontSize: '0.875rem',
+                                            noWrap: true,
+                                            title: item.label
+                                        }
                                     }}
                                 />
                             </ListItemButton>
@@ -225,110 +382,6 @@ export default function TransferList({ defineList, items, onChange, showSearch =
                     })}
                 </List>
             </Stack>
-
-            {items.length > 0 && (
-                <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider' }}>
-                    <ListItemButton
-                        onClick={() => handleToggleAll(filteredItems, checkedItems)}
-                        disabled={disabled || filteredItems.length === 0}
-                        dense>
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                            <Checkbox
-                                checked={checkedItems.length === filteredItems.length && filteredItems.length > 0}
-                                indeterminate={checkedItems.length > 0 && checkedItems.length < filteredItems.length}
-                                disabled={disabled || filteredItems.length === 0}
-                            />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={`Select ${checkedItems.length === filteredItems.length ? 'none' : 'all'}`}
-                            primaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
-                        />
-                    </ListItemButton>
-                </Box>
-            )}
         </Paper>
     );
-
-    return (
-        <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
-            <Grid>
-                <CustomList
-                    title={titles.left || 'Available'}
-                    items={left}
-                    filteredItems={filteredLeft}
-                    search={searchLeft}
-                    setSearch={setSearchLeft}
-                    checkedItems={leftChecked}
-                />
-            </Grid>
-
-            <Grid>
-                <Grid container direction="column" alignItems="center" spacing={1}>
-                    <Grid>
-                        <Tooltip title="Move all to selected">
-                            <span>
-                                <IconButton
-                                    onClick={() => moveAll(left, right, setLeft, setRight)}
-                                    disabled={disabled || left.length === 0}
-                                    color="primary"
-                                    size="large">
-                                    <ChevronsRight size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Grid>
-                    <Grid>
-                        <Tooltip title="Move selected to right">
-                            <span>
-                                <IconButton
-                                    onClick={() => moveChecked(left, right, leftChecked, setLeft, setRight)}
-                                    disabled={disabled || leftChecked.length === 0}
-                                    color="primary"
-                                    size="large">
-                                    <ChevronRight size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Grid>
-                    <Grid>
-                        <Tooltip title="Move selected to left">
-                            <span>
-                                <IconButton
-                                    onClick={() => moveChecked(right, left, rightChecked, setRight, setLeft)}
-                                    disabled={disabled || rightChecked.length === 0}
-                                    color="primary"
-                                    size="large">
-                                    <ChevronLeft size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Grid>
-                    <Grid>
-                        <Tooltip title="Move all to available">
-                            <span>
-                                <IconButton
-                                    onClick={() => moveAll(right, left, setRight, setLeft)}
-                                    disabled={disabled || right.length === 0}
-                                    color="primary"
-                                    size="large">
-                                    <ChevronsLeft size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Grid>
-                </Grid>
-            </Grid>
-
-            <Grid>
-                <CustomList
-                    title={titles.right || 'Selected'}
-                    items={right}
-                    filteredItems={filteredRight}
-                    search={searchRight}
-                    setSearch={setSearchRight}
-                    checkedItems={rightChecked}
-                />
-            </Grid>
-        </Grid>
-    );
-}
+};

@@ -126,14 +126,12 @@ export default function AvatarPicker({
                         : "0px 0px 0px rgba(0,0,0,0)",
                 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                style={{ borderRadius: 8 }}
-            >
+                style={{ borderRadius: 8 }}>
                 <Box sx={{ position: "relative", display: "inline-block" }}>
                     <Avatar
                         variant="rounded"
                         src={source || src}
-                        sx={{ width: 50, height: 50, cursor: "pointer" }}
-                    >
+                        sx={{ width: 50, height: 50, cursor: "pointer" }}>
                         {children}
                     </Avatar>
                     {file && !disabled && (
@@ -141,8 +139,7 @@ export default function AvatarPicker({
                             <IconButton
                                 onClick={handleClear}
                                 size="small"
-                                sx={{ position: "absolute", top: -15, left: -15 }}
-                            >
+                                sx={{ position: "absolute", top: -15, left: -15 }}>
                                 <X />
                             </IconButton>
                         </Tooltip>
@@ -153,8 +150,7 @@ export default function AvatarPicker({
             <Stack
                 flex={1}
                 sx={{ cursor: "pointer" }}
-                onClick={() => inputRef.current?.click()}
-            >
+                onClick={() => inputRef.current?.click()}>
                 <AnimatePresence mode="wait">
                     {!hovered ? (
                         <motion.div
@@ -162,8 +158,7 @@ export default function AvatarPicker({
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: -10, opacity: 0 }}
-                            transition={{ duration: 0.25 }}
-                        >
+                            transition={{ duration: 0.25 }}>
                             <Typography variant="body2">{label}</Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Upload avatar, width {size.width}x{size.height}
@@ -193,6 +188,7 @@ export default function AvatarPicker({
             </Stack>
 
             <input
+                disabled={disabled}
                 ref={inputRef}
                 type="file"
                 accept="image/*"

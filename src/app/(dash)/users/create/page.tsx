@@ -2,6 +2,7 @@
 
 import { handleAddUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
+import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/components/hooks/useRequest";
 import useRoles from "@/components/hooks/useRoles";
 import RequestError from "@/components/RequestError";
@@ -9,7 +10,7 @@ import AvatarPicker from "@/components/ui/AvatarPicker";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import PasswordField from "@/components/ui/PasswordField";
 import { isEmailValid } from "@/libs/validator";
-import { Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, AlertTitle, Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { ChevronLeft, User, UserPlus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -18,6 +19,9 @@ import { useState } from "react";
 
 export default function page() {
 
+
+    const checkPermission = useCheckMyPermission();
+    const canAddUser = checkPermission("can-add-user");
     const roles = useRoles();
     const [enterPw, setEnterPw] = useState(false);
 
@@ -77,13 +81,21 @@ export default function page() {
 
             <Stack component={Paper} borderRadius={2} boxShadow={2}>
 
-                <Stack spacing={2} mt={2} p={[2, 2, 4]}>
+                <Stack gap={2} p={[2, 2, 4]}>
 
                     <RequestError
                         request={request}
                         closable />
 
+                    {!canAddUser && (
+                        <Alert severity="warning" sx={{ mb: 4 }} variant="outlined">
+                            <AlertTitle>Kesalahan Wewenang</AlertTitle>
+                            Kamu tidak memiliki wewenang untuk menambah pengguna!
+                        </Alert>
+                    )}
+
                     <AvatarPicker
+                        disabled={!canAddUser || request.pending}
                         value={avatar}
                         onChange={setAvatar}
                         size={{ width: 100, height: 100 }}>
@@ -92,6 +104,7 @@ export default function page() {
 
                     <Stack>
                         <TextField
+                            disabled={!canAddUser || request.pending}
                             label="Nama"
                             value={name}
                             onChange={e => {
@@ -106,6 +119,7 @@ export default function page() {
 
                     <Stack>
                         <TextField
+                            disabled={!canAddUser || request.pending}
                             type="email"
                             label="Alamat Surel"
                             value={email}
@@ -120,6 +134,7 @@ export default function page() {
                     </Stack>
 
                     <TextField
+                        disabled={!canAddUser || request.pending}
                         label="Jabatan"
                         placeholder="Pilih Jabatan Pengguna"
                         value={role}
@@ -133,7 +148,12 @@ export default function page() {
 
                     <Stack>
                         <FormControlLabel
-                            control={<Checkbox checked={enterPw} onChange={e => setEnterPw(e.target.checked)} />}
+                            control={
+                                <Checkbox
+                                    disabled={!canAddUser || request.pending}
+                                    checked={enterPw}
+                                    onChange={e => setEnterPw(e.target.checked)} />
+                            }
                             label={"Buat Kata Sandi?"} />
                         <AnimatePresence>
                             {enterPw && (
@@ -142,6 +162,7 @@ export default function page() {
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: 10, opacity: 0 }}>
                                     <PasswordField
+                                        disabled={!canAddUser || request.pending}
                                         value={password}
                                         onChange={(e) => {
                                             if (e.length > 64) return;
@@ -156,20 +177,20 @@ export default function page() {
                             )}
                         </AnimatePresence>
                     </Stack>
-
-
-                    <Button
-                        loading={request.pending}
-                        disabled={!request.isValid}
-                        onClick={request.send}
-                        variant="contained"
-                        sx={{
-                            alignSelf: "flex-end",
-                            justifySelf: "flex-end"
-                        }}
-                        startIcon={<UserPlus size={16} />}>
-                        Tambahkan
-                    </Button>
+                    {canAddUser && (
+                        <Button
+                            loading={request.pending}
+                            disabled={!request.isValid}
+                            onClick={request.send}
+                            variant="contained"
+                            sx={{
+                                alignSelf: "flex-end",
+                                justifySelf: "flex-end"
+                            }}
+                            startIcon={<UserPlus size={16} />}>
+                            Tambahkan
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
         </Container>

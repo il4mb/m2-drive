@@ -1,10 +1,12 @@
 "use client"
 
 import Container from '@/components/Container';
+import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { Paper, Stack, TextField, Typography } from '@mui/material';
 
 export default function page() {
 
+    const { user } = useCurrentSession();
 
     return (
         <Container maxWidth='lg'>

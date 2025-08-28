@@ -1,24 +1,26 @@
 import { Button, Chip, Stack, TextField, Typography } from "@mui/material";
-import { CirclePlus, PersonStanding, Plus, Save, ShieldUser, X } from "lucide-react";
+import { CirclePlus, PersonStanding, Plus, Save, ShieldUser, X, Edit, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChangeEvent, useEffect, useState } from "react";
 import TransferList from "./TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
 import useRequest from "@/components/hooks/useRequest";
-import { addRole, getAllRole } from "@/actions/manage-role";
+import { addRole, deleteRole, getAllRole, updateRole } from "@/actions/manage-role";
 import RequestError from "@/components/RequestError";
 import Role from "@/entity/Role";
-
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 export default function RoleManager() {
 
     const SYSTEM_ROLES_NAME = SYSTEM_ROLES.map(e => e.name);
-
     const [name, setName] = useState('');
     const [label, setLabel] = useState('');
     const [open, setOpen] = useState(false);
-    const [abilities, setAbilities] = useState<string[]>([])
+    const [editMode, setEditMode] = useState(false);
+    const [abilities, setAbilities] = useState<string[]>([]);
     const [roles, setRoles] = useState<Role[]>(SYSTEM_ROLES);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
     const requestGetRole = useRequest({
         action: getAllRole,
@@ -29,40 +31,101 @@ export default function RoleManager() {
 
     const requestAdd = useRequest({
         action: addRole,
-        params: { name, label, abilities: abilities },
+        params: { name, label, abilities },
         validator({ name, label, abilities }) {
             return Boolean(name.length > 3 && label.length > 3 && abilities.length > 0)
         },
         onSuccess({ data }) {
-            setName('');
-            setLabel('');
-            setAbilities([]);
-            setOpen(false);
-            setRoles(prev => ([data, ...prev].filter(e => e != undefined)));
+            resetForm();
+            requestGetRole.send();
         },
-    })
+    });
 
-    const handleToggle = () => {
-        setOpen(prev => !prev);
+    const requestUpdate = useRequest({
+        action: updateRole,
+        params: { name, label, abilities },
+        validator({ name, label, abilities }) {
+            return Boolean(name.length > 3 && label.length > 3 && abilities.length > 0)
+        },
+        onSuccess({ data }) {
+            resetForm();
+            requestGetRole.send();
+        },
+    });
+
+    const requestDelete = useRequest({
+        action: deleteRole,
+        params: {},
+        onSuccess({ data }) {
+            setDeleteConfirmOpen(false);
+            setSelectedRole(null);
+            requestGetRole.send();
+        },
+    });
+
+    const resetForm = () => {
         setName('');
         setLabel('');
         setAbilities([]);
-    }
+        setOpen(false);
+        setEditMode(false);
+        setSelectedRole(null);
+        setOpen(false);
+    };
+
+    const handleToggle = () => {
+        setOpen(prev => !prev);
+        resetForm();
+    };
+
+    const handleEdit = (role: Role) => {
+        if (SYSTEM_ROLES_NAME.includes(role.name) && !(role as any).editable) return;
+
+        setSelectedRole(role);
+        setName(role.name);
+        setLabel(role.label);
+        setAbilities(role.abilities);
+        setEditMode(true);
+        setOpen(true);
+    };
+
+    const handleDelete = (role: Role) => {
+        if (SYSTEM_ROLES_NAME.includes(role.name)) return;
+
+        setSelectedRole(role);
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (selectedRole) {
+            requestDelete.send();
+        }
+    };
+
+    const handleSave = () => {
+        if (editMode) {
+            requestUpdate.send();
+        } else {
+            requestAdd.send();
+        }
+    };
 
     const handleSetLabel = (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setLabel(value);
-        setName(value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]+/g, '').trim());
-    }
+        if (!editMode) {
+            setName(value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]+/g, '').trim());
+        }
+    };
 
     const handleSetName = (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setName(value.trim().replace(/\s+/g, '-').replace(/[^a-z-]+/g, '').trim());
-    }
+    };
 
     useEffect(() => {
-        requestGetRole.send()
-    }, [])
+        requestGetRole.send();
+    }, []);
 
     return (
         <Stack>
@@ -75,6 +138,7 @@ export default function RoleManager() {
                     {open ? "Batal" : "Tambah Role"}
                 </Button>
             </Stack>
+
             <AnimatePresence>
                 {open && (
                     <Stack
@@ -88,14 +152,12 @@ export default function RoleManager() {
 
                         <Stack direction={"row"} spacing={1} alignItems={"center"} mb={2}>
                             <CirclePlus />
-                            <Typography
-                                fontSize={16}
-                                fontWeight={600}>
-                                Tambah Role
+                            <Typography fontSize={16} fontWeight={600}>
+                                {editMode ? "Edit Role" : "Tambah Role"}
                             </Typography>
                         </Stack>
 
-                        <RequestError request={requestAdd} closable sx={{ mb: 2, mt: 0 }} />
+                        <RequestError request={editMode ? requestUpdate : requestAdd} closable sx={{ mb: 2, mt: 0 }} />
 
                         <Stack>
                             <TextField
@@ -104,7 +166,7 @@ export default function RoleManager() {
                                 label={"Label"}
                                 autoFocus
                                 autoCapitalize="on"
-                                disabled={requestAdd.pending} />
+                                disabled={editMode ? requestUpdate.pending : requestAdd.pending} />
                             <Typography component={"small"} fontSize={12} color="text.secondary">
                                 {label.length} / 3-50
                             </Typography>
@@ -115,7 +177,7 @@ export default function RoleManager() {
                                 value={name}
                                 onChange={handleSetName}
                                 label={"Name"}
-                                disabled={requestAdd.pending} />
+                                disabled={editMode || (editMode ? requestUpdate.pending : requestAdd.pending)} />
                             <Typography component={"small"} fontSize={12} color="text.secondary">
                                 {name.length} - 3/50
                             </Typography>
@@ -135,16 +197,24 @@ export default function RoleManager() {
                             />
                         </Stack>
 
-                        <Button
-                            disabled={!requestAdd.isValid}
-                            loading={requestAdd.pending}
-                            onClick={requestAdd.send}
-                            size="small"
-                            variant="contained"
-                            sx={{ alignSelf: 'end' }}
-                            startIcon={<Save size={16} />}>
-                            Simpan
-                        </Button>
+                        <Stack direction={"row"} gap={1} alignItems={"center"} sx={{ alignSelf: "flex-end" }}>
+                            <Button
+                                variant="contained"
+                                color="inherit"
+                                onClick={resetForm}>
+                                Batal
+                            </Button>
+                            <Button
+                                disabled={!((editMode ? requestUpdate.isValid : requestAdd.isValid))}
+                                loading={editMode ? requestUpdate.pending : requestAdd.pending}
+                                onClick={handleSave}
+                                size="small"
+                                variant="contained"
+                                sx={{ alignSelf: 'end' }}
+                                startIcon={<Save size={16} />}>
+                                {editMode ? "Update" : "Simpan"}
+                            </Button>
+                        </Stack>
                     </Stack>
                 )}
             </AnimatePresence>
@@ -157,37 +227,92 @@ export default function RoleManager() {
 
             <Stack mx={2} mt={2} gap={2}>
                 {roles.map((e, i) => (
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography fontSize={16} fontWeight={600} alignSelf={"start"} mt={0.8}>{i + 1}.</Typography>
-                        <Stack ml={1}>
-                            <Typography fontSize={22} fontWeight={600}>
-                                {e.label}
-                                {SYSTEM_ROLES_NAME.includes(e.name) && (
-                                    <Chip color="primary" label={"System"} sx={{ ml: 1 }} />
-                                )}
-                            </Typography>
-                            <Stack direction="row" gap={0.5} flexWrap="wrap">
-                                {e.abilities?.map(a => (
-                                    <Typography
-                                        key={a}
-                                        fontSize={11}
-                                        sx={{ bgcolor: "action.hover", px: 1, borderRadius: 1 }}>
-                                        {a}
-                                    </Typography>
-                                ))}
+                    <Stack
+                        key={i}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            bgcolor: "action.hover",
+                        }}>
+                        <Stack direction="row" alignItems="center" flex={1} minWidth={280}>
+                            <Typography fontSize={16} fontWeight={600} alignSelf={"start"} mt={0.8}>{i + 1}.</Typography>
+                            <Stack ml={1} flex={1}>
+                                <Typography fontSize={22} fontWeight={600}>
+                                    {e.label}
+                                    {SYSTEM_ROLES_NAME.includes(e.name) && (
+                                        <Chip color="primary" label={"System"} sx={{ ml: 1 }} size="small" />
+                                    )}
+                                </Typography>
+                                <Stack direction="row" gap={0.5} flexWrap="wrap" mt={1}>
+                                    {e.abilities.length ? e.abilities.map(a => (
+                                        <Chip
+                                            key={a}
+                                            label={a}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ fontSize: 11, height: 24 }}
+                                        />
+                                    )) : (
+                                        <Typography color="text.secondary" fontSize={12}>
+                                            Tidak ada abilities
+                                        </Typography>
+                                    )}
+                                </Stack>
                             </Stack>
                         </Stack>
-                        {!SYSTEM_ROLES_NAME.includes(e.name) && (
-                            <Stack direction="row" spacing={1}>
-                                <Button size="small">Edit</Button>
-                                <Button size="small" color="error">Hapus</Button>
-                            </Stack>
-                        )}
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            justifySelf={"flex-end"}
+                            alignSelf={"flex-end"}
+                            ml={['auto', 'auto', 2]}
+                            mt={[2, 2, 0]}>
+                            {!SYSTEM_ROLES_NAME.includes(e.name) ? (
+                                <>
+                                    <Button
+                                        size="small"
+                                        startIcon={<Edit size={16} />}
+                                        onClick={() => handleEdit(e)}
+                                        disabled={requestUpdate.pending || requestDelete.pending}>
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        color="error"
+                                        startIcon={<Trash2 size={16} />}
+                                        onClick={() => handleDelete(e)}
+                                        disabled={requestUpdate.pending || requestDelete.pending}>
+                                        Hapus
+                                    </Button>
+                                </>
+                            ) : (e as any).editable && (
+                                <Button
+                                    size="small"
+                                    startIcon={<Edit size={16} />}
+                                    onClick={() => handleEdit(e)}
+                                    disabled={requestUpdate.pending}>
+                                    Edit
+                                </Button>
+                            )}
+                        </Stack>
                     </Stack>
-
                 ))}
             </Stack>
 
+            <ConfirmationDialog
+                open={deleteConfirmOpen}
+                onClose={() => setDeleteConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Hapus Role"
+                message={`Apakah Anda yakin ingin menghapus role "${selectedRole?.label}"?`}
+                loading={requestDelete.pending}
+            />
+
+            <RequestError request={requestDelete} closable />
+            <RequestError request={requestUpdate} closable />
         </Stack>
-    )
+    );
 }

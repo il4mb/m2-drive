@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { PERMISSION_NAMES } from "./permission";
 
 type MenuTypeName = "link" | "group";
 
@@ -6,6 +7,7 @@ export type LinkMenu = {
     type: "link";
     label: string;
     href: string;
+    permission?: PERMISSION_NAMES;
     icon?: ReactNode;
 };
 

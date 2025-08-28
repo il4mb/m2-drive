@@ -24,12 +24,12 @@ export default class User {
     createdAt!: number;
 
     @Column({ type: "json", default: null, nullable: true })
-    meta: Meta = {};
+    meta: Meta = { role: "user" };
 }
 
 type Meta = {
     gender?: "M" | "F";
     avatar?: string;
-    role?: string;
+    role: string;
     [k: string]: any;
 }

@@ -23,7 +23,7 @@ type Item = {
 };
 
 type Props = {
-    defineList: Item[];
+    defineList: readonly Item[];
     items: string[];
     onChange: (items: string[]) => void;
     showSearch?: boolean;

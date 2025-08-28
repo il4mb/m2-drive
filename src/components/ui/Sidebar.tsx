@@ -9,6 +9,9 @@ import MenuGroup from './MenuGroup';
 import ThemeToggle from './ThemeToggle';
 import { motion } from "framer-motion";
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { useCurrentSession } from '../context/CurrentSessionProvider';
+import { useMyAbilities } from '../context/CurrentUserAbilitiesProvider';
 
 
 const MENU: IMenu[] = [
@@ -59,13 +62,15 @@ const MENU: IMenu[] = [
         type: "link",
         label: "Manage Pengguna",
         icon: <Users2 />,
-        href: "/users"
+        href: "/users",
+        permission: 'can-list-user'
     },
     {
         type: "link",
         label: "Pengaturan",
         icon: <Settings />,
-        href: "/settings"
+        href: "/settings",
+        permission: 'can-change-system-settings'
     },
     {
         type: "link",
@@ -78,6 +83,9 @@ const MENU: IMenu[] = [
 
 
 export default function Sidebar() {
+
+    const { user } = useCurrentSession();
+    const { role } = useMyAbilities();
 
     const pathname = usePathname();
     const [open, setOpen] = useState(true);
@@ -145,8 +153,15 @@ export default function Sidebar() {
                             {MENU.map((child, i) => {
                                 return (
                                     child.type == "link"
-                                        ? <MenuItem key={i} menu={child} shouldExpand={open} active={currentActivePath == child.href} />
-                                        : <MenuGroup key={i} menu={child} shouldExpand={open} />
+                                        ? <MenuItem
+                                            key={i}
+                                            menu={child}
+                                            shouldExpand={open}
+                                            active={currentActivePath == child.href} />
+                                        : <MenuGroup
+                                            key={i}
+                                            menu={child}
+                                            shouldExpand={open} />
                                 )
                             })}
                         </List>
@@ -157,12 +172,25 @@ export default function Sidebar() {
                         spacing={2}
                         alignItems={"center"}
                         justifyContent={"space-between"}>
-                        <Stack direction={"row"} spacing={2} alignItems={"center"}>
-                            <Avatar />
+                        <Stack
+                            direction={"row"}
+                            spacing={2}
+                            alignItems={"center"}
+                            component={Link}
+                            href={"/profile"}
+                            sx={{
+                                textDecoration: 'none',
+                                color: 'inherit'
+                            }}>
+                            <Avatar src={user?.meta.avatar} alt={user?.name.toUpperCase()} />
                             {open && (
                                 <Box>
-                                    <Typography component={"div"} fontWeight={600} fontSize={18}>Ilham B</Typography>
-                                    <Typography component={"div"} color='text.secondary'>Admin</Typography>
+                                    <Typography component={"div"} fontWeight={600} fontSize={18}>
+                                        {user?.name}
+                                    </Typography>
+                                    <Typography component={"div"} color='text.secondary'>
+                                        {role?.label}
+                                    </Typography>
                                 </Box>
                             )}
                         </Stack>

@@ -28,6 +28,67 @@ export const formatLocaleDate = (time: number, locale: string = 'en-US') => {
 	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(timestamp));
 }
 
+export const toRelativeTime = (time: number) => {
+
+	const now = Math.floor(Date.now() / 1000);
+	const timestamp = time + DATE_EPOCH;
+	let diff = now - timestamp;
+
+	const units = [
+		{ name: "tahun", seconds: 31536000 },
+		{ name: "bulan", seconds: 2592000 },
+		{ name: "minggu", seconds: 604800 },
+		{ name: "hari", seconds: 86400 },
+		{ name: "jam", seconds: 3600 },
+		{ name: "menit", seconds: 60 },
+		{ name: "detik", seconds: 1 },
+	];
+
+	// Detect future
+	const isFuture = diff < 0;
+	diff = Math.abs(diff);
+
+	for (const unit of units) {
+		if (diff >= unit.seconds) {
+			const value = Math.floor(diff / unit.seconds);
+			const label = `${value} ${unit.name}`;
+			return isFuture ? `dalam ${label}` : `${label} lagi`;
+		}
+	}
+
+	return "baru saja";
+}
+
+export function toRelativeTimeFrom(start: number, time: number): string {
+
+	const from = start + DATE_EPOCH;
+	const timestamp = time + DATE_EPOCH;
+	let diff = from - timestamp;
+
+	const units = [
+		{ name: "tahun", seconds: 31536000 },
+		{ name: "bulan", seconds: 2592000 },
+		{ name: "minggu", seconds: 604800 },
+		{ name: "hari", seconds: 86400 },
+		{ name: "jam", seconds: 3600 },
+		{ name: "menit", seconds: 60 },
+		{ name: "detik", seconds: 1 },
+	];
+
+	// Detect future
+	const isFuture = diff < 0;
+	diff = Math.abs(diff);
+
+	for (const unit of units) {
+		if (diff >= unit.seconds) {
+			const value = Math.floor(diff / unit.seconds);
+			const label = `${value} ${unit.name}`;
+			return isFuture ? `dalam ${label}` : `${label} lagi`;
+		}
+	}
+
+	return "sekarang";
+}
 export function currentTime(mod?: string): number {
 	let time = Math.floor(Date.now() / 1000 - DATE_EPOCH);
 

@@ -2,6 +2,7 @@
 
 import { getUser, handleUpdateUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
+import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/components/hooks/useRequest";
 import useRoles from "@/components/hooks/useRoles";
 import RequestError from "@/components/RequestError";
@@ -10,15 +11,19 @@ import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import PasswordField from "@/components/ui/PasswordField";
 import User from "@/entity/User";
 import { isEmailValid } from "@/libs/validator";
-import { Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { emitSocket } from "@/socket";
+import { Alert, AlertTitle, Button, Checkbox, FormControlLabel, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { ChevronLeft, Save, UserIcon, UserPen } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { closeSnackbar, enqueueSnackbar } from "notistack";
+import { enqueueSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 
 export default function page() {
+
+    const checkPermission = useCheckMyPermission();
+    const canEditUser = checkPermission('can-edit-user');
 
     const { uid } = useParams<{ uid: string }>();
     const [user, setUser] = useState<User>();
@@ -31,7 +36,6 @@ export default function page() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('user');
-
 
     const requestGetUser = useRequest({
         action: getUser,
@@ -65,7 +69,7 @@ export default function page() {
                 )
             );
         },
-        async onSuccess() {
+        async onSuccess(result) {
             await requestGetUser.send();
             setAvatar(null);
             setPassword('');
@@ -73,7 +77,14 @@ export default function page() {
             enqueueSnackbar('Pengguna berhasil diperbarui', {
                 variant: 'success',
                 action: CloseSnackbar
-            })
+            });
+            emitSocket("update", {
+                collection: "user",
+                columns: {
+                    id: uid
+                },
+                data: result.data
+            });
         },
     })
 
@@ -108,6 +119,13 @@ export default function page() {
             <Stack component={Paper} borderRadius={2} boxShadow={2}>
                 <Stack gap={2} p={[2, 2, 4]}>
 
+                    {!canEditUser && (
+                        <Alert severity="warning" variant="outlined">
+                            <AlertTitle>Kesalahan Wewenang</AlertTitle>
+                            Kamu tidak memiliki wewenang untuk mensungting pengguna!
+                        </Alert>
+                    )}
+
                     <RequestError
                         request={requestGetUser}
                         tryagain />
@@ -117,6 +135,7 @@ export default function page() {
                         closable />
 
                     <AvatarPicker
+                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
                         src={user?.meta.avatar}
                         size={{ width: 100, height: 100 }}
                         value={avatar} onChange={setAvatar}>
@@ -127,6 +146,7 @@ export default function page() {
                         <TextField
                             label="Nama"
                             value={name}
+                            disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
                             onChange={e => {
                                 const value = e.target.value.trim();
                                 if (value.length > 64) return;
@@ -142,6 +162,7 @@ export default function page() {
                             type="email"
                             label="Alamat Surel"
                             value={email}
+                            disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
                             onChange={e => {
                                 const value = e.target.value.trim().toLowerCase();
                                 if (value.length > 64) return;
@@ -156,6 +177,7 @@ export default function page() {
                         label="Jabatan"
                         placeholder="Pilih Jabatan Pengguna"
                         value={role}
+                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
                         onChange={e => setRole(e.target.value)} select>
                         {roles.map((role, i) => (
                             <MenuItem key={i} value={role.name}>
@@ -166,7 +188,12 @@ export default function page() {
 
                     <Stack>
                         <FormControlLabel
-                            control={<Checkbox checked={changePw} onChange={e => setChangePw(e.target.checked)} />}
+                            control={
+                                <Checkbox
+                                    disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                                    checked={changePw}
+                                    onChange={e => setChangePw(e.target.checked)} />
+                            }
                             label={"Ubah Kata Sandi?"} />
                         <AnimatePresence>
                             {changePw && (
@@ -175,6 +202,7 @@ export default function page() {
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: 10, opacity: 0 }}>
                                     <PasswordField
+                                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
                                         value={password}
                                         onChange={(e) => {
                                             if (e.length > 64) return;
@@ -191,19 +219,22 @@ export default function page() {
                     </Stack>
 
 
-                    <Button
-                        loading={requestUpdate.pending}
-                        disabled={!requestUpdate.isValid}
-                        onClick={requestUpdate.send}
-                        variant="contained"
-                        sx={{
-                            alignSelf: "flex-end",
-                            justifySelf: "flex-end",
-                            mt: 4
-                        }}
-                        startIcon={<Save size={16} />}>
-                        Simpan
-                    </Button>
+                    {canEditUser && (
+                        <Button
+                            loading={requestUpdate.pending}
+                            disabled={!requestUpdate.isValid}
+                            onClick={requestUpdate.send}
+                            variant="contained"
+                            sx={{
+                                alignSelf: "flex-end",
+                                justifySelf: "flex-end",
+                                mt: 4
+                            }}
+                            startIcon={<Save size={16} />}>
+                            Simpan
+                        </Button>
+                    )}
+
                 </Stack>
             </Stack>
 

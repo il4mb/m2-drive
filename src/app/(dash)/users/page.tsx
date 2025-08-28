@@ -2,20 +2,26 @@
 
 import { getAllUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
+import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/components/hooks/useRequest";
 import User from "@/entity/User";
-import { Avatar, Button, Chip, Paper, Stack, Typography } from "@mui/material";
-import { Dot, Pen, Users2 } from "lucide-react";
+import { Alert, AlertTitle, Avatar, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Pen, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function page() {
 
+    const checkPermission = useCheckMyPermission();
+    const canListuser = checkPermission('can-list-user');
+    const canAddUser = checkPermission('can-add-user');
+    const canEdituser = checkPermission('can-edit-user');
+
     const [users, setUsers] = useState<User[]>([]);
     const request = useRequest({
         action: getAllUser,
         onSuccess(result) {
-            console.log(result)
+            if (!canListuser) return;
             setUsers(result.data?.users || []);
         },
     });
@@ -23,6 +29,7 @@ export default function page() {
     useEffect(() => {
         request.send()
     }, [])
+
 
     return (
         <Container maxWidth="lg" scrollable>
@@ -36,15 +43,25 @@ export default function page() {
                         </Typography>
                     </Stack>
                     <Stack>
-                        <Button variant="contained" size="small" LinkComponent={Link} href="/users/create">
-                            Tambah Pengguna
-                        </Button>
+                        {canAddUser && (
+                            <Button variant="contained" size="small" LinkComponent={Link} href="/users/create">
+                                Tambah Pengguna
+                            </Button>
+                        )}
                     </Stack>
                 </Stack>
             </Stack>
 
             <Stack component={Paper} p={2} flex={1} borderRadius={2}>
                 <Stack p={2} flex={1}>
+
+                    {!canListuser && (
+                        <Alert severity="warning" sx={{ mb: 3 }} variant="outlined">
+                            <AlertTitle>Kesalahan Wewenang</AlertTitle>
+                            Kamu tidak memiliki wewenang untuk melihat daftar pengguna!
+                        </Alert>
+                    )}
+
                     {users.length == 0 && (
                         <Stack>
                             <Typography fontSize={16}>Tidak ada pengguna!</Typography>
@@ -78,7 +95,15 @@ export default function page() {
                                 </Stack>
                             </Stack>
                             <Stack>
-                                <Button LinkComponent={Link} href={`/users/${e.id}/edit`} startIcon={<Pen size={16} />} size="small">Sunting</Button>
+                                {canEdituser && (
+                                    <Button
+                                        LinkComponent={Link}
+                                        href={`/users/${e.id}/edit`}
+                                        startIcon={<Pen size={16} />}
+                                        size="small">
+                                        Sunting
+                                    </Button>
+                                )}
                             </Stack>
                         </Stack>
                     ))}

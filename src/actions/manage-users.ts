@@ -205,6 +205,7 @@ export const handleUpdateUser = async ({ uid, name, email, role, avatar, passwor
         return {
             status: true,
             message: "Pengguna berhasil diperbarui!",
+            data: JSON.parse(JSON.stringify(user))
 
         };
     } catch (e: any) {

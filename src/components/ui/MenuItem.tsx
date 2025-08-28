@@ -3,8 +3,8 @@
 import { ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { IMenu } from '@/types';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { getColor } from '@/theme/colors';
+import { useCheckMyPermission } from '../context/CurrentUserAbilitiesProvider';
 
 export interface MenuItemProps {
     menu: IMenu<"link">;
@@ -13,7 +13,11 @@ export interface MenuItemProps {
 }
 export default function MenuItem({ menu, shouldExpand, active }: MenuItemProps) {
 
-    const pathname = usePathname();
+    const checkedPermission = useCheckMyPermission();
+
+    if (menu.permission && !checkedPermission(menu.permission)) {
+        return null;
+    }
 
     return (
         <ListItem

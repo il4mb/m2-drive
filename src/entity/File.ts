@@ -1,11 +1,38 @@
 import { Column, Entity, PrimaryColumn, Unique, Index } from "typeorm";
 
+type FileType = "file" | "folder";
+export interface FileMeta {
+    size?: number;                 // bytes
+    mimeType?: string;             // application/pdf, image/png, etc.
+    description?: string;          // optional description
+    starred?: boolean;             // pinned/starred file
+    trashed?: boolean;             // soft-deleted flag
+    trashedAt?: number;            // deletion timestamp
+    shared?: boolean;              // is this file shared
+    generalPermit?: 'viewer' | 'editor'; // access level
+    thumbnail?: string;            // preview image URL
+    tags?: string[];               // labels/categories
+    lastOpened?: number;           // last opened timestamp
+    Key?: string;                  //  s3 Key
+}
+
+export interface FolderMeta {
+    itemCount?: number;            // number of files/folders inside
+    description?: string;          // optional folder description
+    shared?: boolean;              // is this folder shared
+    tags?: string[];               // labels/categories for search/filter
+    lastOpened?: number;           // timestamp of last access
+    color?: string;                // UI color coding
+    starred?: boolean;             // pinned/starred folder
+}
+
+
 @Entity('files')
 @Unique(['id', 'uId', 'name', 'pId'])
 @Index(['uId', 'pId']) // For faster folder queries
 @Index(['uId', 'type']) // For faster type filtering
 @Index(['uId', 'createdAt']) // For sorting
-export class File {
+export class File<T extends FileType = FileType> {
     @PrimaryColumn()
     id!: string;
 
@@ -19,11 +46,11 @@ export class File {
     @Column()
     name!: string;
 
-    @Column()
-    type!: "file" | "folder";
+    @Column({ type: 'varchar', default: 'file' })
+    type!: T;
 
-    @Column({ type: "json", default: null, nullable: true })
-    meta: Meta | null = null;
+    @Column({ type: 'json', nullable: true, default: null })
+    meta: (T extends 'folder' ? FolderMeta : FileMeta) | null = null;
 
     @Column({ type: 'int' })
     createdAt!: number;
@@ -32,20 +59,5 @@ export class File {
     updatedAt: number | null = null;
 }
 
-type Meta = {
-    starred?: boolean;
-    trashed?: boolean;
-    trashedAt?: number;
-    shared?: boolean;
-    generalPermit?: 'viewer' | 'editor';
-    description?: string;
-    size?: number; // File size in bytes
-    mimeType?: string;
-    thumbnail?: string; // URL or path to thumbnail
-    tags?: string[];
-    lastOpen?: number;
-    Key?: string;
-    // Add any other custom metadata fields
-};
-
-export type IFiles = InstanceType<typeof File>;
+export type Folder = File<'folder'>;
+export type RegularFile = File<'file'>;

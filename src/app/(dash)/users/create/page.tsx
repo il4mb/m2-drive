@@ -110,7 +110,7 @@ export default function page() {
                             onChange={e => {
                                 const value = e.target.value.trim();
                                 if (value.length > 64) return;
-                                setName(value);
+                                setName(e.target.value);
                             }} />
                         <Typography component={"small"} fontSize={12} color="text.secondary">
                             {name.length} | min 3, max 64

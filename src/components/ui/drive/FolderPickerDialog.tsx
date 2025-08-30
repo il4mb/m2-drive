@@ -2,20 +2,22 @@
 
 import { Button, Dialog, DialogActions, DialogContent, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
-import FolderPicker from './FolderPicker';
-import { IFiles } from '@/entity/File';
+import { File } from '@/entity/File';
+import FolderPicker from '@/components/drive/FolderPicker';
+import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 
 export interface FolderPickerDialogProps {
     title?: ReactNode;
     open: boolean;
     disabled?: boolean | string[];
     onClose?: () => void;
-    onSelect?: (file: IFiles | null) => void;
+    onSelect?: (file: File | null) => void;
 
 }
 export default function FolderPickerDialog({ title, onClose, onSelect, disabled = false, open = false }: FolderPickerDialogProps) {
 
-    const [folder, setFolder] = useState<IFiles | null>(null);
+    const auth = useCurrentSession();
+    const [folder, setFolder] = useState<File | null>(null);
     const handleOnClose = () => {
         onClose?.();
     }
@@ -24,6 +26,8 @@ export default function FolderPickerDialog({ title, onClose, onSelect, disabled 
         onSelect?.(folder);
         handleOnClose();
     }
+
+    if (!auth.user) return;
 
     return (
         <Dialog
@@ -44,7 +48,10 @@ export default function FolderPickerDialog({ title, onClose, onSelect, disabled 
                         {title}
                     </Typography>
                 )}
-                <FolderPicker onSelectedChange={setFolder} disabled={disabled} />
+                <FolderPicker
+                    userId={auth.user?.id}
+                    onSelectedChange={setFolder}
+                    disabled={disabled} />
             </DialogContent>
             <DialogActions>
                 <Button

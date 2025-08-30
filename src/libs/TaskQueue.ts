@@ -1,90 +1,72 @@
-"use client";
+import { getSource } from "@/data-source";
+import { TaskQueueItem, TaskStatus } from "@/entity/TaskQueueItem";
 
-type TaskPayload = {
-    [key: string]: any
-}
+export class TaskQueue {
 
-type TaskEntry<T extends TaskPayload | null> = {
-    id: string;
-    task: (payload: T, id: string, signal: AbortSignal) => Promise<unknown>;
-    payload: T;
-    controller: AbortController;
-}
+    private isProcessing = false;
+    private interval: NodeJS.Timeout | null = null;
+    private pollingTime = 2000;
 
-export class TaskQueue<T extends TaskPayload | null = any> {
-    private queue: TaskEntry<T>[] = [];
-    private running = new Map<string, AbortController>();
-    private activeCount = 0;
+    constructor(private concurrency = 1) { }
 
-    constructor(private concurrency: number = 1) { }
-
-    add(id: string, payload: T, task: (payload: T, id: string, signal: AbortSignal) => Promise<unknown>) {
-
-        if (this.running.has(id) || this.queue.find((t) => t.id === id)) {
-            console.warn(`Task "${id}" already exists.`);
-            return;
-        }
-
-        const controller = new AbortController();
-        this.queue.push({ id, task, payload, controller });
-        this.run();
+    async add<T>(type: string, payload: T) {
+        const source = await getSource();
+        const repo = source.getRepository(TaskQueueItem);
+        const task = repo.create({
+            type,
+            payload,
+            status: "pending",
+            createdAt: Date.now(),
+        });
+        await repo.save(task);
+        return task;
     }
 
-    private async run() {
-        while (this.queue.length && this.activeCount < this.concurrency) {
-            const { id, task, payload, controller } = this.queue.shift()!;
-            this.running.set(id, controller);
-            this.activeCount++;
+    async processTask<T>(task: TaskQueueItem<T>, handler: (payload: T) => Promise<void>) {
 
-            try {
-                await task(payload, id, controller.signal);
-            } catch (err) {
-                if (controller.signal.aborted) {
-                    console.log(`Task "${id}" aborted.`);
-                } else {
-                    console.error(`Task "${id}" failed:`, err);
-                }
-            } finally {
-                this.running.delete(id);
-                this.activeCount--;
-                this.run();
+        const source = await getSource();
+        const repo = source.getRepository(TaskQueueItem);
+
+        task.status = "processing";
+        task.updatedAt = Date.now();
+        await repo.save(task);
+
+        try {
+            await handler(task.payload);
+            task.status = "completed";
+        } catch (err: any) {
+            task.status = "failed";
+            task.error = err.message || "Unknown error";
+            task.retryCount++;
+        }
+        task.updatedAt = Date.now();
+        await repo.save(task);
+    }
+
+    async start<T>(handlerMap: Record<string, (payload: any) => Promise<void>>) {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+
+        this.interval = setInterval(async () => {
+            const source = await getSource();
+            const repo = source.getRepository(TaskQueueItem);
+
+            const pendingTasks = await repo.find({
+                where: { status: "pending" as TaskStatus },
+                order: { createdAt: "ASC" },
+                take: this.concurrency,
+            });
+
+            for (const task of pendingTasks) {
+                const handler = handlerMap[task.type];
+                if (!handler) continue;
+                this.processTask(task, handler);
             }
-        }
+        }, this.pollingTime);
     }
 
-    abort(id: string) {
-        // Abort running task
-        const controller = this.running.get(id);
-        if (controller) {
-            controller.abort();
-            return;
-        }
-
-        // Remove from queue if not started
-        const index = this.queue.findIndex((t) => t.id === id);
-        if (index !== -1) {
-            this.queue[index].controller.abort();
-            this.queue.splice(index, 1);
-        }
-    }
-
-    has(id: string) {
-        return this.running.has(id) || this.queue.some((t) => t.id === id);
-    }
-
-    clear() {
-        // Abort all queued tasks
-        this.queue.forEach((t) => t.controller.abort());
-        this.queue = [];
-
-        // Abort all running tasks
-        this.running.forEach((controller) => controller.abort());
-        this.running.clear();
-
-        this.activeCount = 0;
-    }
-
-    isIdle(): boolean {
-        return this.queue.length === 0 && this.running.size === 0;
+    stop() {
+        if (this.interval) clearInterval(this.interval);
+        this.isProcessing = false;
     }
 }

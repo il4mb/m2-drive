@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "node --max-old-space-size=8192 server.ts",
+    "dev:ts": "NODE_ENV=development node --env-file=.env --max-old-space-size=8192 -r ts-node/register/transpile-only -r tsconfig-paths/register server.ts",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
@@ -25,7 +26,7 @@
     "notistack": "^3.0.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sass": "^1.90.0",
+    "recharts": "^3.1.2",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sqlite3": "^5.1.7",
@@ -38,6 +39,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "sass": "^1.91.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
 }

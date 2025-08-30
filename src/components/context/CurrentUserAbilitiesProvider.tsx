@@ -3,7 +3,7 @@
 import User from '@/entity/User';
 import { PERMISSION_LIST, PERMISSION_NAMES, TPermission } from '@/permission';
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import useRequest from '../hooks/useRequest';
+import useRequest from '@/hooks/useRequest';
 import { getCurrentUserAbilities } from '@/actions/current-session';
 import Role from '@/entity/Role';
 

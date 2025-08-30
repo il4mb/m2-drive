@@ -4,9 +4,9 @@ import usePresignUrl from '@/components/hooks/usePresignUrl';
 import { IFiles } from '@/entity/File';
 import { Avatar, Stack, Typography } from '@mui/material';
 import { FileImage, Folder } from 'lucide-react';
-import ContextMenu from '../ContextMenu';
+import ContextMenu from '../../context-menu/ContextMenu';
 import { FileIcon } from '@untitledui/file-icons';
-import { ContextMenuItemProps } from '../ContextMenuItem';
+import { ContextMenuItemProps } from '../../context-menu/ContextMenuItem';
 import { motion } from 'motion/react';
 import { formatLocaleDate } from '@/libs/utils';
 
@@ -38,7 +38,7 @@ export default function FileItem({ index = 0, file, menu = [], layout = "grid", 
     return (
         <ContextMenu
             menu={menu}
-            payload={{ refresh, onOpen, file }}
+            state={{ refresh, onOpen, file }}
             highlight>
             <Stack
                 component={motion.div}

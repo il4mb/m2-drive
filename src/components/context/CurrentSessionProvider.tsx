@@ -3,7 +3,7 @@
 import Token from '@/entity/Token';
 import User from '@/entity/User';
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import useRequest from '../hooks/useRequest';
+import useRequest from '@/hooks/useRequest';
 import { getCurrentSession } from '@/actions/current-session';
 import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
 import { emitSocket, socket, useOnEmit } from '@/socket';

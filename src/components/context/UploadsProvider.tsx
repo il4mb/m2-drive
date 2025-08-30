@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import UploadManager from './UploadManager';
+import { getColor } from '@/theme/colors';
 
 interface UploadProviderState {
     uploads: Upload[];
@@ -108,17 +109,25 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
                             position: 'fixed',
                             bottom: 0,
                             right: 0,
-                            m: 4
+                            m: 4,
+                            zIndex: 9999
                         }}>
                         <Tooltip title="Lihat unggahan" arrow>
-                            <IconButton LinkComponent={Link} href='/drive/upload'
+                            <IconButton
+                                LinkComponent={Link}
+                                href='/drive/upload'
                                 sx={{
                                     position: 'relative',
                                     width: 45,
                                     height: 45,
-                                    borderRadius: 5
-                                }}
-                                color='primary'>
+                                    borderRadius: 5,
+                                    borderColor: 'none',
+                                    background: getColor('primary')[400],
+                                    color: getColor('primary')[100],
+                                    "&:hover": {
+                                        background: getColor('primary')[500]
+                                    }
+                                }}>
                                 <CloudUpload />
                                 <Chip
                                     color='primary'

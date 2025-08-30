@@ -68,7 +68,7 @@ export default function UploadItem({ upload, index }: Props) {
                 border: "1px solid",
                 borderColor: color[300],
                 p: 2,
-                boxShadow: 1,
+                boxShadow: 0,
                 "&:hover": {
                     borderColor: color[600],
                 },

@@ -1,7 +1,7 @@
 "use client";
 
-import useRequest from '@/components/hooks/useRequest';
-import { IFiles } from '@/entity/File';
+import useRequest from '@/hooks/useRequest';
+import { File } from '@/entity/File';
 import { formatFileSize, formatLocaleDate } from '@/libs/utils';
 import {
     Alert,
@@ -23,13 +23,13 @@ import { FileIcon } from '@untitledui/file-icons';
 import { CircleAlert, Folder, RotateCcw, Shredder, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import ContextMenu from '@/components/ui/ContextMenu';
-import ActionRestore from '@/components/ui/menu-actions/ActionRestore';
-import ActionDelete from '@/components/ui/menu-actions/ActionDelete';
+import ContextMenu from '@/components/context-menu/ContextMenu';
+import ActionRestore from '@/components/menu-actions/ActionRestore';
+import ActionDelete from '@/components/menu-actions/ActionDelete';
 
 export default function Page() {
 
-    const [files, setFiles] = useState<IFiles[]>([]);
+    const [files, setFiles] = useState<File[]>([]);
     const request = useRequest({
         endpoint: "/api/drive",
         method: "GET",
@@ -97,7 +97,7 @@ export default function Page() {
                                 )}
                                 {files.map((file, i) => (
                                     <ContextMenu
-                                        payload={{ file, refresh }}
+                                        state={{ file, refresh }}
                                         key={file.id}
                                         menu={[ActionRestore, ActionDelete]}
                                         highlight>

@@ -3,7 +3,7 @@
 import { File } from '@/entity/File';
 import { Stack, IconButton, Typography, Box } from '@mui/material';
 import { createContext, useContext, useState, ReactNode } from 'react';
-import usePresignUrl from '../hooks/usePresignUrl';
+import usePresignUrl from '@/hooks/usePresignUrl';
 import { X } from 'lucide-react';
 
 type SimpleMediaViewerState = (file: File) => void;

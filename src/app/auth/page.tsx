@@ -1,7 +1,7 @@
 "use client";
 
 import { handleLoginAsync, handleStartSession } from "@/actions/login";
-import useRequest from "@/components/hooks/useRequest";
+import useRequest from "@/hooks/useRequest";
 import Pattern from "@/components/icon/Pattern";
 import RequestError from "@/components/RequestError";
 import { isEmailValid } from "@/libs/validator";

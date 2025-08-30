@@ -24,10 +24,22 @@
                 "name": "next"
             }
         ],
+        "baseUrl": "src",
         "paths": {
             "@/*": [
-                "./src/*"
+                "*"
             ]
+        }
+    },
+    "ts-node": {
+        "compilerOptions": {
+            "module": "commonjs",
+            "moduleResolution": "node",
+            "paths": {
+                "@/*": [
+                    "*"
+                ]
+            }
         }
     },
     "include": [

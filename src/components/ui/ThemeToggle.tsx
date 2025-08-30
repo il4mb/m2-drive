@@ -1,7 +1,7 @@
 'use client'
 
 import { IconButton, Tooltip, useColorScheme } from '@mui/material';
-import useDarkMode from '../hooks/useDarkMode';
+import useDarkMode from '@/hooks/useDarkMode';
 import { Moon, Sun } from 'lucide-react';
 
 

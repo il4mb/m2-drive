@@ -7,30 +7,31 @@ export type TPermission = {
 
 export const PERMISSION_LIST = [
     // File operations
-    { label: "Bisa Upload File", value: "can-upload-file" },
-    { label: "Bisa Download File", value: "can-download-file" },
-    { label: "Bisa Sunting File", value: "can-edit-file" },
-    { label: "Bisa Hapus File", value: "can-delete-file" },
+    { label: "Upload File", value: "can-upload-file" },
+    { label: "Download File", value: "can-download-file" },
+    { label: "Sunting File", value: "can-edit-file" },
+    { label: "Hapus File", value: "can-delete-file" },
 
     // Folder operations
-    { label: "Bisa Buat Folder", value: "can-create-folder" },
-    { label: "Bisa Hapus Folder", value: "can-delete-folder" },
+    { label: "Buat Folder", value: "can-create-folder" },
+    { label: "Hapus Folder", value: "can-delete-folder" },
 
     // Sharing
-    { label: "Bisa Berbagi File", value: "can-share-file" },
-    { label: "Bisa Berbagi Folder", value: "can-share-folder" },
-    { label: "Bisa Mengatur Izin Berbagi", value: "can-manage-sharing" },
+    { label: "Berbagi File", value: "can-share-file" },
+    { label: "Berbagi Folder", value: "can-share-folder" },
+    { label: "Mengatur Izin Berbagi", value: "can-manage-sharing" },
 
     // User management
     { label: "Lihat Daftar Pengguna", value: "can-list-user" },
-    { label: "Bisa Tambah Pengguna", value: "can-add-user" },
-    { label: "Bisa Edit Pengguna", value: "can-edit-user" },
-    { label: "Bisa Hapus Pengguna", value: "can-delete-user" },
+    { label: "Tambah Pengguna", value: "can-add-user" },
+    { label: "Edit Pengguna", value: "can-edit-user" },
+    { label: "Hapus Pengguna", value: "can-delete-user" },
 
     // System/admin
-    { label: "Bisa Akses Laporan Aktivitas", value: "can-access-activity-report" },
-    { label: "Bisa Mengatur Role & Permission", value: "can-manage-roles" },
-    { label: "Bisa Mengubah Pengaturan Sistem", value: "can-change-system-settings" }
+    { label: "Akses Laporan Aktivitas", value: "can-access-activity-report" },
+    { label: "Mengatur Role & Permission", value: "can-manage-roles" },
+    { label: "Mengubah Pengaturan Sistem", value: "can-change-system-settings" },
+    { label: "Mengelola Drive Root", value: "can-manage-drive-root" }
 ] as const;
 
 // ✅ This now becomes a tuple of string literals

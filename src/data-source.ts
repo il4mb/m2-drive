@@ -6,6 +6,10 @@ import Contributor from "./entity/Contributor";
 import Token from "./entity/Token";
 import User from "./entity/User";
 import Role from "./entity/Role";
+import { RoleSubscriber } from "./entity/RoleSubscriber";
+import { UserSubscriber } from "./entity/UserSubscriber";
+import { TaskQueueItem } from "./entity/TaskQueueItem";
+import { FileSubscriber } from "./entity/FileSubscriber";
 
 const source = new DataSource({
     type: "sqlite",
@@ -18,7 +22,13 @@ const source = new DataSource({
         Options,
         Contributor,
         Token,
-        Role
+        Role,
+        TaskQueueItem
+    ],
+    subscribers: [
+        UserSubscriber,
+        RoleSubscriber,
+        FileSubscriber
     ],
     cache: true
 });

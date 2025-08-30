@@ -2,7 +2,7 @@
 
 import { Avatar, Box, IconButton, List, Paper, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
-import { Archive, ChevronLeft, FolderOpen, History, Home, Info, Settings, Share2, Trash, User2, Users2 } from 'lucide-react';
+import { Archive, ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2 } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from './MenuItem';
 import MenuGroup from './MenuGroup';
@@ -67,6 +67,13 @@ const MENU: IMenu[] = [
     },
     {
         type: "link",
+        label: "Manage Drive Root",
+        icon: <FolderRoot />,
+        href: "/drive-root",
+        permission: 'can-manage-drive-root'
+    },
+    {
+        type: "link",
         label: "Pengaturan",
         icon: <Settings />,
         href: "/settings",
@@ -109,7 +116,7 @@ export default function Sidebar() {
                 overflow: 'hidden'
             }}
             boxShadow={4}>
-            <Paper sx={{ flex: 1, display: 'flex' }} elevation={1}>
+            <Paper sx={{ flex: 1, display: 'flex', borderRadius: 0 }} elevation={1}>
                 <Stack flex={1} p={open ? 4 : 2}>
 
                     <Stack

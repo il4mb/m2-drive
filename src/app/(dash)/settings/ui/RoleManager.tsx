@@ -5,10 +5,23 @@ import { ChangeEvent, useEffect, useState } from "react";
 import TransferList from "./TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
 import useRequest from "@/components/hooks/useRequest";
-import { addRole, deleteRole, getAllRole, updateRole } from "@/actions/manage-role";
+import { saveRole, deleteRole, getAllRole } from "@/actions/manage-role";
 import RequestError from "@/components/RequestError";
 import Role from "@/entity/Role";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import _ from "lodash";
+import { emitSocket } from "@/socket";
+
+function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
+    const keyedA = _.keyBy(rolesA, "name");
+    const keyedB = _.keyBy(rolesB, "name");
+
+    // merge deep per key
+    const merged = _.merge({}, keyedA, keyedB);
+
+    return _.values(merged);
+}
+
 
 export default function RoleManager() {
 
@@ -25,57 +38,66 @@ export default function RoleManager() {
     const requestGetRole = useRequest({
         action: getAllRole,
         onSuccess(result) {
-            setRoles([...result.data, ...SYSTEM_ROLES]);
+            setRoles(mergeRolesDeep(SYSTEM_ROLES, result.data));
         },
     });
 
-    const requestAdd = useRequest({
-        action: addRole,
+    const requestSave = useRequest({
+        action: saveRole,
         params: { name, label, abilities },
         validator({ name, label, abilities }) {
             return Boolean(name.length > 3 && label.length > 3 && abilities.length > 0)
         },
         onSuccess({ data }) {
-            resetForm();
+            closeEdit();
             requestGetRole.send();
+            emitSocket("update", {
+                collection: "role",
+                columns: {
+                    name: data?.name
+                },
+                data
+            });
         },
-    });
+    }, []);
 
-    const requestUpdate = useRequest({
-        action: updateRole,
-        params: { name, label, abilities },
-        validator({ name, label, abilities }) {
-            return Boolean(name.length > 3 && label.length > 3 && abilities.length > 0)
-        },
-        onSuccess({ data }) {
-            resetForm();
-            requestGetRole.send();
-        },
-    });
 
     const requestDelete = useRequest({
         action: deleteRole,
-        params: {},
+        params: { name: selectedRole?.name || '' },
+        validator({ name }) {
+            return Boolean(selectedRole);
+        },
         onSuccess({ data }) {
             setDeleteConfirmOpen(false);
             setSelectedRole(null);
             requestGetRole.send();
+            emitSocket("update", {
+                collection: "role",
+                columns: {
+                    name: selectedRole?.name
+                },
+                data
+            });
         },
-    });
+    }, [selectedRole]);
 
-    const resetForm = () => {
+    const closeEdit = () => {
         setName('');
         setLabel('');
         setAbilities([]);
         setOpen(false);
         setEditMode(false);
         setSelectedRole(null);
-        setOpen(false);
     };
 
     const handleToggle = () => {
         setOpen(prev => !prev);
-        resetForm();
+        setName('');
+        setLabel('');
+        setAbilities([]);
+        setEditMode(false);
+        setSelectedRole(null);
     };
 
     const handleEdit = (role: Role) => {
@@ -103,11 +125,7 @@ export default function RoleManager() {
     };
 
     const handleSave = () => {
-        if (editMode) {
-            requestUpdate.send();
-        } else {
-            requestAdd.send();
-        }
+        requestSave.send();
     };
 
     const handleSetLabel = (e: ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +175,7 @@ export default function RoleManager() {
                             </Typography>
                         </Stack>
 
-                        <RequestError request={editMode ? requestUpdate : requestAdd} closable sx={{ mb: 2, mt: 0 }} />
+                        <RequestError request={requestSave} closable sx={{ mb: 2, mt: 0 }} />
 
                         <Stack>
                             <TextField
@@ -166,7 +184,7 @@ export default function RoleManager() {
                                 label={"Label"}
                                 autoFocus
                                 autoCapitalize="on"
-                                disabled={editMode ? requestUpdate.pending : requestAdd.pending} />
+                                disabled={requestSave.pending} />
                             <Typography component={"small"} fontSize={12} color="text.secondary">
                                 {label.length} / 3-50
                             </Typography>
@@ -177,7 +195,7 @@ export default function RoleManager() {
                                 value={name}
                                 onChange={handleSetName}
                                 label={"Name"}
-                                disabled={editMode || (editMode ? requestUpdate.pending : requestAdd.pending)} />
+                                disabled={editMode || (requestSave.pending)} />
                             <Typography component={"small"} fontSize={12} color="text.secondary">
                                 {name.length} - 3/50
                             </Typography>
@@ -201,12 +219,12 @@ export default function RoleManager() {
                             <Button
                                 variant="contained"
                                 color="inherit"
-                                onClick={resetForm}>
+                                onClick={closeEdit}>
                                 Batal
                             </Button>
                             <Button
-                                disabled={!((editMode ? requestUpdate.isValid : requestAdd.isValid))}
-                                loading={editMode ? requestUpdate.pending : requestAdd.pending}
+                                disabled={!requestSave.isValid}
+                                loading={requestSave.pending}
                                 onClick={handleSave}
                                 size="small"
                                 variant="contained"
@@ -276,7 +294,7 @@ export default function RoleManager() {
                                         size="small"
                                         startIcon={<Edit size={16} />}
                                         onClick={() => handleEdit(e)}
-                                        disabled={requestUpdate.pending || requestDelete.pending}>
+                                        disabled={requestDelete.pending}>
                                         Edit
                                     </Button>
                                     <Button
@@ -284,7 +302,7 @@ export default function RoleManager() {
                                         color="error"
                                         startIcon={<Trash2 size={16} />}
                                         onClick={() => handleDelete(e)}
-                                        disabled={requestUpdate.pending || requestDelete.pending}>
+                                        disabled={requestDelete.pending}>
                                         Hapus
                                     </Button>
                                 </>
@@ -293,7 +311,7 @@ export default function RoleManager() {
                                     size="small"
                                     startIcon={<Edit size={16} />}
                                     onClick={() => handleEdit(e)}
-                                    disabled={requestUpdate.pending}>
+                                    disabled={requestSave.pending}>
                                     Edit
                                 </Button>
                             )}
@@ -312,7 +330,7 @@ export default function RoleManager() {
             />
 
             <RequestError request={requestDelete} closable />
-            <RequestError request={requestUpdate} closable />
+            <RequestError request={requestSave} closable />
         </Stack>
     );
 }

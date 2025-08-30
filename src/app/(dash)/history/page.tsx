@@ -1,7 +1,7 @@
 "use client";
 
-import useRequest from "@/components/hooks/useRequest";
-import { IFiles } from "@/entity/File";
+import useRequest from "@/hooks/useRequest";
+import { File } from "@/entity/File";
 import {
     Alert,
     AlertTitle,
@@ -20,22 +20,22 @@ type Response = {
     status: boolean;
     message: string;
     data: {
-        lastAdded: IFiles[];
-        lastUpdated: IFiles[];
-        lastOpened: IFiles[];
+        lastAdded: File[];
+        lastUpdated: File[];
+        lastOpened: File[];
     };
 };
 
 type SectionProps = {
     title: string;
     icon: React.ReactNode;
-    files: IFiles[];
+    files: File[];
 }
 
 export default function Page() {
-    const [lastAdd, setLastAdd] = useState<IFiles[]>([]);
-    const [lastUpdate, setLastUpdate] = useState<IFiles[]>([]);
-    const [lastOpen, setLastOpen] = useState<IFiles[]>([]);
+    const [lastAdd, setLastAdd] = useState<File[]>([]);
+    const [lastUpdate, setLastUpdate] = useState<File[]>([]);
+    const [lastOpen, setLastOpen] = useState<File[]>([]);
 
     const fetchHistory = useRequest<Response>({
         endpoint: "/api/drive/history",
@@ -50,7 +50,7 @@ export default function Page() {
         fetchHistory.send();
     }, []);
 
-    const FileCard = ({ file }: { file: IFiles }) => (
+    const FileCard = ({ file }: { file: File }) => (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

@@ -6,6 +6,7 @@ import RoleManager from "./ui/RoleManager";
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import UploadSizeManager from "./ui/UploadSizeManager";
+import DriveSizeManager from "./ui/DriveSizeManager";
 
 export default function page() {
 
@@ -38,6 +39,9 @@ export default function page() {
                     <>
                         <Stack mx={'auto'} maxWidth={800} width={'100%'} mb={8}>
                             <RoleManager />
+                        </Stack>
+                        <Stack mx={'auto'} maxWidth={800} width={'100%'} mb={8}>
+                            <DriveSizeManager />
                         </Stack>
                         <Stack mx={'auto'} maxWidth={800} width={'100%'}>
                             <UploadSizeManager />

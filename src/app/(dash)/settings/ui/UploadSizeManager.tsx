@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "motion/react";
 import RequestError from "@/components/RequestError";
 
 export default function UploadSizeManager() {
+
     const roles = useRoles();
     const isMobile = useMediaQuery("(max-width:600px)");
 
@@ -58,7 +59,7 @@ export default function UploadSizeManager() {
 
     useEffect(() => {
         getRequest.send();
-    }, []);
+    }, [roles]);
 
     return (
         <Stack>
@@ -166,6 +167,11 @@ export default function UploadSizeManager() {
 
             {/* List */}
             <Stack mx={2} mt={2} gap={2}>
+
+                {options.length == 0 && (
+                    <Typography color="text.secondary">Tidak ada aturan</Typography>
+                )}
+                
                 {options.map((opt, i) => {
                     const roleInfo = roles.find((r) => r.name === opt.roleName);
                     const label = roleInfo?.label || opt.roleName;

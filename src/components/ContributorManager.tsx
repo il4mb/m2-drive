@@ -1,0 +1,229 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, CircularProgress, MenuItem, LinearProgress, Paper } from '@mui/material';
+import useRequest from '@/hooks/useRequest';
+import { findUsers } from '@/actions/user';
+import User from '@/entity/User';
+import { Plus, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { File } from '@/entity/File';
+import { addFileContributors, getFileContributors, removeFileContributor, updateFileContributor } from '@/actions/contributors';
+import { useFileContributors } from '@/hooks/useFileContributors';
+
+type ContributorManagerProps = {
+    file: File;
+}
+const ContributorManager = ({ file }: ContributorManagerProps) => {
+
+    const [open, setOpen] = useState(false);
+    const [keyword, setKeyword] = useState('');
+    const [users, setUsers] = useState<User[]>([]);
+    const { contributors, loading } = useFileContributors(file.id);
+
+    // Search users
+    const findRequest = useRequest({
+        autoSend: true,
+        action: findUsers,
+        params: { keyword },
+        validator(data) {
+            return data.keyword.length > 0;
+        },
+        onSuccess(result) {
+            setUsers(result.data || []);
+        },
+    }, [keyword]);
+
+    const addContributor = async (user: User) => {
+        await addFileContributors({
+            fileId: file.id,
+            userId: user.id,
+            role: "viewer"
+        });
+        setKeyword('');
+        setUsers([]);
+    };
+
+
+    const removeContributor = async (id: string) => {
+        await removeFileContributor({ id });
+    };
+
+    const updateRole = async (cId: string, role: string) => {
+        await updateFileContributor({ id: cId, role: role as any });
+    }
+
+    useEffect(() => {
+        if (keyword.length == 0) {
+            setUsers([]);
+        }
+    }, [keyword]);
+
+    return (
+        <Stack spacing={1} mb={2} minHeight={100}>
+            <Typography fontSize={16}>
+                Kontributor:
+            </Typography>
+
+            <Stack flex={1} sx={{ position: "relative" }}>
+                <AnimatePresence>
+                    {loading && (
+                        <LinearProgress sx={{ position: 'absolute', top: 0, height: 2, left: 0, width: '100%' }} />
+                    )}
+                    {contributors.length === 0 && (
+                        <motion.div
+                            key="no-contributor"
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ marginBottom: 20, marginTop: 20, flex: 1 }}>
+                            <Typography color="text.secondary" ml={1}>
+                                Tidak ada kontributor
+                            </Typography>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {contributors.length > 0 && (
+                        <List dense>
+                            {contributors.map((c, i) => (
+                                <motion.li
+                                    key={c.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    transition={{ duration: 0.25 }}>
+
+                                    <ListItem
+                                        secondaryAction={
+                                            <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                                <TextField
+                                                    select
+                                                    variant="standard"
+                                                    sx={{
+                                                        maxWidth: 200,
+                                                        width: '100%',
+                                                        '& .MuiInputBase-root:before': { borderBottom: 'none' },
+                                                        '& .MuiInputBase-root:after': { borderBottom: 'none' },
+                                                        '& .MuiInputBase-input': { paddingY: 1 },
+                                                    }}
+                                                    defaultValue="viewer"
+                                                    value={c.role}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        updateRole(c.id, val);
+                                                    }}>
+                                                    <MenuItem value="viewer">Hanya Lihat</MenuItem>
+                                                    <MenuItem value="editor">Mengedit</MenuItem>
+                                                </TextField>
+                                                {open && (
+                                                    <IconButton onClick={() => removeContributor(c.id)}>
+                                                        <X size={16} />
+                                                    </IconButton>
+                                                )}
+                                            </Stack>
+
+
+                                        }>
+                                        <Avatar src={c.user.meta.avatar} sx={{ mr: 1 }}>
+                                            {c.user.name?.[0]}
+                                        </Avatar>
+                                        <ListItemText primary={c.user.name} secondary={c.user.email} />
+                                    </ListItem>
+
+                                </motion.li>
+                            ))}
+                        </List>
+                    )}
+                </AnimatePresence>
+
+                {open ? (
+                    <motion.div
+                        key="search-area"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}>
+                        <Stack direction="column" gap={1} height={250}>
+                            <Stack direction="row" spacing={1} alignItems="flex-end">
+                                <TextField
+                                    label="Cari pengguna..."
+                                    value={keyword}
+                                    onChange={(e) => setKeyword(e.target.value)}
+                                    autoFocus
+                                    fullWidth
+                                />
+                                <Button
+                                    onClick={() => setOpen(false)}
+                                    size="small"
+                                    color="inherit">
+                                    Batal
+                                </Button>
+                            </Stack>
+
+                            <AnimatePresence>
+                                {users.length == 0 && !findRequest.pending && (
+                                    <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
+                                        <Typography color='text.secondary'>Tidak ada hasil!</Typography>
+                                    </Stack>
+                                )}
+                                {findRequest.pending ? (
+                                    <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
+                                        <CircularProgress />
+                                    </Stack>
+                                ) : users.length > 0 && (
+                                    <List dense>
+                                        {users.map((u, i) => (
+                                            <motion.li
+                                                key={u.id}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 10 }}
+                                                transition={{ duration: 0.2, delay: 0.05 * i }}>
+                                                <ListItem
+                                                    onClick={() => addContributor(u)}
+                                                    secondaryAction={
+                                                        <IconButton edge="end" onClick={() => addContributor(u)}>
+                                                            <Plus size={16} />
+                                                        </IconButton>
+                                                    }>
+                                                    <Avatar src={u.meta.avatar} sx={{ mr: 1, width: 35, height: 35 }}>
+                                                        {u.name?.[0]}
+                                                    </Avatar>
+                                                    <ListItemText primary={u.name} secondary={u.email} />
+                                                </ListItem>
+                                            </motion.li>
+                                        ))}
+                                    </List>
+                                )}
+                            </AnimatePresence>
+                        </Stack>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="add-btn"
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                            justifySelf: 'flex-end',
+                            marginTop: 'auto'
+                        }}>
+                        <Button
+                            onClick={() => setOpen(true)}
+                            sx={{ alignSelf: 'end' }}
+                            size="small"
+                            variant="outlined">
+                            Tambah K.
+                        </Button>
+                    </motion.div>
+                )}
+            </Stack>
+        </Stack>
+    );
+};
+
+export default ContributorManager;

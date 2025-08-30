@@ -1,11 +1,11 @@
 'use client';
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, } from 'react';
-import { TaskQueue } from '@/libs/TaskQueue';
+import { ClientTaskQueue } from '@/libs/clientTaskQueue';
 import { useUploadsIdb } from './IDBMProvider';
 import { Upload } from '@/types';
 import { useUploads } from './UploadsProvider';
-import useRequest from '../hooks/useRequest';
+import useRequest from '@/hooks/useRequest';
 
 export const CHUNK_SIZE = 5 * 1024 * 1024;
 
@@ -24,7 +24,7 @@ const UploadContext = createContext<UploadManagerContext | null>(null);
 
 export default function UploadManager({ children }: Props) {
 
-    const queue = useMemo(() => new TaskQueue(1), []);
+    const queue = useMemo(() => new ClientTaskQueue(1), []);
     const db = useUploadsIdb();
     const { uploads } = useUploads();
 

@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import Role from "@/entity/Role";
 import { currentTime } from "@/libs/utils";
 import { withAction } from "@/libs/withApi";
@@ -31,7 +31,7 @@ export const saveRole = withAction<SaveRoleProps, Role>(async (data) => {
         label: data.label.trim()
     });
 
-    const source = await getSource();
+    const source = await getConnection();
     const repo = source.getRepository(Role);
 
     let role = await repo.findOneBy({ name: parsed.name });
@@ -81,7 +81,7 @@ export const saveRole = withAction<SaveRoleProps, Role>(async (data) => {
 
 // ---------------- DELETE ----------------
 export const deleteRole = withAction<{ name: string }, null>(async ({ name }) => {
-    const source = await getSource();
+    const source = await getConnection();
     const repo = source.getRepository(Role);
 
     const role = await repo.findOneBy({ name });
@@ -101,7 +101,7 @@ export const deleteRole = withAction<{ name: string }, null>(async ({ name }) =>
 
 // ---------------- GET ALL ----------------
 export const getAllRole = withAction(async () => {
-    const source = await getSource();
+    const source = await getConnection();
     const repo = source.getRepository(Role);
 
     const roles = await repo.find({

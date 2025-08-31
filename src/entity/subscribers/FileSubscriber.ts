@@ -1,6 +1,6 @@
 import { EventSubscriber, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from "typeorm";
-import { File } from "./File";
-import Contributor from "./Contributor";
+import { File } from "../File";
+import Contributor from "../Contributor";
 
 @EventSubscriber()
 export class FileSubscriber implements EntitySubscriberInterface<File> {

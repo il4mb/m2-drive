@@ -1,12 +1,12 @@
 'use server'
 
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import User from "@/entity/User";
 import { withAction } from "@/libs/withApi";
 
 export const getUser = withAction<{ uId: string }, User>(async ({ uId }) => {
 
-    const source = await getSource();
+    const source = await getConnection();
     const usersRepository = source.getRepository(User);
     const u = await usersRepository.findOneBy({ id: uId });
     if (!u) throw new Error("404: ");
@@ -25,7 +25,7 @@ export const getUser = withAction<{ uId: string }, User>(async ({ uId }) => {
 
 export const findUsers = withAction<{ keyword: string }, User[]>(async ({ keyword }) => {
 
-    const source = await getSource();
+    const source = await getConnection();
     const usersRepository = source.getRepository(User);
     const users = await usersRepository.createQueryBuilder("u")
         .where("u.name LIKE :keyword", { keyword: `%${keyword}%` })

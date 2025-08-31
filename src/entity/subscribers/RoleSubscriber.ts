@@ -1,8 +1,8 @@
 import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent, RemoveEvent } from "typeorm";
-import Role from "../entity/Role";
-import { getSource } from "@/data-source";
-import User from "./User";
-import { Options } from "./Options";
+import Role from "../Role";
+import { getConnection } from "@/data-source";
+import User from "../User";
+import { Options } from "../Options";
 
 @EventSubscriber()
 export class RoleSubscriber implements EntitySubscriberInterface<Role> {
@@ -11,7 +11,7 @@ export class RoleSubscriber implements EntitySubscriberInterface<Role> {
     }
 
     async afterInsert(event: InsertEvent<Role>) {
-        const source = await getSource();
+        const source = await getConnection();
         const optionsRepository = source.getRepository(Options);
         const option1 = optionsRepository.create({
             id: `@drive-size-${event.entityId}`,
@@ -28,7 +28,7 @@ export class RoleSubscriber implements EntitySubscriberInterface<Role> {
     async afterRemove(event: RemoveEvent<Role>) {
         if (!event.entityId) return;
 
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
         const optionsRepository = source.getRepository(Options);
 

@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source"
+import { getConnection } from "@/data-source"
 import { Options } from "@/entity/Options";
 import { withAction } from "@/libs/withApi"
 
@@ -38,7 +38,7 @@ function formatOption(o: Options) {
 
 // Helper to get all max-upload related options
 async function fetchMaxUploadOptions() {
-    const source = await getSource();
+    const source = await getConnection();
     return source.getRepository(Options)
         .createQueryBuilder("o")
         .where("o.id LIKE :name", { name: `@max-upload-%` })
@@ -55,7 +55,7 @@ export const getMaxUploadOptions = withAction<{}, MaxUploadOption[]>(async () =>
 });
 
 export const addMaxUploadOptions = withAction<MaxUploadOption & { unlimited: boolean }>(async ({ roleName, size, unit, unlimited }) => {
-    const source = await getSource();
+    const source = await getConnection();
     const optionRepository = source.getRepository(Options);
 
     const id = `@max-upload-${roleName}`;

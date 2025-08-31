@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import User from "@/entity/User";
 import { putPublicObjectFromBuffer } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
@@ -11,7 +11,7 @@ import bcrypt from "bcrypt";
 export const getUser = async ({ uid }: any) => {
     try {
 
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
         const user = await userRepository.findOneBy({ id: uid });
 
@@ -35,7 +35,7 @@ export const getAllUser = async () => {
 
     try {
 
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
         const users = await userRepository.createQueryBuilder('u')
             .getMany();
@@ -59,7 +59,7 @@ export const handleAddUser = async ({ name, email, role, avatar }: any) => {
 
     try {
 
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
         const exist = await userRepository.findOneBy({ email });
         if (exist) throw new Error("400: Alamat email telah digunakan!");
@@ -132,7 +132,7 @@ export const handleUpdateUser = async ({ uid, name, email, role, avatar, passwor
 
         if (!uid) throw new Error("400: User ID diperlukan!");
 
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
 
         const user = await userRepository.findOneBy({ id: uid });

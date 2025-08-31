@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import { File } from "@/entity/File";
 import { withApi } from "@/libs/withApi";
 import { NextRequest } from "next/server";
@@ -7,7 +7,7 @@ import { Brackets } from "typeorm";
 export const GET = withApi(async (req: NextRequest) => {
 
     const uId = "1";
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
 
     const notTrashed = new Brackets(qb => {

@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source"
+import { getConnection } from "@/data-source"
 import { withAction } from "@/libs/withApi"
 import { File, Folder } from "@/entity/File"
 import { IsNull } from "typeorm"
@@ -19,7 +19,7 @@ export type UserDriveSummary = {
 }
 
 export const getDriveRoot = withAction<{}, { summaries: UserDriveSummary[] }>(async () => {
-    const source = await getSource();
+    const source = await getConnection();
 
     const summaries = await source.query(`
         SELECT 
@@ -49,7 +49,7 @@ export const getDriveRoot = withAction<{}, { summaries: UserDriveSummary[] }>(as
 
 export const getUserDriveSummary = withAction<{ uId: string }, UserDriveSummary & { mimeBreakdown: Record<string, number> }>(async ({ uId }) => {
 
-    const source = await getSource();
+    const source = await getConnection();
 
     // Main summary query
     const [summary] = await source.query(`
@@ -123,7 +123,7 @@ export const getUserFiles = withAction<DriveFilesProps, { files: File[]; parent?
             throw new Error("400: Order tidak valid!");
         }
 
-        const source = await getSource();
+        const source = await getConnection();
         const fileRepo = source.getRepository(File);
 
         // Fetch files under this folder
@@ -179,7 +179,7 @@ export const getUserFiles = withAction<DriveFilesProps, { files: File[]; parent?
 
 export const getUserFile = withAction<{ uId: string; id: string | null }, { file?: File }>(async ({ uId, id }) => {
 
-    const source = await getSource();
+    const source = await getConnection();
     const fileRepo = source.getRepository(File);
     const file = await fileRepo.findOneBy({
         uId,
@@ -213,7 +213,7 @@ export const createUserFolder = withAction<{ uId?: string | null, name: string, 
     if (name.length < 1 || name.length > 34) {
         throw new Error("400: Nama folder tidak boleh lebih kecil dari 1 dan lebih dari 34 karakter!");
     }
-    const source = await getSource();
+    const source = await getConnection();
     const fileRepository = source.getRepository(File);
     const file = fileRepository.create({
         id: generateKey(6),
@@ -265,7 +265,7 @@ export const renameUserFile = withAction<RenameProps>(async ({ userId, name, fil
     if (newName.length < 1 || newName.length > 34) {
         throw new Error("400: Nama file tidak boleh lebih kecil dari 1 dan lebih dari 34 karakter!");
     }
-    const source = await getSource();
+    const source = await getConnection();
     const fileRepository = source.getRepository(File);
 
     const file = await fileRepository
@@ -331,7 +331,7 @@ export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
         throw new Error("401: Tidak dapat menyalin ke folder yang sama!");
     }
 
-    const source = await getSource();
+    const source = await getConnection();
     const fileRepository = source.getRepository(File);
 
     // helper: generate unique name in target folder
@@ -423,7 +423,7 @@ export const moveUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
         throw new Error("400: Request tidak valid!");
     }
 
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
 
     const file = await repository
@@ -527,7 +527,7 @@ export const removeUserFile = withAction<RemoveRestoreProps & { permanen?: boole
             throw new Error("400: Request tidak valid!");
         }
 
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
 
         const file = await repository.findOneBy({
@@ -611,7 +611,7 @@ export const restoreUserFile = withAction<RemoveRestoreProps>(async ({ userId, f
         throw new Error("400: Request tidak valid!");
     }
 
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
 
     const file = await repository.findOneBy({
@@ -652,3 +652,50 @@ export const restoreUserFile = withAction<RemoveRestoreProps>(async ({ userId, f
         message: "File restored from trash"
     }
 });
+
+
+type ShareProps = {
+    fileId: string;
+    userId: string;
+    generalPermit: string;
+}
+export const shareUserFile = withAction<ShareProps>(
+    async ({ fileId, userId, generalPermit }) => {
+
+        const source = await getConnection();
+        const repository = source.getRepository(File);
+
+        const file = await repository.findOneBy({
+            id: fileId,
+            uId: userId
+        });
+
+        if (!file) {
+            throw new Error("404: File tidak ditemukan!");
+        }
+
+        file.meta = {
+            ...file.meta,
+            generalPermit
+        } as any;
+        file.updatedAt = currentTime();
+
+        await repository.save(file);
+        // const io = globalThis.ioServer;
+        // if (io) {
+        //     io.emit("update", {
+        //         collection: "file",
+        //         columns: {
+        //             id: file.id,
+        //             uId: file.uId,
+        //             pId: file.pId,
+        //         }
+        //     });
+        // }
+
+        return {
+            status: true,
+            message: "Ok"
+        }
+    }
+)

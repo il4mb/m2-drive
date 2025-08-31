@@ -1,6 +1,6 @@
 import { EventSubscriber, EntitySubscriberInterface, InsertEvent, RemoveEvent } from "typeorm";
-import User from "./User";
-import { File } from "./File";
+import User from "../User";
+import { File } from "../File";
 import { generateKey } from "@/libs/utils";
 
 @EventSubscriber()

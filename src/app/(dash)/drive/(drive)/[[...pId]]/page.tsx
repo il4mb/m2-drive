@@ -2,7 +2,7 @@
 
 import useUserDrive from '@/hooks/useUserDrive';
 import { File } from '@/entity/File';
-import { CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
+import { LinearProgress, Stack, Typography } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import FileView from '@/components/drive/FileView';
 import { useContextMenuState } from '@/components/context-menu/ContextMenu';
 import { DriveLayoutState } from '../layout';
+import { useMyDrive } from '@/hooks/useMyDrive';
 
 export interface pageProps {
     children?: ReactNode;
@@ -21,6 +22,9 @@ export default function page() {
     const { pId = [] } = useParams<{ pId: string[] }>();
     const { user } = useCurrentSession();
     const lastpid = pId[pId.length - 1];
+
+    const data = useMyDrive(lastpid || null);
+
     const { files, loading, parent } = useUserDrive(
         user?.id || null,
         lastpid, {
@@ -41,6 +45,11 @@ export default function page() {
     useEffect(() => {
         state.setLoading(loading);
     }, [loading]);
+
+
+    useEffect(() => {
+        console.log(data)
+    }, [data])
 
     return (
         <Stack

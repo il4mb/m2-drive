@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import { File } from "@/entity/File";
 import { withApi } from "@/libs/withApi";
 import { s3Client, bucketName } from "@/libs/s3-storage";
@@ -11,7 +11,7 @@ export const GET = withApi(async (req) => {
     const id = searchParams.get("id");
     if (!id) throw new Error("400: Invalid request!" + req.url);
 
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
     const file = await repository.findOneBy({ id });
 

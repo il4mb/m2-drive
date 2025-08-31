@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import { File } from "@/entity/File";
 import { DATE_EPOCH } from "@/libs/utils";
 import { withApi } from "@/libs/withApi";
@@ -16,7 +16,7 @@ export const POST = withApi(async (req) => {
 
     if (name.length > 64) throw new Error("400: Folder name should not more than 64 characters!");
 
-    const source = await getSource();
+    const source = await getConnection();
     const repo = source.getRepository(File);
     const exist = await repo.existsBy({
         uId,
@@ -73,7 +73,7 @@ export const DELETE = withApi(async (req) => {
     if (!id) throw new Error("400: Missing folder id!");
 
     const uId = "1";
-    const source = await getSource();
+    const source = await getConnection();
     const repo = source.getRepository(File);
 
     const folder = await repo.findOne({ where: { id, uId, type: "folder" } });

@@ -6,15 +6,18 @@ import Contributor from "./entity/Contributor";
 import Token from "./entity/Token";
 import User from "./entity/User";
 import Role from "./entity/Role";
-import { RoleSubscriber } from "./entity/RoleSubscriber";
-import { UserSubscriber } from "./entity/UserSubscriber";
+import { RoleSubscriber } from "./entity/subscribers/RoleSubscriber";
+import { UserSubscriber } from "./entity/subscribers/UserSubscriber";
 import { TaskQueueItem } from "./entity/TaskQueueItem";
-import { FileSubscriber } from "./entity/FileSubscriber";
+import { FileSubscriber } from "./entity/subscribers/FileSubscriber";
+import { DatabaseSubscriber } from "./server/database/databaseSubscriber";
+
+const dev = process.env.NODE_ENV !== "production";
 
 const source = new DataSource({
     type: "sqlite",
     database: `${process.cwd()}/database.sqlite`,
-    synchronize: true,
+    synchronize: dev,
     logging: false,
     entities: [
         User,
@@ -28,12 +31,13 @@ const source = new DataSource({
     subscribers: [
         UserSubscriber,
         RoleSubscriber,
-        FileSubscriber
+        FileSubscriber,
+        DatabaseSubscriber
     ],
     cache: true
 });
 
-export const getSource = async () => {
+export const getConnection = async () => {
     if (!source.isInitialized) {
         await source.initialize();
     }

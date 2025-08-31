@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import { TaskQueueItem, TaskStatus } from "@/entity/TaskQueueItem";
 
 export class TaskQueue {
@@ -10,7 +10,7 @@ export class TaskQueue {
     constructor(private concurrency = 1) { }
 
     async add<T>(type: string, payload: T) {
-        const source = await getSource();
+        const source = await getConnection();
         const repo = source.getRepository(TaskQueueItem);
         const task = repo.create({
             type,
@@ -24,7 +24,7 @@ export class TaskQueue {
 
     async processTask<T>(task: TaskQueueItem<T>, handler: (payload: T) => Promise<void>) {
 
-        const source = await getSource();
+        const source = await getConnection();
         const repo = source.getRepository(TaskQueueItem);
 
         task.status = "processing";
@@ -48,7 +48,7 @@ export class TaskQueue {
         this.isProcessing = true;
 
         this.interval = setInterval(async () => {
-            const source = await getSource();
+            const source = await getConnection();
             const repo = source.getRepository(TaskQueueItem);
 
             const pendingTasks = await repo.find({

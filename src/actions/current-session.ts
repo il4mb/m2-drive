@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import Role from "@/entity/Role";
 import Token from "@/entity/Token";
 import User from "@/entity/User";
@@ -10,7 +10,7 @@ import { PERMISSION_LIST, TPermission } from "@/permission";
 import { cookies } from "next/headers";
 
 const getRepositories = async () => {
-    const source = await getSource();
+    const source = await getConnection();
     const tokenRepository = source.getRepository(Token);
     const userRepository = source.getRepository(User);
     const roleRepository = source.getRepository(Role);

@@ -1,32 +1,27 @@
 import { Share2 } from "lucide-react";
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    TextField,
-    Stack,
-    MenuItem,
-} from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, MenuItem } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { enqueueSnackbar } from "notistack";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import ContributorManager from "../ContributorManager";
+import { shareUserFile } from "@/actions/dive-root";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
 };
 
+type GeneralPermit = "none" | "viewer" | "editor";
 export default createContextMenu<State>({
     icon: Share2,
     label: "Berbagi",
     component({ state, resolve }) {
 
-        const [generalPermit, setGeneralPermit] = useState<"" | "viewer" | "editor">("");
         const { file } = state;
-        const link = `${window.location.origin}/file/${file.id}?p=${generalPermit}`;
+        const { user } = useCurrentSession();
+        const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(file.meta?.generalPermit || "none");
+        const link = `${window.location.origin}/shared/${file.id}?p=${generalPermit}`;
 
         const handleCopy = async () => {
             try {
@@ -38,16 +33,16 @@ export default createContextMenu<State>({
         }
 
         const handleUpdatePermit = async (e: ChangeEvent<HTMLInputElement>) => {
-            const permit = e.target.value;
-            if (!["", "viewer", "editor"].includes(permit)) {
+            if (!user?.id) return;
+            const permit = e.target.value as GeneralPermit;
+            if (!["none", "viewer", "editor"].includes(permit)) {
                 return enqueueSnackbar("Jenis permit tidak dikenali!", { variant: "warning" });
             }
-            // await state.permit.send({
-            //     body: {
-            //         fileId: file.id,
-            //         generalPermit: permit
-            //     }
-            // });
+            await shareUserFile({
+                fileId: file.id,
+                userId: user.id,
+                generalPermit: permit
+            })
             setGeneralPermit(permit as any);
         }
 
@@ -55,11 +50,6 @@ export default createContextMenu<State>({
             // refresh();
             resolve(exit);
         }
-
-        // useEffect(() => {
-        //     setGeneralPermit(file.meta?.generalPermit || "");
-        // }, [file]);
-
 
         return (
             <Dialog onClose={() => handleClose(false)} open maxWidth="xs" fullWidth>
@@ -81,13 +71,13 @@ export default createContextMenu<State>({
                             value={generalPermit}
                             onChange={handleUpdatePermit}
                             fullWidth>
-                            <MenuItem value="">Nonaktif (Tidak Dibagikan)</MenuItem>
+                            <MenuItem value="none">Nonaktif (Tidak Dibagikan)</MenuItem>
                             <MenuItem value="viewer">Hanya Lihat</MenuItem>
                             <MenuItem value="editor">Dapat Mengedit</MenuItem>
                         </TextField>
 
                         {/* Tampilkan link hanya jika sudah dipilih izin */}
-                        {generalPermit && (
+                        {["editor", "viewer"].includes(generalPermit) && (
                             <TextField
                                 // disabled={state.permit.pending}
                                 label="Link berbagi"

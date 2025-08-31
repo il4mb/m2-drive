@@ -31,5 +31,6 @@ type Meta = {
     gender?: "M" | "F";
     avatar?: string;
     role: string;
+    isActive?: boolean;
     [k: string]: any;
 }

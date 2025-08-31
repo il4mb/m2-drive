@@ -1,12 +1,12 @@
 'use server'
 
-import { getSource } from "@/data-source"
+import { getConnection } from "@/data-source"
 import Contributor from "@/entity/Contributor";
 import { currentTime } from "@/libs/utils";
 import { withAction } from "@/libs/withApi"
 
 export const getFileContributors = withAction<{ fileId: string }, Contributor[]>(async ({ fileId }) => {
-    const source = await getSource();
+    const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
     const contributors = await contributorRepository.find({
         where: { fileId },
@@ -25,7 +25,7 @@ export const addFileContributors = withAction<{ fileId: string, userId: string, 
     async ({ fileId, userId, role }) => {
 
         if (!fileId || !userId) throw new Error("400: Request tidak valid!");
-        const source = await getSource();
+        const source = await getConnection();
         const contributorRepository = source.getRepository(Contributor);
 
         const contributor = contributorRepository.create({
@@ -55,7 +55,7 @@ export const addFileContributors = withAction<{ fileId: string, userId: string, 
 // ✅ Update contributor role
 export const updateFileContributor = withAction<{ id: string, role: "viewer" | "editor" }>(
     async ({ id, role }) => {
-        const source = await getSource();
+        const source = await getConnection();
         const contributorRepository = source.getRepository(Contributor);
 
         const contributor = await contributorRepository.findOneBy({ id });
@@ -86,7 +86,7 @@ export const updateFileContributor = withAction<{ id: string, role: "viewer" | "
 // ✅ Remove contributor
 export const removeFileContributor = withAction<{ id: string }>(
     async ({ id }) => {
-        const source = await getSource();
+        const source = await getConnection();
         const contributorRepository = source.getRepository(Contributor);
 
         const contributor = await contributorRepository.findOneBy({ id });

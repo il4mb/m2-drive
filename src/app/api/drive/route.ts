@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source"
+import { getConnection } from "@/data-source"
 import Contributor from "@/entity/Contributor";
 import { File } from "@/entity/File";
 import { currentTime, generateKey } from "@/libs/utils";
@@ -20,7 +20,7 @@ export const GET = withApi(async (req) => {
     const order = (searchParams.get("order") || "DESC").toUpperCase() as | "ASC" | "DESC";
 
     const uId = "1";
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
 
     const qb = repository.createQueryBuilder("file").where("file.uId = :uId", {
@@ -97,7 +97,7 @@ type Action = {
 const ACTIONS: Action = {
     // Create new file or folder
     create: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
 
@@ -121,7 +121,7 @@ const ACTIONS: Action = {
 
     // Copy file/folder (and its contents if folder)
     copy: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -184,7 +184,7 @@ const ACTIONS: Action = {
 
     // Move file/folder to new location
     move: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -227,7 +227,7 @@ const ACTIONS: Action = {
 
     // Delete file/folder (soft delete to trash)
     delete: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -261,7 +261,7 @@ const ACTIONS: Action = {
 
     // Restore from trash
     restore: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -294,7 +294,7 @@ const ACTIONS: Action = {
 
     // Permanent delete
     permanentDelete: async (req, res) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -335,7 +335,7 @@ const ACTIONS: Action = {
 
     // Rename file/folder
     rename: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -374,7 +374,7 @@ const ACTIONS: Action = {
 
     // Star/unstar file/folder
     star: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -404,7 +404,7 @@ const ACTIONS: Action = {
 
     // Update file metadata
     updateMeta: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -436,7 +436,7 @@ const ACTIONS: Action = {
     // Share file/folder with other users
     share: async (req) => {
 
-        const source = await getSource();
+        const source = await getConnection();
         const repository = source.getRepository(File);
         const body = await req.json();
         const uId = '1';
@@ -469,7 +469,7 @@ const ACTIONS: Action = {
     },
 
     contributor: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repoFile = source.getRepository(File);
         const repoContributor = source.getRepository(Contributor);
         const body = await req.json();
@@ -513,7 +513,7 @@ const ACTIONS: Action = {
     },
 
     removeContributor: async (req) => {
-        const source = await getSource();
+        const source = await getConnection();
         const repoFile = source.getRepository(File);
         const repoContributor = source.getRepository(Contributor);
         const body = await req.json();

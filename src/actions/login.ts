@@ -1,6 +1,6 @@
 'use server'
 
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import Token from "@/entity/Token";
 import User from "@/entity/User";
 import { currentTime, generateKey } from "@/libs/utils";
@@ -14,7 +14,7 @@ type LoginProps = {
 
 export async function handleLoginAsync({ email, password }: LoginProps) {
     try {
-        const source = await getSource();
+        const source = await getConnection();
         const userRepository = source.getRepository(User);
         const tokenRepository = source.getRepository(Token);
 
@@ -60,7 +60,7 @@ export async function handleLoginAsync({ email, password }: LoginProps) {
 
 export async function handleStartSession({ tokenId }: { tokenId: string }) {
     try {
-        const source = await getSource();
+        const source = await getConnection();
         const tokenRepository = source.getRepository(Token);
 
         const exist = await tokenRepository.existsBy({ id: tokenId });

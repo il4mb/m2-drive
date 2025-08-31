@@ -1,4 +1,4 @@
-import { getSource } from "@/data-source";
+import { getConnection } from "@/data-source";
 import { File } from "@/entity/File";
 import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
@@ -59,7 +59,7 @@ export const POST = withApi(async (req) => {
     }
 
 
-    const source = await getSource();
+    const source = await getConnection();
     const repository = source.getRepository(File);
     const file = new File();
 

@@ -28,6 +28,7 @@ import { useEffect, useState } from "react";
 import RequestError from "@/components/RequestError";
 import Link from "next/link";
 import { motion } from "motion/react";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 function formatSize(bytes: number) {
     if (!bytes) return "0 B";
@@ -176,15 +177,7 @@ export default function Page() {
                                     <TableRow key={i} hover>
                                         <TableCell>
                                             <Stack direction="row" spacing={1.5} alignItems="center">
-                                                <Avatar
-                                                    src={s.userAvatar || undefined}
-                                                    sx={{
-                                                        bgcolor: theme.palette.primary.main,
-                                                        fontSize: "0.9rem",
-                                                        fontWeight: 500,
-                                                    }}>
-                                                    {s.userName?.charAt(0) || "?"}
-                                                </Avatar>
+                                                <UserAvatar userId={s.userId} />
                                                 <Typography fontWeight={500}>{s.userName || "Unknown"}</Typography>
                                             </Stack>
                                         </TableCell>

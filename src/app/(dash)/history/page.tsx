@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
+import { useMyHistory } from "@/hooks/useMyHistory";
 
 type Response = {
     status: boolean;
@@ -33,6 +34,14 @@ type SectionProps = {
 }
 
 export default function Page() {
+
+    const { files } = useMyHistory();
+
+
+    useEffect(() => {
+        console.log(files)
+    }, [files]);
+
     const [lastAdd, setLastAdd] = useState<File[]>([]);
     const [lastUpdate, setLastUpdate] = useState<File[]>([]);
     const [lastOpen, setLastOpen] = useState<File[]>([]);

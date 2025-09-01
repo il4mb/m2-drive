@@ -2,6 +2,7 @@
 
 import {
     Button,
+    LinearProgress,
     Paper,
     Stack,
     TableCell,
@@ -15,10 +16,11 @@ import StickyHeader from '@/components/StickyHeader';
 import { motion } from 'motion/react';
 import { FileIcon } from '@untitledui/file-icons';
 import { formatFileSize, formatLocaleDate } from '@/libs/utils';
+import ContextMenu from '@/components/context-menu/ContextMenu';
 
 export default function Page() {
 
-    const files = useMyTrash();
+    const { files, loading } = useMyTrash();
 
     useEffect(() => {
         console.log(files);
@@ -42,50 +44,64 @@ export default function Page() {
     // }, []);
 
     return (
-        <Container maxWidth='lg' scrollable>
-            <StickyHeader>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack alignItems="center" spacing={1} direction="row">
-                        <Trash size={20} />
-                        <Typography fontWeight={600} fontSize={18}>
-                            Tempat Sampah
-                        </Typography>
-                    </Stack>
-                    <Button variant="outlined" color="error">
-                        Kosongkan Tempat Sampah
-                    </Button>
-                </Stack>
-            </StickyHeader>
+        <ContextMenu state={{}}>
+            <Stack flex={1} overflow={"hidden"}>
+                <Container maxWidth='lg' scrollable>
 
-            <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2 }}>
-                <motion.table>
-                    {files.map((file, i) => (
+                    <StickyHeader>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between">
+                            <Stack alignItems="center" spacing={1} direction="row">
+                                <Trash size={20} />
+                                <Typography fontWeight={600} fontSize={18}>
+                                    Tempat Sampah
+                                </Typography>
+                            </Stack>
+                            <Button variant="outlined" color="error">
+                                Kosongkan Tempat Sampah
+                            </Button>
+                        </Stack>
+                    </StickyHeader>
 
-                        <motion.tr
-                            initial={{ opacity: 0, y: -8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2, delay: 0.03 * i }}
-                            style={{ cursor: "pointer" }}>
-                            <TableCell>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    {file.type === "folder" ? (
-                                        <Folder strokeWidth={1} size={20} />
-                                    ) : (
-                                        <FileIcon variant="default" size={20} type={file.type} />
-                                    )}
-                                    <Typography>{file.name}</Typography>
-                                </Stack>
-                            </TableCell>
-                            <TableCell>{formatFileSize(file.meta?.size || 0)}</TableCell>
-                            <TableCell>
-                                {formatLocaleDate(file.meta?.trashedAt || 0, "ID-id")}
-                            </TableCell>
-                        </motion.tr>
-                    ))}
-                </motion.table>
-            </Paper>
+                    <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2, minHeight: '85dvh', position: 'relative' }}>
+                        {loading && (
+                            <LinearProgress sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: 2
+                            }} />
+                        )}
+                        <motion.table>
+                            {files.map((file, i) => (
 
-        </Container>
+                                <motion.tr
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.2, delay: 0.03 * i }}
+                                    style={{ cursor: "pointer" }}>
+                                    <TableCell>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            {file.type === "folder" ? (
+                                                <Folder strokeWidth={1} size={20} />
+                                            ) : (
+                                                <FileIcon variant="default" size={20} type={file.type} />
+                                            )}
+                                            <Typography>{file.name}</Typography>
+                                        </Stack>
+                                    </TableCell>
+                                    <TableCell>{formatFileSize(file.meta?.size || 0)}</TableCell>
+                                    <TableCell>
+                                        {formatLocaleDate(file.meta?.trashedAt || 0, "ID-id")}
+                                    </TableCell>
+                                </motion.tr>
+                            ))}
+                        </motion.table>
+                    </Paper>
+
+                </Container>
+            </Stack>
+        </ContextMenu>
     );
 }

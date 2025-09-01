@@ -1,3 +1,27 @@
+// server/database/types.ts
+export type DatabaseEvent = "INSERT" | "UPDATE" | "DELETE";
+
+export interface DatabaseChangePayload {
+    event: DatabaseEvent;
+    collection: string;
+    data: any;
+    timestamp: Date;
+    changes?: Record<string, any>;
+    previousData?: any;
+}
+
+export interface BroadcastContext {
+    user?: any;
+    collection: string;
+    event: DatabaseEvent;
+    data: any;
+    previousData?: any;
+}
+
+export type BroadcastRule = (context: BroadcastContext) => boolean;
+
+
+
 import { EntityName } from ".";
 
 // server/database/types.ts
@@ -11,16 +35,15 @@ export type QueryOperator =
     | 'LIKE'
     | 'ILIKE'
     | 'IN'
-    | 'BETWEEN'
-    | 'IS_NULL'
-    | 'NOT_NULL';
+    | 'BETWEEN';
+
 
 export interface QueryCondition {
     field: string;
     operator: QueryOperator;
     value: any;
     logical?: 'AND' | 'OR';
-    
+    children?: QueryCondition[];
 }
 
 export interface OrderBy {
@@ -37,6 +60,7 @@ export interface QueryConfig {
     orderBy?: OrderBy;
     limit?: number;
     offset?: number;
+    relations: EntityName[];
 }
 
 export interface QueryResult<T> {

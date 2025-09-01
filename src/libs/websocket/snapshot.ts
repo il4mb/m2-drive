@@ -3,6 +3,7 @@ import { socket } from '@/socket';
 import { Query } from './query';
 import { EntityMap, EntityName } from '@/server/database';
 import { QueryType } from '@/server/database/types';
+import { DatabaseChangePayload } from '@/server/database/types';
 
 export interface SnapshotOptions {
     onError?: (error: Error) => void;
@@ -14,114 +15,115 @@ export interface Unsubscribe {
 }
 
 // Single-item overload
-export function onSnapshot<
-    T extends EntityName,
-    Q extends 'one',
-    E = InstanceType<EntityMap[T]>
->(
+export function onSnapshot<T extends EntityName, Q extends 'one', E = InstanceType<EntityMap[T]>>(
     query: Query<T, Q>,
     callback: (data: E | null) => void,
     options?: SnapshotOptions
 ): Unsubscribe;
 
 // Many-items overload
-export function onSnapshot<
-    T extends EntityName,
-    Q extends 'list',
-    E = InstanceType<EntityMap[T]>
->(
+export function onSnapshot<T extends EntityName, Q extends 'list', E = InstanceType<EntityMap[T]>>(
     query: Query<T, Q>,
     callback: (data: E[]) => void,
     options?: SnapshotOptions
 ): Unsubscribe;
 
-// Implementation
+
 export function onSnapshot<
     T extends EntityName,
     Q extends QueryType,
     E = InstanceType<EntityMap[T]>
 >(
     query: Query<T, Q>,
-    callback: ((data: E | null) => void) | ((data: E[]) => void),
+    callback: Q extends "one" ? (data: E | null) => void : (data: E[]) => void,
     options?: SnapshotOptions
 ): Unsubscribe {
 
     const queryConfig = query.toJSON();
-    const isSingle = queryConfig.type == "one";
+    const isSingle = queryConfig.type === "one";
 
-
-    let currentData: T[] = [];
-    let isSubscribed = true;
+    // Store correct shape for currentData
+    let currentData: E[] | E | null = isSingle ? null : [];
+    let subscribeId = '';
 
     const handleQueryResponse = (response: any) => {
-
-        // console.log(response, isSingle)
-
-        if (!isSubscribed) return;
-
         if (response.success) {
-            // currentData = response.data;
-
             if (isSingle) {
+                currentData = response.data || null;
                 // @ts-ignore
-                (callback as (data: T) => void)(response.data[0] || null);
+                (callback as (data: E | null) => void)(currentData);
             } else {
-                (callback as (data: T[]) => void)(response.data);
+                currentData = response.data || [];
+                // @ts-ignore
+                (callback as (data: E[]) => void)(currentData);
             }
 
             options?.onMetadata?.({
                 lastUpdate: new Date(),
-                count: response.data.length
+                count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0)
             });
         } else {
-            console.error(response);
+            console.warn(response);
             options?.onError?.(new Error(response.error));
         }
     };
 
-    const handleDatabaseChange = (payload: any) => {
-        if (!isSubscribed || payload.collection !== queryConfig.collection) return;
-
-        switch (payload.event) {
-            case 'INSERT':
-                currentData = [...currentData, payload.data];
-                break;
-            case 'UPDATE':
-                currentData = currentData.map(item =>
-                    // @ts-ignore
-                    item.id === payload.data.id ? { ...item, ...payload.data } : item
-                );
-                break;
-            case 'DELETE':
+    const handleDatabaseChange = (payload: DatabaseChangePayload) => {
+        
+        if (payload)
+            if (isSingle) {
+                switch (payload.event) {
+                    case 'INSERT':
+                    case 'UPDATE':
+                        currentData = payload.data;
+                        break;
+                    case 'DELETE':
+                        currentData = null;
+                        break;
+                }
                 // @ts-ignore
-                currentData = currentData.filter(item => item.id !== payload.data.id);
-                break;
-        }
+                (callback as (data: E | null) => void)(currentData);
+            } else {
+                let list = currentData as E[];
+                switch (payload.event) {
+                    case 'INSERT':
+                        list = [...list, payload.data];
+                        break;
+                    case 'UPDATE':
+                        list = list.map(item =>
+                            (item as any).id === payload.data.id
+                                ? { ...item, ...payload.data }
+                                : item
+                        );
+                        break;
+                    case 'DELETE':
 
-        if (isSingle) {
-            // @ts-ignore
-            (callback as (data: T) => void)(currentData[0] || null);
-        } else {
-            (callback as (data: T[]) => void)(currentData);
-        }
+                        list = list.filter(item => (item as any).id !== payload.data.id);
+                        break;
+                }
+                currentData = list;
+                (callback as (data: E[]) => void)(list);
+            }
 
         options?.onMetadata?.({
             lastUpdate: new Date(),
-            count: currentData.length
+            count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0)
         });
     };
 
-    // Subscribe to collection and execute initial query
-    socket.emit('subscribe-collection', queryConfig.collection);
-    socket.emit('execute-query', queryConfig, handleQueryResponse);
+    socket.emit('subscribe', {
+        collection: queryConfig.collection,
+        conditions: queryConfig.conditions
+    }, (id: string) => {
+        subscribeId = id;
+        socket.emit('execute-query', queryConfig, handleQueryResponse);
+        socket.on(`change-${subscribeId}`, handleDatabaseChange);
+    });
 
-    // Listen for database changes
-    socket.on('database-change', handleDatabaseChange);
 
-    // Return unsubscribe function
+
     return () => {
-        isSubscribed = false;
-        socket.off('database-change', handleDatabaseChange);
-        socket.emit('unsubscribe-collection', queryConfig.collection);
+        socket.off(`change-${subscribeId}`, handleDatabaseChange);
+        socket.emit('unsubscribe', subscribeId);
     };
 }

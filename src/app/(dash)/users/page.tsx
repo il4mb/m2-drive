@@ -3,7 +3,7 @@
 import { getAllUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
-import useRequest from "@/components/hooks/useRequest";
+import useRequest from "@/hooks/useRequest";
 import User from "@/entity/User";
 import { Alert, AlertTitle, Avatar, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { Pen, Users2 } from "lucide-react";

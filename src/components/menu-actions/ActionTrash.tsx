@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, alpha, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Typography } from "@mui/material";
+import { Alert, AlertTitle, alpha, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Typography } from "@mui/material";
 import { Trash } from "lucide-react";
 import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
@@ -10,6 +10,7 @@ import useRequest from "@/hooks/useRequest";
 import { removeUserFile } from "@/actions/dive-root";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 import RequestError from "../RequestError";
+import { useRemoveFile } from "@/hooks/useRemoveFile";
 
 type State = {
     file: File
@@ -30,19 +31,8 @@ export default createContextMenu<State>({
         const { file } = state;
         //@ts-ignore
         const [permanen, setPermanen] = useState(file.type == "folder" && file.meta.itemCount == 0 ? true : false);
-
-        const request = useRequest({
-            action: removeUserFile,
-            params: {
-                fileId: file.id,
-                userId: user?.id || '',
-                permanen
-            }
-        }, [permanen, user, file]);
-
-        const handleSubmit = () => {
-            request.send()
-        }
+        const { remove, loading, error } = useRemoveFile(user?.id);
+        const handleSubmit = () => remove(file.id, permanen);
 
         return (
             <Dialog onClose={() => resolve(false)} open maxWidth="xs" fullWidth>
@@ -50,9 +40,12 @@ export default createContextMenu<State>({
                     Konfirmasi Hapus
                 </DialogTitle>
                 <DialogContent>
-                    <RequestError
-                        request={request}
-                        sx={{ mb: 2 }} />
+                    {error && (
+                        <Alert severity="error">
+                            <AlertTitle>Failed</AlertTitle>
+                            {error}
+                        </Alert>
+                    )}
                     <Typography>
                         Apakah kamu yakin ingin menghapus {file.type}{" "}
                         <strong>{file.name}</strong>?
@@ -60,7 +53,7 @@ export default createContextMenu<State>({
 
                     <FormControlLabel
                         control={<Checkbox
-                            disabled={request.pending}
+                            disabled={loading}
                             checked={permanen}
                             onChange={e => setPermanen(e.target.checked)} />}
                         label={"Hapus permanen?"} />
@@ -73,7 +66,7 @@ export default createContextMenu<State>({
                 </DialogContent>
                 <DialogActions>
                     <Button
-                        disabled={request.pending}
+                        disabled={loading}
                         size="small"
                         onClick={() => resolve(true)}
                         color="inherit">
@@ -83,7 +76,7 @@ export default createContextMenu<State>({
                         size="small"
                         color="error"
                         variant="contained"
-                        disabled={request.pending}
+                        disabled={loading}
                         onClick={handleSubmit}>
                         Hapus
                     </Button>

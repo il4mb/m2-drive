@@ -1,6 +1,6 @@
 'use client'
 
-import useDarkMode from '@/components/hooks/useDarkMode';
+import useDarkMode from '@/hooks/useDarkMode';
 import Ediska from '@/components/icon/Ediska';
 import { getColor } from '@/theme/colors';
 import { Container, Typography, Box, Stack, Paper } from '@mui/material';

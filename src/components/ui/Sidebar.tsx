@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useCurrentSession } from '../context/CurrentSessionProvider';
 import { useMyAbilities } from '../context/CurrentUserAbilitiesProvider';
+import UserAvatar from './UserAvatar';
 
 
 const MENU: IMenu[] = [
@@ -189,7 +190,7 @@ export default function Sidebar() {
                                 textDecoration: 'none',
                                 color: 'inherit'
                             }}>
-                            <Avatar src={user?.meta.avatar} alt={user?.name.toUpperCase()} />
+                            <UserAvatar userId={user?.id} />
                             {open && (
                                 <Box>
                                     <Typography component={"div"} fontWeight={600} fontSize={18}>

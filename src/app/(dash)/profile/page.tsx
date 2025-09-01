@@ -3,6 +3,7 @@
 import Container from '@/components/Container';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvider';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { currentTime, formatLocaleDate, toRelativeTimeFrom } from '@/libs/utils';
 import { Avatar, Button, Paper, Stack, Typography, Divider } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -37,8 +38,9 @@ export default function Page() {
                         {/* User Info */}
                         <Stack alignItems="center" spacing={1} mb={3} sx={{ position: 'relative' }}>
                             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>
-                                <Avatar
-                                    src={user.meta.avatar}
+                                <UserAvatar
+                                    userId={user.id}
+                                    size={60}
                                     sx={{ width: 100, height: 100, border: '3px solid', borderColor: 'primary.main' }}
                                 />
                             </motion.div>

@@ -10,12 +10,14 @@ import ContextMenu from '../context-menu/ContextMenu';
 import { contextMenuStack } from '../context-menu/ContextMenuItem';
 import ActionOpen from '../menu-actions/ActionOpen';
 import ActionShare from '../menu-actions/ActionShare';
-import { useFileContributors } from '@/hooks/useFileContributors';
+import { useContributors } from '@/hooks/useContributors';
 import ActionDivider from '../menu-actions/ActionDivider';
 import ActionCopy from '../menu-actions/ActionCopy';
 import ActionMove from '../menu-actions/ActionMove';
 import ActionRename from '../menu-actions/ActionRename';
 import ActionTrash from '../menu-actions/ActionTrash';
+import { getColor } from '@/theme/colors';
+import UserAvatar from '../ui/UserAvatar';
 
 type FileMenuState = {
     file: File;
@@ -39,7 +41,7 @@ export default function FileView<T>({
     layout = "list",
 }: FileViewProps<T>) {
 
-    const { contributors } = useFileContributors(file.id);
+    const { contributors } = useContributors(file.id);
 
     const handleOpen = (e: MouseEvent) => {
         e.preventDefault();
@@ -151,19 +153,22 @@ export default function FileView<T>({
                             </Typography>
 
                             {contributors.length > 0 && (
-                                <Stack direction={"row"} ml={5} alignItems={"center"}>
+                                <Stack
+                                    direction={"row"}
+                                    ml={5}
+                                    alignItems={"center"}>
                                     <Typography>
                                         Dibagikan:
                                     </Typography>
-                                    <Stack direction={"row"} alignItems={"center"} ml={1}>
+                                    <Stack
+                                        direction={"row"}
+                                        alignItems={"center"}
+                                        ml={1}>
                                         {contributors.map((c, i) => (
-                                            <Tooltip title={c.user.name} key={i} arrow>
-                                                <Avatar
-                                                    src={c.user.meta.avatar}
-                                                    sx={{ width: 20, height: 20 }}>
-                                                    {c.user.name?.[0]}
-                                                </Avatar>
-                                            </Tooltip>
+                                            <UserAvatar
+                                                key={i}
+                                                userId={c.user.id}
+                                                size={18} />
                                         ))}
                                     </Stack>
                                 </Stack>

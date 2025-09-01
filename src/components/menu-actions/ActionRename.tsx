@@ -1,12 +1,11 @@
-import { ChevronRight, Pen } from "lucide-react";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
+'use client'
+
+import { Pen } from "lucide-react";
+import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
-import { useCurrentSession } from "../context/CurrentSessionProvider";
-import useRequest from "@/hooks/useRequest";
-import { renameUserFile } from "@/actions/dive-root";
-import RequestError from "../RequestError";
+import { useFileUpdate } from "@/hooks/useFileUpdate";
 
 type State = {
     file: File;
@@ -18,24 +17,9 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const file = state.file;
-        const auth = useCurrentSession();
         const [name, setName] = useState<string>(file.name);
-
-        const request = useRequest({
-            action: renameUserFile,
-            params: {
-                name,
-                fileId: file.id,
-                userId: auth.user?.id || ''
-            },
-            validator({ name, userId }) {
-                if (name.length < 1 || name.length > 34 || !userId) return false;
-                return true;
-            },
-            onSuccess() {
-                resolve(true)
-            }
-        }, [name, auth.user]);
+        const { update, loading, error } = useFileUpdate(file.id);
+        const isValid = name.length > 0 && name != file.name;
 
         const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
@@ -43,17 +27,26 @@ export default createContextMenu<State>({
             setName(value.replace(/[^a-z0-9_\-\(\)\s]+/gi, ''));
         }
 
+        const handleSubmit = () => {
+            update({ name }).then(e => {
+                if (e) {
+                    resolve(true);
+                }
+            })
+        }
 
         return (
             <Dialog maxWidth={'xs'} onClose={() => resolve(false)} fullWidth open>
                 <DialogTitle>Ganti Nama</DialogTitle>
                 <DialogContent sx={{ overflow: 'visible' }}>
-                    <RequestError
-                        request={request}
-                        sx={{ mb: 3 }}
-                        closable />
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                            <AlertTitle>Error</AlertTitle>
+                            {error}
+                        </Alert>
+                    )}
                     <TextField
-                        disabled={request.pending}
+                        disabled={loading}
                         value={name}
                         onChange={handleChange}
                         label="Nama"
@@ -65,7 +58,7 @@ export default createContextMenu<State>({
                 </DialogContent>
                 <DialogActions>
                     <Button
-                        disabled={request.pending}
+                        disabled={loading}
                         size="small"
                         color="inherit"
                         onClick={() => resolve(false)}>
@@ -74,9 +67,9 @@ export default createContextMenu<State>({
                     <Button
                         variant="contained"
                         size="small"
-                        disabled={!request.isValid || request.pending}
-                        loading={request.pending}
-                        onClick={request.send}>
+                        disabled={!isValid || loading}
+                        loading={loading}
+                        onClick={handleSubmit}>
                         Simpan
                     </Button>
                 </DialogActions>

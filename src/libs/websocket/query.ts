@@ -1,10 +1,11 @@
 import { EntityMap, EntityName } from "@/server/database";
-import { QueryOperator, QueryCondition, QueryConfig, QueryType } from "@/server/database/types";
+import { QueryOperator, QueryConfig, QueryType, QueryCondition } from "@/server/database/types";
 
 
 export const IsNull = "@IsNull";
 export const NotNull = "@IsNotNull";
 export const Json = (field: string, ...path: string[]): any => `@Json(${field}.${path.join(".")})`
+
 
 export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<EntityMap[T]>> {
 
@@ -14,6 +15,7 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
     private limitValue?: number;
     private orderByField?: string;
     private orderDirection: "ASC" | "DESC" = "ASC";
+    private joinTable: EntityName[] = [];
 
     constructor(collection: T, type: Q) {
         this.collection = collection;
@@ -23,7 +25,8 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
     where(field: keyof E, operator: QueryOperator, value: any): this {
         this.conditions.push({
             field: field as any,
-            operator, value,
+            operator,
+            value,
             logical: "AND"
         });
         return this;
@@ -39,8 +42,39 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
         return this;
     }
 
+    /** Group multiple AND conditions in parentheses */
+    bracketWhere(callback: (q: Query<T, Q, E>) => void): this {
+        const subQuery = new Query<T, Q, E>(this.collection, this.type);
+        callback(subQuery);
+        if (subQuery.conditions.length) {
+            this.conditions.push({
+                logical: "AND",
+                children: subQuery.conditions
+            } as any);
+        }
+        return this;
+    }
+
+    /** Group multiple AND conditions in parentheses but connect with OR */
+    orBracketWhere(callback: (q: Query<T, Q, E>) => void): this {
+        const subQuery = new Query<T, Q, E>(this.collection, this.type);
+        callback(subQuery);
+        if (subQuery.conditions.length) {
+            this.conditions.push({
+                logical: "OR",
+                children: subQuery.conditions
+            } as any);
+        }
+        return this;
+    }
+
     limit(limit: number): this {
         this.limitValue = limit;
+        return this;
+    }
+
+    relations(entities: EntityName[]) {
+        this.joinTable = entities;
         return this;
     }
 
@@ -56,11 +90,12 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
             type: this.type,
             conditions: this.conditions,
             limit: this.limitValue,
+            relations: this.joinTable,
             orderBy: this.orderByField ? {
                 field: this.orderByField,
                 direction: this.orderDirection
             } : undefined
-        }
+        };
     }
 }
 

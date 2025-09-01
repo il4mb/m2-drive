@@ -12,7 +12,7 @@ import { alpha, Button, IconButton, Paper, Skeleton, Stack, TextField, Tooltip, 
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, ChevronLeft, Clock, CloudUpload, FileDigit, FolderOpen, Funnel, HardDrive, LayoutGrid, StretchHorizontal, } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { File, Folder } from "@/entity/File";
 
 export type DriveLayoutState = {
@@ -27,15 +27,7 @@ export type DriveLayoutState = {
     setLoading: (b: boolean) => void;
 };
 
-const activeStyle = (active: boolean) =>
-    active
-        ? {
-            background: alpha(getColor("primary")[400], 0.3),
-            "&:hover": {
-                background: alpha(getColor("primary")[400], 0.3),
-            },
-        }
-        : undefined;
+
 
 export interface layoutProps {
     children?: ReactNode;
@@ -51,19 +43,22 @@ export default function layout({ children }: layoutProps) {
     const [order, setOrder] = useLocalStorage<DriveLayoutState["order"]>("drive-order", "desc");
     const [sort, setSort] = useLocalStorage<DriveLayoutState["sort"]>("drive-sort", "type");
 
-    const state: DriveLayoutState = {
-        file,
-        layout,
-        setLayout,
-        order,
-        setOrder,
-        sort,
-        setSort,
-        setFolder: setFile,
-        setLoading
-    }
+    const state: DriveLayoutState = useMemo(() => ({
+        file, layout, setLayout, order, setOrder, sort, setSort, setFolder: setFile, setLoading
+    }), [file, layout, setLayout, order, setOrder, sort, setSort, setFile, setLoading]);
+
     const toggleLayout = () => setLayout(prev => prev == "grid" ? "list" : "grid");
 
+
+    const activeStyle = (active: boolean) =>
+        active
+            ? {
+                background: alpha(getColor("primary")[400], 0.3),
+                "&:hover": {
+                    background: alpha(getColor("primary")[400], 0.3),
+                },
+            }
+            : undefined;
     const menu = contextMenuStack<DriveLayoutState>([
         ActionNewFolder,
         ActionDivider,
@@ -135,7 +130,6 @@ export default function layout({ children }: layoutProps) {
         }
     ])
 
-
     return (
         <ContextMenu state={state} menu={menu} maxWidth={210}>
             <Stack flex={1} overflow={"hidden"}>
@@ -147,7 +141,7 @@ export default function layout({ children }: layoutProps) {
                                 {!loading && !file ? (
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <HardDrive size={28} color={theme.palette.primary.main} />
-                                        <Typography fontSize={22} fontWeight={700}>
+                                        <Typography component={"div"} fontSize={22} fontWeight={700}>
                                             My Drive
                                         </Typography>
                                     </Stack>
@@ -158,15 +152,15 @@ export default function layout({ children }: layoutProps) {
                                         </IconButton>
                                         <Stack direction={"row"} spacing={1} alignItems={"center"}>
                                             <FolderOpen />
-                                            <Typography>
+                                            <Typography component={"div"}>
                                                 {file.name}
                                             </Typography>
                                         </Stack>
                                     </Stack>
                                 ) : (
                                     <Stack flex={1} direction={"row"} spacing={1} alignItems={"flex-end"}>
-                                        <Skeleton variant='rounded' width={30} height={30} />
-                                        <Skeleton variant='rounded' width={150} height={20} />
+                                        <Skeleton component={"div"} variant='rounded' width={30} height={30} />
+                                        <Skeleton component={"div"} variant='rounded' width={150} height={20} />
                                     </Stack>
                                 )}
                             </Stack>
@@ -175,6 +169,7 @@ export default function layout({ children }: layoutProps) {
 
                                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
                                     <TextField
+                                        autoComplete="off"
                                         disabled={loading}
                                         size='small'
                                         label={`Cari di ${file ? file.name : 'Drive'}`}

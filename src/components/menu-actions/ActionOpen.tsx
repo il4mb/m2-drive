@@ -1,3 +1,5 @@
+'use client'
+
 import { FolderOpen } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";

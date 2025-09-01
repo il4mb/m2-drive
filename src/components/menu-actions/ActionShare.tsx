@@ -1,12 +1,15 @@
+'use client'
+
 import { Share2 } from "lucide-react";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, MenuItem } from "@mui/material";
-import { ChangeEvent, useState } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, MenuItem, LinearProgress, Alert, AlertTitle } from "@mui/material";
+import { ChangeEvent, useEffect, useState } from "react";
 import { enqueueSnackbar } from "notistack";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import ContributorManager from "../ContributorManager";
-import { shareUserFile } from "@/actions/dive-root";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { useFileUpdate } from "@/hooks/useFileUpdate";
+import CloseSnackbar from "../ui/CloseSnackbar";
 
 type State = {
     file: File;
@@ -20,7 +23,10 @@ export default createContextMenu<State>({
 
         const { file } = state;
         const { user } = useCurrentSession();
-        const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(file.meta?.generalPermit || "none");
+        const { update, loading, error } = useFileUpdate(file.id);
+        const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(
+            // @ts-ignore
+            () => ["none", "viewer", "editor"].includes(file.meta?.generalPermit) ? file.meta?.generalPermit : "none");
         const link = `${window.location.origin}/shared/${file.id}?p=${generalPermit}`;
 
         const handleCopy = async () => {
@@ -38,18 +44,27 @@ export default createContextMenu<State>({
             if (!["none", "viewer", "editor"].includes(permit)) {
                 return enqueueSnackbar("Jenis permit tidak dikenali!", { variant: "warning" });
             }
-            await shareUserFile({
-                fileId: file.id,
-                userId: user.id,
-                generalPermit: permit
-            })
-            setGeneralPermit(permit as any);
+            // @ts-ignore
+            const success = await update({ meta: { generalPermit: permit } });
+            if (!success) {
+                enqueueSnackbar(error || "Unknown Error", {
+                    variant: 'error',
+                    action: CloseSnackbar
+                })
+            }
         }
 
         const handleClose = (exit = true) => {
-            // refresh();
             resolve(exit);
         }
+
+
+        useEffect(() => {
+            // @ts-ignore
+            setGeneralPermit(file.meta.generalPermit);
+        }, [file])
+
+
 
         return (
             <Dialog onClose={() => handleClose(false)} open maxWidth="xs" fullWidth>
@@ -64,8 +79,19 @@ export default createContextMenu<State>({
                             <ContributorManager file={file} />
                         </Stack>
 
+                        {loading && (
+                            <LinearProgress sx={{ height: 2 }} />
+                        )}
+
+                        {error && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                <AlertTitle>Error</AlertTitle>
+                                {error}
+                            </Alert>
+                        )}
+
                         <TextField
-                            // disabled={state.permit.pending}
+                            disabled={loading}
                             select
                             label="Pengaturan Akses"
                             value={generalPermit}
@@ -79,7 +105,7 @@ export default createContextMenu<State>({
                         {/* Tampilkan link hanya jika sudah dipilih izin */}
                         {["editor", "viewer"].includes(generalPermit) && (
                             <TextField
-                                // disabled={state.permit.pending}
+                                disabled={loading}
                                 label="Link berbagi"
                                 value={link}
                                 fullWidth
@@ -93,12 +119,16 @@ export default createContextMenu<State>({
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button size="small" onClick={() => handleClose(false)} color="inherit">
+                    <Button
+                        disabled={loading}
+                        size="small"
+                        onClick={() => handleClose(false)}
+                        color="inherit">
                         Tutup
                     </Button>
                     {generalPermit && (
                         <Button
-                            // disabled={state.permit.pending}
+                            disabled={loading}
                             onClick={handleCopy}
                             size="small"
                             variant="outlined">

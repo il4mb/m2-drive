@@ -1,3 +1,5 @@
+'use client'
+
 import { RotateCcw } from "lucide-react";
 import { createContextMenu } from "../../context-menu/ContextMenuItem";
 import { alpha } from "@mui/material";

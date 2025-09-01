@@ -1,57 +1,80 @@
 'use client'
 
 import { File, Folder } from "@/entity/File";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useRequest from "./useRequest";
-import { getUserFile, getUserFiles, getUserDriveSummary, UserDriveSummary } from "@/actions/dive-root";
+import { getUserFile, getUserDriveSummary, UserDriveSummary } from "@/actions/dive-root";
 import { useOnEmit } from "@/socket";
+import { onSnapshot } from "@/libs/websocket/snapshot";
+import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";
+import { validateByConditionsRecursive } from "@/server/database/helper";
+import { QueryCondition } from "@/server/database/types";
 
 type Filter = {
     sortBy?: "type" | "name" | "createdAt" | "updatedAt" | "trashedAt";
     order?: "asc" | "desc";
-    onlyType?: "file"|"folder";
+    onlyType?: "file" | "folder";
 }
 
-export default function useUserDrive(uId: string | null, pId?: string, filter: Filter = { sortBy: "type", order: "asc" }) {
 
+
+export default function useUserDrive(
+    uId: string | null,
+    pId?: string,
+    filter: Filter = { sortBy: "type", order: "asc" }
+) {
     const [loading, setLoading] = useState(true);
     const [files, setFiles] = useState<File[]>();
     const [parent, setParent] = useState<Folder | null>(null);
+    const signature = useRef('');
 
-    const request = useRequest({
-        autoSend: true,
-        action: getUserFiles,
-        params: {
-            uId: uId || '',
-            pId,
-            ...filter
-        },
-        validator(data) {
-            return Boolean(data.uId);
-        },
-        onSuccess(result) {
-            setFiles(result.data?.files || []);
-            setParent(result.data?.parent || null);
-        },
-        onComplete() {
-            setLoading(false);
-        },
-    }, [uId, pId, filter]);
+    useEffect(() => {
 
-    useOnEmit("update", {
-        collection: 'file',
-        columns: {
-            uId,
-            // pId: pId ? pId : null
-        },
-        callback() {
-            setLoading(true);
-            request.send();
-        },
-    }, [uId, pId]);
+        const propsString = JSON.stringify({ uId, pId, filter });
+        if (!uId || propsString == signature.current) return;
+        signature.current = propsString;
 
-    return { files, parent, loading }
+        setLoading(true);
+
+        const query = getMany("file")
+            .where("uId", "==", uId)
+            .where("pId", "==", pId || IsNull)
+            .bracketWhere(q => {
+                q.orWhere(Json("meta", "trashed"), "==", IsNull)
+                    .orWhere(Json("meta", "trashed"), "==", false)
+            })
+
+        if (filter.onlyType) {
+            query.where("type", "==", filter.onlyType);
+        }
+        if (filter.sortBy) {
+            query.orderBy(
+                (filter.sortBy || "name") as any,
+                (filter.order || "ASC").toUpperCase() as any
+            );
+        }
+
+        const unsubscriber = [
+            onSnapshot(getOne("file").where("uId", "==", uId).where("id", "==", pId), (data: any) => {
+                setParent(data || null);
+                setLoading(false);
+            }),
+            onSnapshot(query, (data) => {
+                // @ts-ignore
+                setFiles(data.filter(e=> !e.meta?.trashed));
+                setLoading(false);
+            })
+        ]
+
+        return () => {
+            unsubscriber.map(e => e());
+        };
+    }, [uId, filter, pId]);
+
+    return { files, parent, loading };
 }
+
+
 
 export function useUserDriveSummary(uId: string) {
 

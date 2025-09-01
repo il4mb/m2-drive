@@ -4,13 +4,12 @@ import useUserDrive from '@/hooks/useUserDrive';
 import { File } from '@/entity/File';
 import { LinearProgress, Stack, Typography } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { AnimatePresence, motion } from 'motion/react';
 import FileView from '@/components/drive/FileView';
 import { useContextMenuState } from '@/components/context-menu/ContextMenu';
 import { DriveLayoutState } from '../layout';
-import { useMyDrive } from '@/hooks/useMyDrive';
 
 export interface pageProps {
     children?: ReactNode;
@@ -23,14 +22,12 @@ export default function page() {
     const { user } = useCurrentSession();
     const lastpid = pId[pId.length - 1];
 
-    const data = useMyDrive(lastpid || null);
-
-    const { files, loading, parent } = useUserDrive(
-        user?.id || null,
-        lastpid, {
+    const filter = useMemo(() => ({
         order: state.order,
         sortBy: state.sort
-    });
+    }), [state.order, state.sort]);
+
+    const { files, loading, parent } = useUserDrive(user?.id || null, lastpid, filter);
     const [selected, setSelected] = useState<File>();
 
     const handleOpen = (file: File) => {
@@ -46,25 +43,21 @@ export default function page() {
         state.setLoading(loading);
     }, [loading]);
 
-
-    useEffect(() => {
-        console.log(data)
-    }, [data])
-
     return (
         <Stack
             flex={1}
             sx={{ position: 'relative' }}>
             <AnimatePresence>
                 {loading && (
-                    <LinearProgress sx={{ position: 'absolute', top: -10, left: 0, width: '100%', height: 2 }} />
+                    <LinearProgress key={"loading"} sx={{ position: 'absolute', top: -10, left: 0, width: '100%', height: 2 }} />
                 )}
                 {Boolean(files && files.length == 0 && !loading) ? (
-                    <Stack justifyContent={"center"} alignItems={"center"} flex={1}>
+                    <Stack key={"empty"} justifyContent={"center"} alignItems={"center"} flex={1}>
                         <Typography color='text.secondary' fontWeight={600} fontSize={18}>Tidak ada File</Typography>
                     </Stack>
                 ) : (
                     <Stack
+                        key={state.layout}
                         direction={state.layout == "grid" ? "row" : "column"}
                         gap={state.layout == "grid" ? 3 : 0}
                         alignItems={"flex-start"}
@@ -81,7 +74,7 @@ export default function page() {
                                     maxWidth: state.layout == "grid" ? '200px' : '100%',
                                     width: '100%'
                                 }}
-                                key={state.layout + file.id}>
+                                key={`${state.layout}-${file.id}`}>
                                 <FileView
                                     size={22}
                                     onOpen={handleOpen}

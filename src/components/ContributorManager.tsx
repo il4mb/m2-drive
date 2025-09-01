@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, CircularProgress, MenuItem, LinearProgress, Paper } from '@mui/material';
-import useRequest from '@/hooks/useRequest';
-import { findUsers } from '@/actions/user';
+import { useState } from 'react';
+import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, CircularProgress, MenuItem, LinearProgress } from '@mui/material';
 import User from '@/entity/User';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { File } from '@/entity/File';
-import { addFileContributors, getFileContributors, removeFileContributor, updateFileContributor } from '@/actions/contributors';
-import { useFileContributors } from '@/hooks/useFileContributors';
+import { useContributors } from '@/hooks/useContributors';
+import { useUsers } from '@/hooks/useUsers';
 
 type ContributorManagerProps = {
     file: File;
@@ -18,46 +16,13 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
 
     const [open, setOpen] = useState(false);
     const [keyword, setKeyword] = useState('');
-    const [users, setUsers] = useState<User[]>([]);
-    const { contributors, loading } = useFileContributors(file.id);
+    const { users, loading } = useUsers({ keyword });
+    const { contributors, loading: loading2, addContributor, updateContributor, removeContributor } = useContributors(file.id);
 
-    // Search users
-    const findRequest = useRequest({
-        autoSend: true,
-        action: findUsers,
-        params: { keyword },
-        validator(data) {
-            return data.keyword.length > 0;
-        },
-        onSuccess(result) {
-            setUsers(result.data || []);
-        },
-    }, [keyword]);
-
-    const addContributor = async (user: User) => {
-        await addFileContributors({
-            fileId: file.id,
-            userId: user.id,
-            role: "viewer"
-        });
+    const handleAddContributor = async (user: User) => {
+        await addContributor(user.id, "viewer");
         setKeyword('');
-        setUsers([]);
-    };
-
-
-    const removeContributor = async (id: string) => {
-        await removeFileContributor({ id });
-    };
-
-    const updateRole = async (cId: string, role: string) => {
-        await updateFileContributor({ id: cId, role: role as any });
     }
-
-    useEffect(() => {
-        if (keyword.length == 0) {
-            setUsers([]);
-        }
-    }, [keyword]);
 
     return (
         <Stack spacing={1} mb={2} minHeight={100}>
@@ -67,7 +32,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
 
             <Stack flex={1} sx={{ position: "relative" }}>
                 <AnimatePresence>
-                    {loading && (
+                    {loading || loading2 && (
                         <LinearProgress sx={{ position: 'absolute', top: 0, height: 2, left: 0, width: '100%' }} />
                     )}
                     {contributors.length === 0 && (
@@ -113,7 +78,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                                     value={c.role}
                                                     onChange={(e) => {
                                                         const val = e.target.value;
-                                                        updateRole(c.id, val);
+                                                        updateContributor(c.id, val as any);
                                                     }}>
                                                     <MenuItem value="viewer">Hanya Lihat</MenuItem>
                                                     <MenuItem value="editor">Mengedit</MenuItem>
@@ -164,12 +129,12 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                             </Stack>
 
                             <AnimatePresence>
-                                {users.length == 0 && !findRequest.pending && (
+                                {users.length == 0 && !loading && (
                                     <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
                                         <Typography color='text.secondary'>Tidak ada hasil!</Typography>
                                     </Stack>
                                 )}
-                                {findRequest.pending ? (
+                                {loading ? (
                                     <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
                                         <CircularProgress />
                                     </Stack>
@@ -183,9 +148,9 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                                 exit={{ opacity: 0, x: 10 }}
                                                 transition={{ duration: 0.2, delay: 0.05 * i }}>
                                                 <ListItem
-                                                    onClick={() => addContributor(u)}
+                                                    onClick={() => handleAddContributor(u)}
                                                     secondaryAction={
-                                                        <IconButton edge="end" onClick={() => addContributor(u)}>
+                                                        <IconButton edge="end" onClick={() => handleAddContributor(u)}>
                                                             <Plus size={16} />
                                                         </IconButton>
                                                     }>

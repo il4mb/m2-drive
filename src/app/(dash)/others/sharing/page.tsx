@@ -22,8 +22,7 @@ export default function Page() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ delay: 0.05 * i }}
-                        key={c.id}
-                    >
+                        key={c.id}>
                         <FileView menu={[]} menuState={{}} size={26} file={c.file} />
                     </motion.div>
                 ))
@@ -33,8 +32,7 @@ export default function Page() {
                     px={2}
                     borderRadius={2}
                     bgcolor="action.hover"
-                    textAlign="center"
-                >
+                    textAlign="center">
                     <Typography variant="body2" color="text.secondary">
                         {emptyMessage}
                     </Typography>

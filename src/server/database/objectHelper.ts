@@ -17,6 +17,7 @@ function resolveFieldName(field: string): string {
     return field.startsWith('$') ? field.substring(1) : field;
 }
 
+
 /** Handle JSON path resolution for object fields */
 function resolveFieldValue<T extends Record<string, any>>(obj: T, field: string): any {
     if (!field) return undefined;
@@ -28,18 +29,43 @@ function resolveFieldValue<T extends Record<string, any>>(obj: T, field: string)
         const pathMatch = resolvedField.match(/\@Json\((.*?)\)/);
         if (!pathMatch?.[1]) return undefined;
 
-        // Extract and clean the path (remove quotes, handle escaping)
-        const jsonPath = pathMatch[1].replace(/^["']|["']$/g, '');
+        // Extract and clean the path (remove quotes, handle different formats)
+        let jsonPath = pathMatch[1].replace(/^["']|["']$/g, '');
+
+        // Handle different formats: "meta".trashed or meta.trashed
+        jsonPath = jsonPath.replace(/\"\./g, '.').replace(/\.\"/g, '.');
+
         const pathParts = jsonPath.split(".");
-        
+
         let currentValue: any = obj;
 
         for (const part of pathParts) {
             if (currentValue === null || currentValue === undefined) {
                 return undefined;
             }
-            
+
             // Handle array indices if needed
+            if (Array.isArray(currentValue) && !isNaN(Number(part))) {
+                currentValue = currentValue[Number(part)];
+            } else if (typeof currentValue === 'object' && part in currentValue) {
+                currentValue = currentValue[part];
+            } else {
+                return undefined;
+            }
+        }
+        return currentValue;
+    }
+
+    // Handle dot notation for nested properties (like $file.aa)
+    if (resolvedField.includes('.')) {
+        const pathParts = resolvedField.split('.');
+        let currentValue: any = obj;
+
+        for (const part of pathParts) {
+            if (currentValue === null || currentValue === undefined) {
+                return undefined;
+            }
+
             if (Array.isArray(currentValue) && !isNaN(Number(part))) {
                 currentValue = currentValue[Number(part)];
             } else if (typeof currentValue === 'object' && part in currentValue) {
@@ -68,7 +94,7 @@ function evaluateCondition<T extends Record<string, any>>(obj: T, condition: Que
     if (operator === 'IS NULL') {
         return actualValue === null || actualValue === undefined;
     }
-    
+
     if (operator === 'IS NOT NULL') {
         return actualValue !== null && actualValue !== undefined;
     }
@@ -92,10 +118,10 @@ function evaluateCondition<T extends Record<string, any>>(obj: T, condition: Que
     // Operator handling
     switch (operator) {
         case "==":
-            return actualValue === value;
+            return actualValue == value;
 
         case "!=":
-            return actualValue !== value;
+            return actualValue != value;
 
         case ">":
             return actualValue > value;
@@ -252,7 +278,7 @@ export function validateByConditions<T extends Record<string, any>>(
     conditions: QueryCondition[] = []
 ): boolean {
     if (!conditions.length) return true;
-    
+
     // Wrap the entire condition set in a virtual bracket group
     return validateByConditionsRecursive(obj, conditions, "AND");
 }

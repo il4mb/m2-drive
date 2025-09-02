@@ -149,7 +149,7 @@ export default function Page() {
                                     <TableRow key={i} hover>
                                         <TableCell>
                                             <Stack direction="row" spacing={1.5} alignItems="center">
-                                                <UserAvatar userId={s.userId} />
+                                                <UserAvatar size={35} userId={s.userId} />
                                                 <Typography fontWeight={500}>{s.userName || "Unknown"}</Typography>
                                             </Stack>
                                         </TableCell>

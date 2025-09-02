@@ -28,6 +28,11 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
             throw new Error("404: File tidak ditemukan!");
         }
 
+        const tags = file.meta?.tags || [];
+        if (tags.some(tag => ['no-remove', 'no-edit'].includes(tag))) {
+            throw new Error("403: Menghapus tidak diperbolehkan!");
+        }
+
         if (actor?.meta.role != "admin" && actor?.id != file.uId) {
             throw new Error("403: Not allowed to delete this " + file.type);
         }

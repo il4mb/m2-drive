@@ -9,6 +9,7 @@ import { File } from "@/entity/File";
 import ContributorManager from "../ContributorManager";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import CloseSnackbar from "../ui/CloseSnackbar";
+import { useFileTags } from "@/hooks/useFileTag";
 
 type State = {
     file: File;
@@ -21,6 +22,7 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
+        const noShare = useFileTags(state.file, ['no-share']);
         const { update, loading, error } = useFileUpdate(file.id);
         const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(
             // @ts-ignore
@@ -71,6 +73,12 @@ export default createContextMenu<State>({
                 </DialogTitle>
                 <DialogContent>
                     <Stack gap={2} mt={1}>
+                        {noShare && (
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                <AlertTitle>Peringatan!</AlertTitle>
+                                <strong>Admin</strong> menandai file ini  <strong>{file.meta?.tags?.join(', ')}</strong>, <br />Membagikan file ini mungkin tidak berhasil!
+                            </Alert>
+                        )}
 
                         <Stack mb={1}>
                             <ContributorManager file={file} />

@@ -39,7 +39,7 @@ function getPortalRoot() {
         portalRoot = document.createElement("div");
         portalRoot.id = "context-menu-root";
         portalRoot.style.position = "relative";
-        portalRoot.style.zIndex = "1300";
+        portalRoot.style.zIndex = "800";
         document.body.appendChild(portalRoot);
     }
     return portalRoot;

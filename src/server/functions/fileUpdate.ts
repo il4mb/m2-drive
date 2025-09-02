@@ -44,8 +44,19 @@ export const createFolder = createFunction<CreateFolderProps>(async ({ userId, n
         throw new Error("400: Folder dengan nama yang sama sudah ada!");
     }
 
+    if (pId) {
+        const folder = await fileRepository.findOneBy({ id: pId });
+        if (!folder) {
+            throw new Error("404: Folder tujuan tidak ditemukan!");
+        }
+        const tags = folder.meta?.tags || [];
+        if (tags.some(tag => ['no-append', 'no-edit'].includes(tag))) {
+            throw new Error("403: Menambah folder tidak diperbolehkan!");
+        }
+    }
+
     const file = fileRepository.create({
-        id: generateKey(6),
+        id: generateKey(8),
         uId: userId,
         name,
         pId: pId ? pId : null,
@@ -57,12 +68,12 @@ export const createFolder = createFunction<CreateFolderProps>(async ({ userId, n
     });
 
     await fileRepository.save(file);
-    const data = JSON.parse(JSON.stringify(file));
 })
 
 export type UpdateFilePart = Partial<Omit<File, "meta">> & {
     meta?: Partial<NonNullable<File["meta"]>>;
 };
+
 
 type UpdateFileProps = {
     id: string;
@@ -70,7 +81,6 @@ type UpdateFileProps = {
 };
 
 export const updateFile = async ({ id, data }: UpdateFileProps) => {
-
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("401: Unauthenticated");
 
@@ -79,8 +89,12 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
     const file = await fileRepository.findOneBy({ id });
     if (!file) throw new Error("404: File not found");
 
-    if (actor?.meta.role != "admin" && actor?.id != file.uId) {
-        throw new Error("403: Not allowed to performs this action");
+    const isAdmin = actor?.meta.role === "admin";
+    const isOwner = actor?.id === file.uId;
+
+    // Check permissions
+    if (!isAdmin && !isOwner) {
+        throw new Error("403: Not allowed to perform this action");
     }
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
@@ -108,38 +122,68 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
         "lastOpened",
         "Key"
     ];
-    const allowedMetaFields =
-        file.type === "folder" ? folderMetaFields : fileMetaFields;
+    const allowedMetaFields = file.type === "folder" ? folderMetaFields : fileMetaFields;
 
-    // Check for unknown top-level keys
-    for (const key of Object.keys(data)) {
-        if (key !== "meta" && !allowedFields.includes(key as keyof File)) {
-            throw new Error(`400: Unknown property "${key}" in update`);
+    // If user is admin, only allow updating tags in meta
+    if (isAdmin && !isOwner) {
+        // Check if admin is trying to update anything other than meta.tags
+        const hasNonMetaUpdates = Object.keys(data).some(key => key !== "meta");
+        const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
+
+        if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
+            throw new Error("403: Admin can only update tags for files they don't own");
         }
     }
 
-    // Apply top-level allowed fields
-    for (const key of allowedFields) {
-        if (key in data && key !== "meta") {
-            (file as any)[key] = data[key as keyof UpdateFilePart] as any;
+    // Check for unknown top-level keys for regular users
+    if (!isAdmin || isOwner) {
+        for (const key of Object.keys(data)) {
+            if (key !== "meta" && !allowedFields.includes(key as keyof File)) {
+                throw new Error(`400: Unknown property "${key}" in update`);
+            }
+        }
+    }
+
+    // Apply top-level allowed fields (only for owners or admin on their own files)
+    if (isOwner || (isAdmin && isOwner)) {
+        for (const key of allowedFields) {
+            if (key in data && key !== "meta") {
+                (file as any)[key] = data[key as keyof UpdateFilePart] as any;
+            }
         }
     }
 
     // Merge and validate meta
     if (data.meta) {
-        for (const key of Object.keys(data.meta)) {
-            if (!allowedMetaFields.includes(key as keyof File["meta"])) {
-                throw new Error(
-                    `400: Unknown meta property "${key}" in update`
-                );
+        // For admin on non-owned files, only allow tags
+        if (isAdmin && !isOwner) {
+            const metaKeys = Object.keys(data.meta);
+            if (metaKeys.length !== 1 || !metaKeys.includes("tags")) {
+                throw new Error("403: Admin can only update tags for files they don't own");
+            }
+        }
+
+        // For regular users or admin on their own files, validate all meta fields
+        if (isOwner || (isAdmin && isOwner)) {
+            for (const key of Object.keys(data.meta)) {
+                if (!allowedMetaFields.includes(key as keyof File["meta"])) {
+                    throw new Error(
+                        `400: Unknown meta property "${key}" in update`
+                    );
+                }
             }
         }
 
         const currentMeta = file.meta || {};
         const newMeta = JSON.parse(JSON.stringify(currentMeta));
 
+        // Apply meta updates based on permissions
         for (const key of allowedMetaFields) {
             if (key in data.meta) {
+                // For admin on non-owned files, only apply tags
+                if (isAdmin && !isOwner && key !== "tags") {
+                    continue;
+                }
                 // @ts-ignore
                 (newMeta as any)[key] = data.meta[key];
             }
@@ -148,8 +192,18 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
         file.meta = newMeta;
     }
 
+    const tags = file.meta?.tags || [];
+    const isOnlyUpdatingTags =
+        data.meta &&
+        Object.keys(data.meta).length === 1 &&
+        Object.prototype.hasOwnProperty.call(data.meta, "tags");
+
+    // Check for "no-edit" tag restriction (applies to everyone except maybe super admins)
+    if (tags.some(tag => tag === "no-edit") && !isOnlyUpdatingTags) {
+        throw new Error("403: Mengedit file/folder tidak diperbolehkan!");
+    }
+
     file.updatedAt = currentTime();
     await fileRepository.save(file);
     return file;
 }
-

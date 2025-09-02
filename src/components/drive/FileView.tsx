@@ -17,6 +17,7 @@ import ActionMove from '../menu-actions/ActionMove';
 import ActionRename from '../menu-actions/ActionRename';
 import ActionTrash from '../menu-actions/ActionTrash';
 import UserAvatar from '../ui/UserAvatar';
+import ActionDetails from '../menu-actions/ActionDetails';
 
 export type FileMenuState = {
     file: File;
@@ -68,6 +69,7 @@ export default function FileView<T = any>({
 
     const menuItem = contextMenuStack<FileMenuState>([
         ActionOpen,
+        ActionDetails,
         ActionShare,
         ActionDivider,
         ActionCopy,

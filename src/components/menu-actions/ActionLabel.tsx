@@ -3,25 +3,31 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { ChevronRight, Flag, Folder } from "lucide-react";
 import TransferList, { TransferListItem } from "@/app/(dash)/settings/ui/TransferList";
 import { useEffect, useMemo, useState } from "react";
-import { File } from "@/entity/File";
+import { File, FileTags } from "@/entity/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { isEqual } from "lodash";
 import { FileIcon } from "@untitledui/file-icons";
 
 
-const FLAG_LIST: TransferListItem[] = [
-    {
-        label: "No Append",
-        value: "no-append"
-    },
+const FLAG_LIST: TransferListItem<FileTags>[] = [
+
     {
         label: "No Edit",
         value: 'no-edit'
     },
     {
+        label: "No Append",
+        value: "no-append",
+        parent: 'no-edit'
+    },
+    {
         label: "No Remove",
         value: 'no-remove',
-        parent: 'no-edit'
+        parent: 'no-remove'
+    },
+    {
+        label: 'No Clone',
+        value: 'no-clone'
     },
     {
         label: "No Share",
@@ -31,7 +37,7 @@ const FLAG_LIST: TransferListItem[] = [
 
 export default createContextMenu<{ file: File }>({
     icon: Flag,
-    label: "Sunting Label",
+    label: "Sunting Tags",
     component({ state, resolve }) {
 
         const { file } = state;
@@ -40,7 +46,7 @@ export default createContextMenu<{ file: File }>({
             : FLAG_LIST, [file]);
 
         const { update, loading, error } = useFileUpdate(file.id);
-        const [tags, setTags] = useState<string[]>([]);
+        const [tags, setTags] = useState<FileTags[]>([]);
         const isValid = !isEqual(file.meta?.tags || [], tags);
 
         const handleSubmit = async () => {
@@ -52,8 +58,8 @@ export default createContextMenu<{ file: File }>({
         }, [file]);
 
         return (
-            <Dialog maxWidth={"md"} fullWidth open>
-                <DialogTitle>Manage Label</DialogTitle>
+            <Dialog maxWidth={"md"} onClose={() => resolve(false)} fullWidth open>
+                <DialogTitle>Manage Tags</DialogTitle>
                 <DialogContent>
 
                     {error && (
@@ -62,14 +68,17 @@ export default createContextMenu<{ file: File }>({
                             {error}
                         </Alert>
                     )}
-                    <Stack spacing={1} direction={"row"} alignItems={"center"} py={2}>
+                    <Stack spacing={1} direction={"row"} alignItems={"center"} py={2} mb={1}>
                         <ChevronRight />
-                        <Stack spacing={1} direction={"row"} alignItems={"center"}>
-                            {file.type == "folder" 
-                            ? <Folder /> : <FileIcon variant="solid" 
-                            // @ts-ignore
-                            type={file.meta.mimeType} />}
-                            <Typography fontSize={18}>{file.name}</Typography>
+                        <Stack spacing={1} direction={"row"} alignItems={"center"} borderBottom={'1px solid'}>
+                            {file.type == "folder"
+                                ? <Folder size={18} />
+                                : <FileIcon
+                                    size={18}
+                                    variant="solid"
+                                    // @ts-ignore
+                                    type={file.meta.mimeType} />}
+                            <Typography fontSize={16}>{file.name}</Typography>
                         </Stack>
                     </Stack>
 

@@ -1,5 +1,7 @@
+import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { createFolder } from "@/server/functions/fileUpdate";
+import { enqueueSnackbar } from "notistack";
 import { useState } from "react"
 
 export const useCreateFolder = (userId?: string) => {
@@ -9,7 +11,10 @@ export const useCreateFolder = (userId?: string) => {
 
 
     const create = async (name: string, pId: string | null): Promise<boolean> => {
-        if (!userId) return false;
+        if (!userId) {
+            enqueueSnackbar("No user found to create a folder", { variant: 'error', action: CloseSnackbar });
+            return false;
+        }
 
         setLoading(true);
         setError(null);

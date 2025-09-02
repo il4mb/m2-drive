@@ -1,25 +1,24 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, CircularProgress, MenuItem, LinearProgress } from '@mui/material';
+import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, MenuItem, LinearProgress } from '@mui/material';
 import User from '@/entity/User';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { File } from '@/entity/File';
 import { useContributors } from '@/hooks/useContributors';
 import { useUsers } from '@/hooks/useUsers';
-import { useCurrentSession } from './context/CurrentSessionProvider';
+import UserAvatar from './ui/UserAvatar';
 
 type ContributorManagerProps = {
     file: File;
 }
 const ContributorManager = ({ file }: ContributorManagerProps) => {
 
-    const { user } = useCurrentSession();
     const [open, setOpen] = useState(false);
     const { contributors, loading: loading2, addContributor, updateContributor, removeContributor } = useContributors(file.id);
     const [keyword, setKeyword] = useState('');
-    const exclude = useMemo(() => [user?.id, ...contributors.map(e => e.userId)].filter(e => e != null), [user, contributors]);
+    const exclude = useMemo(() => [file.uId, ...contributors.map(e => e.userId)].filter(e => e != null), [file, contributors]);
     const { users, loading } = useUsers({ keyword, exclude, limit: 6 });
 
     const handleAddContributor = async (user: User) => {
@@ -94,10 +93,8 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
 
 
                                     }>
-                                    <Avatar src={c.user.meta.avatar} sx={{ mr: 1 }}>
-                                        {c.user.name?.[0]}
-                                    </Avatar>
-                                    <ListItemText primary={c.user.name} secondary={c.user.email} />
+                                    <UserAvatar userId={c.userId} size={35} sx={{ mr: 1 }} />
+                                    <ListItemText primary={c.user?.name} secondary={c.user?.email} />
                                 </ListItem>
 
                             </motion.li>

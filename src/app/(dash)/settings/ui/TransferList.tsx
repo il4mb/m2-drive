@@ -17,16 +17,16 @@ import {
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
 
-export type TransferListItem = {
+export type TransferListItem<T extends string = string> = {
     label: string;
-    value: string;
+    value: T;
     parent?: string;
 };
 
-type Props = {
-    defineList: readonly TransferListItem[];
-    items: string[];
-    onChange: (items: string[]) => void;
+type Props<T extends string> = {
+    defineList: readonly TransferListItem<T>[];
+    items: T[];
+    onChange: (items: T[]) => void;
     showSearch?: boolean;
     maxHeight?: number;
     disabled?: boolean;
@@ -36,7 +36,7 @@ type Props = {
     };
 };
 
-export default function TransferList({
+export default function TransferList<T extends string>({
     defineList,
     items,
     onChange,
@@ -44,7 +44,7 @@ export default function TransferList({
     maxHeight = 300,
     disabled = false,
     titles = { left: 'Available', right: 'Selected' }
-}: Props) {
+}: Props<T>) {
     const [checked, setChecked] = useState<string[]>([]);
     const [left, setLeft] = useState<TransferListItem[]>([]);
     const [right, setRight] = useState<TransferListItem[]>([]);
@@ -169,7 +169,7 @@ export default function TransferList({
 
     const selectChecked = () => {
         const newItems = [...items, ...leftChecked.map(e => e.value)];
-        onChange(newItems);
+        onChange(newItems as T[]);
         setChecked(checked.filter(val => !leftChecked.some(item => item.value === val)));
     };
 

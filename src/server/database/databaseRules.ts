@@ -67,6 +67,7 @@ export const databaseRules: DatabaseRuleMap = {
     file: (context) => {
         const { user, event, data } = context;
         if (event === "UPDATE") {
+            const tags = data?.meta?.tags || [];
             if (data?.uId === user?.id || user?.meta.role === "admin") return true;
         }
         if(event == "INSERT") {

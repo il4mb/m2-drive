@@ -3,7 +3,7 @@
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import User from "@/entity/User";
-import { Alert, AlertTitle, Button, Chip, LinearProgress, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, AlertTitle, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Calendar, CaseSensitive, Clock, Pen, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -127,7 +127,7 @@ export default function page() {
                             alignItems={"center"}
                             justifyContent={"space-between"}>
                             <Stack direction={"row"} gap={1} alignItems={"center"}>
-                                <UserAvatar userId={e.id} />
+                                <UserAvatar size={40} userId={e.id} />
                                 <Stack>
                                     <Typography component={'div'} fontSize={18} fontWeight={600}>
                                         {e.name}

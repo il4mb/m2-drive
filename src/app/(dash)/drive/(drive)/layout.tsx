@@ -18,7 +18,7 @@ import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 
 export type DriveLayoutState = {
     userId: string;
-    file: File | null;
+    folder: File | null;
     layout: "grid" | "list";
     setLayout: (l: DriveLayoutState["layout"]) => void;
     order: "ASC" | "DESC";
@@ -40,7 +40,7 @@ export default function layout({ children }: layoutProps) {
 
     const { user } = useCurrentSession();
     const [loading, setLoading] = useState(true);
-    const [file, setFile] = useState<File | null>(null);
+    const [folder, setFolder] = useState<File | null>(null);
     const [layout, setLayout] = useLocalStorage<DriveLayoutState["layout"]>("drive-layout", "list");
     const [order, setOrder] = useLocalStorage<DriveLayoutState["order"]>("drive-order", "DESC");
     const [sort, setSort] = useLocalStorage<DriveLayoutState["sort"]>("drive-sort", "type");
@@ -49,8 +49,8 @@ export default function layout({ children }: layoutProps) {
     const state: DriveLayoutState = useMemo(() => ({
         userId: user?.id || '',
         keyword,
-        file, layout, setLayout, order, setOrder, sort, setSort, setFolder: setFile, setLoading
-    }), [keyword, file, layout, setLayout, order, setOrder, sort, setSort, setFile, setLoading]);
+        folder, layout, setLayout, order, setOrder, sort, setSort, setFolder, setLoading
+    }), [user, keyword, folder, layout, order, sort, setLayout, setOrder, setSort, setFolder, setLoading]);
 
     const toggleLayout = () => setLayout(prev => prev == "grid" ? "list" : "grid");
 
@@ -143,14 +143,14 @@ export default function layout({ children }: layoutProps) {
                     <StickyHeader loading={loading}>
                         <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
                             <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
-                                {!loading && !file ? (
+                                {!loading && !folder ? (
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <HardDrive size={28} color={theme.palette.primary.main} />
                                         <Typography component={"div"} fontSize={22} fontWeight={700}>
                                             My Drive
                                         </Typography>
                                     </Stack>
-                                ) : file ? (
+                                ) : folder ? (
                                     <Stack direction={"row"} spacing={2} alignItems={"center"}>
                                         <IconButton onClick={() => router.back()}>
                                             <ChevronLeft size={16} />
@@ -158,7 +158,7 @@ export default function layout({ children }: layoutProps) {
                                         <Stack direction={"row"} spacing={1} alignItems={"center"}>
                                             <FolderOpen />
                                             <Typography component={"div"}>
-                                                {file.name}
+                                                {folder.name}
                                             </Typography>
                                         </Stack>
                                     </Stack>
@@ -178,7 +178,7 @@ export default function layout({ children }: layoutProps) {
                                         onChange={e => setKeyword(e.target.value)}
                                         autoComplete="off"
                                         size='small'
-                                        label={`Cari di ${file ? file.name : 'Drive'}`}
+                                        label={`Cari di ${folder ? folder.name : 'Drive'}`}
                                         fullWidth />
                                     <IconButton disabled={loading}>
                                         <Funnel size={16} />

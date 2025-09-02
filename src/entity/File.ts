@@ -1,17 +1,17 @@
 import { Column, Entity, PrimaryColumn, Unique, Index } from "typeorm";
 
-type FileType = "file" | "folder";
+export type FileTags = "no-append"|"no-edit"|"no-remove"|"no-clone"|"no-share";
+export type FileType = "file" | "folder";
 export interface FileMeta {
     size?: number;                 // bytes
     mimeType?: string;             // application/pdf, image/png, etc.
     description?: string;          // optional description
-    starred?: boolean;             // pinned/starred file
     trashed?: boolean;             // soft-deleted flag
     trashedAt?: number;            // deletion timestamp
     shared?: boolean;              // is this file shared
     generalPermit?: 'viewer' | 'editor'; // access level
     thumbnail?: string;            // preview image URL
-    tags?: string[];               // labels/categories
+    tags?: FileTags[];               // labels/categories
     lastOpened?: number;           // last opened timestamp
     Key?: string;                  //  s3 Key
 }
@@ -20,10 +20,12 @@ export interface FolderMeta {
     itemCount?: number;            // number of files/folders inside
     description?: string;          // optional folder description
     shared?: boolean;              // is this folder shared
-    tags?: string[];               // labels/categories for search/filter
+    tags?: FileTags[];               // labels/categories for search/filter
     lastOpened?: number;           // timestamp of last access
     color?: string;                // UI color coding
-    starred?: boolean;             // pinned/starred folder
+    generalPermit?: 'viewer' | 'editor'; // access level
+    trashed?: boolean;             // soft-deleted flag
+    trashedAt?: number;            // deletion timestamp
 }
 
 

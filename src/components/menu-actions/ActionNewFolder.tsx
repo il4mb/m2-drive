@@ -8,8 +8,9 @@ import { File } from "@/entity/File";
 import { useCreateFolder } from "@/hooks/useFolderCreate";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 import useUser from "@/hooks/useUser";
+import { useFileTags } from "@/hooks/useFileTag";
 
-export default createContextMenu<{ file: File | null, userId: string }>({
+export default createContextMenu<{ folder: File | null, userId: string }>({
     icon: FolderPlus,
     label: "Buat Folder",
     component({ state, resolve }) {
@@ -17,7 +18,9 @@ export default createContextMenu<{ file: File | null, userId: string }>({
         const auth = useCurrentSession();
         const { user } = useUser(state.userId);
 
-        const file = state.file;
+        const folder = state.folder;
+        const noClone = useFileTags(folder, ['no-append']);
+
         const createFolder = useCreateFolder(state.userId);
         const [name, setName] = useState<string>('');
         const rootLabel = useMemo(() => user && auth.user && auth.user?.id != user?.id ? `${user?.name} Drive` : `My Drive`, [user, auth]);
@@ -29,7 +32,8 @@ export default createContextMenu<{ file: File | null, userId: string }>({
         }
 
         const handleCreate = async () => {
-            const success = await createFolder.create(name, file?.id || null);
+            if (folder && folder.type != "folder") return;
+            const success = await createFolder.create(name, folder?.id || null);
             if (success) {
                 resolve(true);
             }
@@ -39,8 +43,17 @@ export default createContextMenu<{ file: File | null, userId: string }>({
             <Dialog maxWidth={'xs'} onClose={() => resolve(false)} fullWidth open>
                 <DialogTitle>Buat Folder</DialogTitle>
                 <DialogContent sx={{ overflow: 'visible' }}>
+
+                    {noClone && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            <AlertTitle>Peringatan!</AlertTitle>
+                            <strong>Admin</strong> menandai folder ini  <strong>{folder?.meta?.tags?.join(', ')}</strong>, <br />Membuat folder turunan mungkin tidak berhasil!
+                        </Alert>
+                    )}
+
+
                     {createFolder.error && (
-                        <Alert severity="error">
+                        <Alert severity="error" sx={{ mb: 2}}>
                             <AlertTitle>Failed</AlertTitle>
                             {createFolder.error}
                         </Alert>
@@ -48,10 +61,10 @@ export default createContextMenu<{ file: File | null, userId: string }>({
                     <Stack direction={"row"} spacing={1} mb={2} alignItems={"center"}>
                         <ChevronRight />
                         <Stack direction={"row"} spacing={1} mb={2} alignItems={"center"} borderBottom={'1px solid'}>
-                            {file ? (
+                            {folder ? (
                                 <>
                                     <Folder />
-                                    <Typography>{file.name}</Typography>
+                                    <Typography>{folder.name}</Typography>
                                 </>) : (
                                 <>
                                     <HardDrive />

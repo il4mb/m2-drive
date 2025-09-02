@@ -6,6 +6,7 @@ import { ChangeEvent, useState } from "react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
+import { useFileTags } from "@/hooks/useFileTag";
 
 type State = {
     file: File;
@@ -17,6 +18,7 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const file = state.file;
+        const noEdit = useFileTags(file, ['no-edit']);
         const [name, setName] = useState<string>(file.name);
         const { update, loading, error } = useFileUpdate(file.id);
         const isValid = name.length > 0 && name != file.name;
@@ -39,6 +41,13 @@ export default createContextMenu<State>({
             <Dialog maxWidth={'xs'} onClose={() => resolve(false)} fullWidth open>
                 <DialogTitle>Ganti Nama</DialogTitle>
                 <DialogContent sx={{ overflow: 'visible' }}>
+
+                    {noEdit && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            <AlertTitle>Peringatan!</AlertTitle>
+                            <strong>Admin</strong> menandai folder ini  <strong>{file.meta?.tags?.join(', ')}</strong>, <br />Mengganti nama mungkin tidak berhasil!
+                        </Alert>
+                    )}
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
                             <AlertTitle>Error</AlertTitle>

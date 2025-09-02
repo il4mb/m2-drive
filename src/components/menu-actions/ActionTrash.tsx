@@ -7,6 +7,7 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { useState } from "react";
 import { useRemoveFile } from "@/hooks/useFileRemove";
+import { useFileTags } from "@/hooks/useFileTag";
 
 type State = {
     file: File
@@ -24,6 +25,8 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
+
+        const noTrash = useFileTags(state.file, ['no-remove', 'no-edit']);
         //@ts-ignore
         const [permanen, setPermanen] = useState(file.type == "folder" && file.meta.itemCount == 0 ? true : false);
         const { remove, loading, error } = useRemoveFile(file.uId);
@@ -35,8 +38,15 @@ export default createContextMenu<State>({
                     Konfirmasi Hapus
                 </DialogTitle>
                 <DialogContent>
+                    {noTrash && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            <AlertTitle>Peringatan!</AlertTitle>
+                            <strong>Admin</strong> menandai file ini <strong>{file.meta?.tags?.join(', ')}</strong>, <br />Menghapus file ini mungkin tidak berhasil!
+                        </Alert>
+                    )}
+
                     {error && (
-                        <Alert severity="error">
+                        <Alert severity="error" sx={{ mb: 2 }}>
                             <AlertTitle>Failed</AlertTitle>
                             {error}
                         </Alert>

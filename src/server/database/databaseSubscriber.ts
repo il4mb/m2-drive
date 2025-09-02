@@ -211,20 +211,20 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
     >(
         collection: N,
         payload: DatabaseChangePayload,
-        id?: string | number
+        dataId?: string | number
     ) {
 
         const rule: BroadcastRule<E> = (broadcastRules as any)[collection] || broadcastRules.default;
         for (const [id, { socket, collection, conditions }] of subscribers) {
 
+            if (collection != payload.collection) continue;
             const isValid = validateByConditions(payload.data || {}, conditions);
             const isValid2 = validateByConditions(payload.previousData || {}, conditions);
-            if (payload.event != "DELETE" && (collection != payload.collection && (!isValid && !isValid2))) {
-                continue;
-            }
+            if (payload.event == "UPDATE" && (!isValid && !isValid2)) continue;
+
             const user = socket.data?.user as User | undefined;
             const context: BroadcastContext<E> = {
-                room: id
+                room: dataId
                     ? "item"
                     : payload.collection
                         ? "collection"

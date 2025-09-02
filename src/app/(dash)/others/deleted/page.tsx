@@ -10,7 +10,7 @@ import {
     Typography,
 } from '@mui/material';
 import { Trash } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDriveTrash } from '@/hooks/useDriveTrash';
 import Container from '@/components/Container';
 import StickyHeader from '@/components/StickyHeader';
@@ -27,6 +27,7 @@ import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
 import { emptyTrash } from '@/server/functions/fileTrash';
+import { validateByConditions } from '@/server/database/objectHelper';
 
 
 type MenuState = FileMenuState & {
@@ -36,7 +37,7 @@ type MenuState = FileMenuState & {
 export default function Page() {
 
     const { user } = useCurrentSession();
-    const { files, loading } = useDriveTrash();
+    const { files, loading } = useDriveTrash(user?.id);
     const [confirm, setConfirm] = useState('');
     const isConfirm = confirm == "KONFIRMASI";
 
@@ -51,7 +52,8 @@ export default function Page() {
         if (!result.success) {
             throw new Error(result.error || "Unknown Error");
         }
-    };
+    }
+
 
     return (
         <ContextMenu state={{}}>

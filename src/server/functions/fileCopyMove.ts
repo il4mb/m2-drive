@@ -113,6 +113,12 @@ export const copyFile = createFunction<CopyMoveProps>(
                 throw new Error("404: File not found");
             }
 
+            const tags = original.meta?.tags || [];
+            if (tags.includes('no-clone')) {
+                throw new Error("403: Menyalin tidak diperbolehkan!");
+            }
+
+
             // Use userId if provided, otherwise use the original file's uId
             const finalOwnerId = userId || original.uId;
             const finalName = await getUniqueName(original.name, newParentId, finalOwnerId);
@@ -207,6 +213,11 @@ export const moveFile = createFunction<CopyMoveProps>(
 
         if (!file) {
             throw new Error("404: File not found");
+        }
+
+        const tags = file.meta?.tags || [];
+        if (tags.some(tag => ['no-edit', 'no-clone'].includes(tag))) {
+            throw new Error("403: Memindah tidak diperbolehkan!");
         }
 
         // Check permission - user can only move their own files unless no userId is provided

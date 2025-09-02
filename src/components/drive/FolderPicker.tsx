@@ -5,7 +5,7 @@ import useUserDrive from '@/hooks/useDrive';
 import { getColor } from '@/theme/colors';
 import { Breadcrumbs, List, ListItem, ListItemIcon, ListItemText, Stack, Typography, CircularProgress, Box, Paper, } from '@mui/material';
 import { Folder, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FolderPickerProps {
     onSelectedChange?: (file: File | null) => void;
@@ -20,7 +20,8 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
     const [selected, setSelected] = useState<File | null>(null);
     const [folder, setFolder] = useState<File | null>(null);
     const locked = useRef(false);
-    const { files = [], loading } = useUserDrive({
+
+    const driveProps = useMemo<any>(() => ({
         uId: userId,
         pId: folder?.id,
         filter: {
@@ -28,7 +29,9 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
             order: 'DESC',
             sortBy: 'createdAt'
         }
-    });
+    }), [userId, folder])
+
+    const { files = [], loading } = useUserDrive(driveProps);
 
     const handleSelected = (file: File) => {
         if (locked.current) return;

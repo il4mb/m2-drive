@@ -4,6 +4,7 @@ import { Query } from './query';
 import { EntityMap, EntityName } from '@/server/database';
 import { QueryType } from '@/server/database/types';
 import { DatabaseChangePayload } from '@/server/database/types';
+import { validateByConditions } from '@/server/database/objectHelper';
 
 export interface SnapshotOptions {
     onError?: (error: Error) => void;
@@ -69,43 +70,8 @@ export function onSnapshot<
     };
 
     const handleDatabaseChange = (payload: DatabaseChangePayload) => {
-
-        if (payload)
-            if (isSingle) {
-                switch (payload.event) {
-                    case 'INSERT':
-                    case 'UPDATE':
-                        currentData = payload.data;
-                        break;
-                    case 'DELETE':
-                        currentData = null;
-                        break;
-                }
-                // @ts-ignore
-                (callback as (data: E | null) => void)(currentData);
-            } else {
-                let list = currentData as E[];
-                switch (payload.event) {
-                    case 'INSERT':
-                        list = [...list, payload.data];
-                        currentData = list;
-                        (callback as (data: E[]) => void)(list);
-                        break;
-                    case 'UPDATE':
-                        list = list.map(item =>
-                            (item as any).id === payload.data.id
-                                ? { ...item, ...payload.data }
-                                : item
-                        );
-                        currentData = list;
-                        (callback as (data: E[]) => void)(list);
-                        break;
-                    case 'DELETE':
-                        socket.emit('execute-query', queryConfig, handleQueryResponse);
-                        break;
-                }
-            }
-
+        if (payload.collection != queryConfig.collection) return;
+        socket.emit('execute-query', queryConfig, handleQueryResponse);
         options?.onMetadata?.({
             lastUpdate: new Date(),
             count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0)

@@ -8,7 +8,6 @@ import useRequest from "@/hooks/useRequest";
 import { saveRole, deleteRole, getAllRole } from "@/actions/manage-role";
 import RequestError from "@/components/RequestError";
 import Role from "@/entity/Role";
-import ConfirmationDialog from "@/components/ui/dialog/ConfirmationDialog";
 import _ from "lodash";
 import { emitSocket } from "@/socket";
 

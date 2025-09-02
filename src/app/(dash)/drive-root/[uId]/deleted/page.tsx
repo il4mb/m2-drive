@@ -1,19 +1,9 @@
 "use client";
 
-import {
-    Alert,
-    Button,
-    LinearProgress,
-    Paper,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material';
-import { Trash } from 'lucide-react';
+import { Alert, Button, IconButton, LinearProgress, Paper, Stack, TextField, Typography } from '@mui/material';
+import { ChevronLeft, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useDriveTrash } from '@/hooks/useDriveTrash';
-import Container from '@/components/Container';
-import StickyHeader from '@/components/StickyHeader';
 import { motion } from 'motion/react';
 import ContextMenu from '@/components/context-menu/ContextMenu';
 import FileView, { FileMenuState } from '@/components/drive/FileView';
@@ -24,9 +14,11 @@ import { File } from '@/entity/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { enqueueSnackbar } from 'notistack';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
-import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
-import { emptyTrash } from '@/server/functions/fileTrash';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { emptyTrash, restoreFile } from '@/server/functions/fileTrash';
+import Container from '@/components/Container';
 
 
 type MenuState = FileMenuState & {
@@ -35,8 +27,8 @@ type MenuState = FileMenuState & {
 
 export default function Page() {
 
-    const { user } = useCurrentSession();
-    const { files, loading } = useDriveTrash();
+    const { uId } = useParams<{ uId: string }>();
+    const { files, loading } = useDriveTrash(uId);
     const [confirm, setConfirm] = useState('');
     const isConfirm = confirm == "KONFIRMASI";
 
@@ -45,26 +37,38 @@ export default function Page() {
         ActionDelete,
     ]);
 
+    const handleRestore = async (file: File) => {
+        if (!uId) return;
+        const response = await invokeFunction(restoreFile, { fileId: file.id });
+        if (!response.success) {
+            enqueueSnackbar(response.error || "Unknown Error", { variant: 'error', action: CloseSnackbar })
+        }
+    }
+
     const handleConfirm = async () => {
-        if (!user?.id) return;
-        const result = await invokeFunction(emptyTrash, { userId: user.id });
+        if (!uId) return;
+        const result = await invokeFunction(emptyTrash, { userId: uId });
         if (!result.success) {
             throw new Error(result.error || "Unknown Error");
         }
-    };
+    }
 
     return (
         <ContextMenu state={{}}>
-            <Stack flex={1} overflow={"hidden"}>
-                <Container maxWidth='lg' scrollable>
-
-                    <StickyHeader>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" position={'relative'}>
-                            <Stack alignItems="center" spacing={1} direction="row">
-                                <Trash size={20} />
-                                <Typography fontWeight={600} fontSize={18}>
-                                    Tempat Sampah
-                                </Typography>
+            <Stack flex={1}>
+                <Container maxWidth='lg'>
+                    <Paper component={Stack} sx={{ p: 3, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
+                        <Stack mb={2} direction="row" alignItems="center" justifyContent="space-between" position={'relative'}>
+                            <Stack spacing={2} alignItems={"center"} direction={"row"}>
+                                <IconButton LinkComponent={Link} href={`/drive-root/${uId}/drive`}>
+                                    <ChevronLeft size={18} />
+                                </IconButton>
+                                <Stack alignItems="center" spacing={1} direction="row">
+                                    <Trash size={20} />
+                                    <Typography fontWeight={600} fontSize={18}>
+                                        Tempat Sampah
+                                    </Typography>
+                                </Stack>
                             </Stack>
                             <ConfirmationDialog
                                 triggerElement={
@@ -113,9 +117,6 @@ export default function Page() {
                                 }} />
                             )}
                         </Stack>
-                    </StickyHeader>
-
-                    <Paper component={Stack} sx={{ p: 2, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)', position: 'relative' }}>
 
                         {!loading && files.length == 0 ? (
                             <Stack flex={1} justifyContent={"center"} alignItems={"center"}>
@@ -132,6 +133,10 @@ export default function Page() {
                                 key={file.id}>
                                 <FileView
                                     menu={menuItem}
+                                    menuState={{
+                                        file,
+                                        restore: handleRestore
+                                    }}
                                     size={26}
                                     file={file}
                                 />

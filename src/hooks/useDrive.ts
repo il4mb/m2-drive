@@ -7,69 +7,83 @@ import { getUserFile, getUserDriveSummary, UserDriveSummary } from "@/actions/di
 import { useOnEmit } from "@/socket";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";
-import { validateByConditionsRecursive } from "@/server/database/objectHelper";
-import { QueryCondition } from "@/server/database/types";
 
-type Filter = {
-    sortBy?: "type" | "name" | "createdAt" | "updatedAt" | "trashedAt";
-    order?: "asc" | "desc";
+
+export type Filter = {
+    sortBy?: string;
+    order?: "ASC" | "DESC";
     onlyType?: "file" | "folder";
-}
+};
 
+export type UseDriveProps = {
+    uId?: string | null;
+    pId?: string | null;
+    filter?: Filter;
+    keyword?: string;
+};
 
+export default function useUserDrive({
+    uId,
+    pId,
+    filter,
+    keyword
+}: UseDriveProps) {
 
-export default function useUserDrive(
-    uId: string | null,
-    pId?: string,
-    filter: Filter = { sortBy: "type", order: "asc" }
-) {
     const [loading, setLoading] = useState(true);
     const [files, setFiles] = useState<File[]>();
     const [parent, setParent] = useState<Folder | null>(null);
-    const signature = useRef('');
 
     useEffect(() => {
-
-        const propsString = JSON.stringify({ uId, pId, filter });
-        if (!uId || propsString == signature.current) return;
-        signature.current = propsString;
-
+         if (!uId) return;
         setLoading(true);
 
-        const query = getMany("file")
-            .where("uId", "==", uId)
-            .where("pId", "==", pId || IsNull)
-            .bracketWhere(q => {
-                q.orWhere(Json("meta", "trashed"), "==", IsNull)
-                    .orWhere(Json("meta", "trashed"), "==", false)
-            })
+        let timeoutId: NodeJS.Timeout | null = null;
+        let unsubscribers: (() => void)[] = [];
 
-        if (filter.onlyType) {
-            query.where("type", "==", filter.onlyType);
-        }
-        if (filter.sortBy) {
-            query.orderBy(
-                (filter.sortBy || "name") as any,
-                (filter.order || "ASC").toUpperCase() as any
-            );
-        }
+        timeoutId = setTimeout(() => {
+            const query = getMany("file")
+                .where("uId", "==", uId)
+                .where("pId", "==", pId || IsNull)
+                .bracketWhere(q => {
+                    q.orWhere(Json("meta", "trashed"), "==", IsNull)
+                        .orWhere(Json("meta", "trashed"), "==", false);
+                });
 
-        const unsubscriber = [
-            onSnapshot(getOne("file").where("uId", "==", uId).where("id", "==", pId), (data: any) => {
-                setParent(data || null);
-                setLoading(false);
-            }),
-            onSnapshot(query, (data) => {
-                // @ts-ignore
-                setFiles(data.filter(e=> !e.meta?.trashed));
-                setLoading(false);
-            })
-        ]
+            if (keyword) {
+                query.where("name", "STARTS WITH", keyword);
+            }
+
+            if (filter?.onlyType) {
+                query.where("type", "==", filter.onlyType);
+            }
+            if (filter?.sortBy) {
+                query.orderBy(
+                    (filter.sortBy || "name") as any,
+                    (filter.order || "ASC").toUpperCase() as any
+                );
+            }
+
+            unsubscribers = [
+                onSnapshot(
+                    getOne("file").where("uId", "==", uId).where("id", "==", pId),
+                    (data: any) => {
+                        setParent(data || null);
+                        setLoading(false);
+                    }
+                ),
+                onSnapshot(query, (data) => {
+                    // @ts-ignore
+                    setFiles(data.filter(e => !e.meta?.trashed));
+                    setLoading(false);
+                })
+            ];
+        }, 300);
 
         return () => {
-            unsubscriber.map(e => e());
+            if (timeoutId) clearTimeout(timeoutId);
+            unsubscribers.forEach(unsub => unsub());
         };
-    }, [uId, filter, pId]);
+    }, [uId, filter, keyword, pId]);
 
     return { files, parent, loading };
 }

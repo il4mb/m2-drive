@@ -142,7 +142,7 @@ export default function Page() {
                 </Stack>
             </StickyHeader>
 
-            <Stack mb={3} component={Paper} p={2} borderRadius={2}>
+            <Stack mb={3} component={Paper} p={2} borderRadius={2} sx={{ minHeight: 'max(600px, 85vh)' }}>
                 <Stack direction={"row"} spacing={1} alignItems={"center"} mb={3}>
                     <History size={20} />
                     <Typography fontSize={18} fontWeight={600}>

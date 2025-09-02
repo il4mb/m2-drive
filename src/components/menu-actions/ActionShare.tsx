@@ -7,7 +7,6 @@ import { enqueueSnackbar } from "notistack";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import ContributorManager from "../ContributorManager";
-import { useCurrentSession } from "../context/CurrentSessionProvider";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import CloseSnackbar from "../ui/CloseSnackbar";
 
@@ -22,7 +21,6 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
-        const { user } = useCurrentSession();
         const { update, loading, error } = useFileUpdate(file.id);
         const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(
             // @ts-ignore
@@ -39,7 +37,6 @@ export default createContextMenu<State>({
         }
 
         const handleUpdatePermit = async (e: ChangeEvent<HTMLInputElement>) => {
-            if (!user?.id) return;
             const permit = e.target.value as GeneralPermit;
             if (!["none", "viewer", "editor"].includes(permit)) {
                 return enqueueSnackbar("Jenis permit tidak dikenali!", { variant: "warning" });

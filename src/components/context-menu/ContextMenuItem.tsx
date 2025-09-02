@@ -23,6 +23,7 @@ export type ContextMenuItemDef<T> = {
     action?: (state: T) => void | boolean | Promise<void | boolean>;
     component?: React.FC<{ state: T, resolve: (close?: boolean) => void; }>;
     style?: (state: T) => (SxProps | false | null | undefined);
+    // [k: string]: any
 }
 
 /**

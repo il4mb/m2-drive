@@ -31,6 +31,7 @@ export interface FileViewProps<T = {}> {
     selected?: boolean;
     layout?: "list" | "grid";
     menu?: FC<ContextMenuItemProps<T>>[],
+    appendMenu?: FC<ContextMenuItemProps<FileMenuState>>[],
     menuState?: T
 }
 export default function FileView<T = any>({
@@ -41,6 +42,7 @@ export default function FileView<T = any>({
     selected = false,
     layout = "list",
     menu,
+    appendMenu,
     menuState: additionalMenuState
 }: FileViewProps<T>) {
 
@@ -71,7 +73,8 @@ export default function FileView<T = any>({
         ActionCopy,
         ActionMove,
         ActionRename,
-        ActionTrash
+        ActionTrash,
+        ...(appendMenu || [])
     ]);
 
     return (

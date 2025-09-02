@@ -17,13 +17,14 @@ import {
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
 
-type Item = {
+export type TransferListItem = {
     label: string;
     value: string;
+    parent?: string;
 };
 
 type Props = {
-    defineList: readonly Item[];
+    defineList: readonly TransferListItem[];
     items: string[];
     onChange: (items: string[]) => void;
     showSearch?: boolean;
@@ -45,8 +46,8 @@ export default function TransferList({
     titles = { left: 'Available', right: 'Selected' }
 }: Props) {
     const [checked, setChecked] = useState<string[]>([]);
-    const [left, setLeft] = useState<Item[]>([]);
-    const [right, setRight] = useState<Item[]>([]);
+    const [left, setLeft] = useState<TransferListItem[]>([]);
+    const [right, setRight] = useState<TransferListItem[]>([]);
     const [leftSearch, setLeftSearch] = useState('');
     const [rightSearch, setRightSearch] = useState('');
 
@@ -70,13 +71,13 @@ export default function TransferList({
     const leftChecked = useMemo(() => left.filter(i => checked.includes(i.value)), [left, checked]);
     const rightChecked = useMemo(() => right.filter(i => checked.includes(i.value)), [right, checked]);
 
-    // Filter lists based on search terms
     const filteredLeft = useMemo(() => {
         if (!leftSearch) return left;
         return left.filter(item =>
             item.label.toLowerCase().includes(leftSearch.toLowerCase())
         );
     }, [left, leftSearch]);
+
 
     const filteredRight = useMemo(() => {
         if (!rightSearch) return right;
@@ -85,14 +86,58 @@ export default function TransferList({
         );
     }, [right, rightSearch]);
 
+
     const toggleCheck = (val: string) => {
         if (disabled) return;
-        setChecked(prev =>
-            prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
-        );
-    };
 
-    const handleToggleAll = (itemsToToggle: Item[], shouldCheck: boolean) => {
+        setChecked(prev => {
+            const isChecked = prev.includes(val);
+
+            const getChildren = (parentVal: string): string[] => {
+                return defineList
+                    .filter(item => item.parent === parentVal)
+                    .map(item => item.value);
+            };
+
+            const getParent = (childVal: string): string | undefined => {
+                return defineList.find(item => item.value === childVal)?.parent;
+            };
+
+            // Prevent uncheck if parent is checked
+            if (!isChecked) {
+                // --- CHECKING ---
+                const newChecked = new Set(prev);
+                newChecked.add(val);
+
+                // Recursively check all children
+                const stack = [val];
+                while (stack.length) {
+                    const current = stack.pop()!;
+                    const children = getChildren(current);
+                    for (const child of children) {
+                        if (!newChecked.has(child)) {
+                            newChecked.add(child);
+                            stack.push(child);
+                        }
+                    }
+                }
+                return Array.from(newChecked);
+            } else {
+                // --- UNCHECKING ---
+                const parent = getParent(val);
+                if (parent && prev.includes(parent)) {
+                    // Ignore uncheck if parent still checked
+                    return prev;
+                }
+
+                // Normal uncheck
+                return prev.filter(v => v !== val);
+            }
+        });
+    }
+
+
+    const handleToggleAll = (itemsToToggle: TransferListItem[], shouldCheck: boolean) => {
         if (disabled) return;
 
         if (shouldCheck) {
@@ -242,8 +287,8 @@ export default function TransferList({
 
 type CustomProps = {
     title: string;
-    items: Item[];
-    checkedItems: Item[];
+    items: TransferListItem[];
+    checkedItems: TransferListItem[];
     searchTerm: string;
     showSearch: boolean;
     scrollRef: React.RefObject<HTMLDivElement | null>;

@@ -318,13 +318,13 @@ export const renameUserFile = withAction<RenameProps>(async ({ userId, name, fil
 
 
 type CopyMoveProps = {
-    uId: string;
+    toUserId?: string;
     sourceId: string;
     targetId: string | null;
 }
-export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, targetId }) => {
+export const copyUserFile = withAction<CopyMoveProps>(async ({ toUserId, sourceId, targetId }) => {
 
-    if (!sourceId || !uId) {
+    if (!sourceId) {
         throw new Error("400: Request tidak valid!");
     }
     if (sourceId == targetId) {
@@ -335,10 +335,10 @@ export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
     const fileRepository = source.getRepository(File);
 
     // helper: generate unique name in target folder
-    const getUniqueName = async (baseName: string, parentId: string | null) => {
+    const getUniqueName = async (baseName: string, parentId: string | null, toUserId: string) => {
         const siblings = await fileRepository.findBy({
             pId: parentId ? parentId : IsNull(),
-            uId
+            uId: toUserId
         });
 
         const siblingNames = new Set(siblings.map(s => s.name));
@@ -354,15 +354,12 @@ export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
     };
 
     const copiedItems = new Map<string, string>();
-    const copyItem = async (fileId: string, newParentId: string | null, uId: string) => {
+    const copyItem = async (fileId: string, newParentId: string | null, toUserId?: string | null) => {
         if (copiedItems.has(fileId)) {
             return copiedItems.get(fileId)!;
         }
 
-        const original = await fileRepository.findOneBy({
-            id: fileId,
-            uId
-        });
+        const original = await fileRepository.findOneBy({ id: fileId });
         if (!original) {
             throw new Error("404: File not found");
         }
@@ -370,9 +367,12 @@ export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
         const copy = new File();
         Object.assign(copy, original);
         copy.id = generateKey(6);
-        copy.uId = uId;
+        if (toUserId) {
+            // if copy to another user
+            copy.uId = toUserId;
+        }
         copy.pId = newParentId;
-        copy.name = await getUniqueName(original.name, newParentId);
+        copy.name = await getUniqueName(original.name, newParentId, toUserId || copy.uId);
         copy.createdAt = Date.now();
         copy.updatedAt = null;
         copy.meta = { ...original.meta };
@@ -381,40 +381,21 @@ export const copyUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, ta
         copiedItems.set(fileId, copy.id);
 
         if (original.type === 'folder') {
-            const children = await fileRepository.findBy({
-                pId: original.id,
-                uId
-            });
+            const children = await fileRepository.findBy({pId: original.id});
 
             await Promise.all(children.map(child =>
-                copyItem(child.id, copy.id, uId)
+                copyItem(child.id, copy.id, toUserId)
             ));
         }
 
         return copy;
     };
 
-    await copyItem(sourceId, targetId || null, uId);
-
-    const io = globalThis.ioServer;
-    if (io) {
-        io.emit("update", {
-            collection: "file",
-            columns: {
-                id: targetId,
-                uId: uId,
-            }
-        });
-    }
-
-    return {
-        status: true,
-        message: "File copied successfully"
-    };
+    await copyItem(sourceId, targetId || null, toUserId);
 })
 
 
-export const moveUserFile = withAction<CopyMoveProps>(async ({ uId, sourceId, targetId }) => {
+export const moveUserFile = withAction<CopyMoveProps>(async ({ toUserId: uId, sourceId, targetId }) => {
 
     if (sourceId == targetId) {
         throw new Error("401: Tidak dapat memindah ke folder yang sama!");

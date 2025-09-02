@@ -5,9 +5,11 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import FolderPicker from "@/components/drive/FolderPicker";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
-import { useCurrentSession } from "../context/CurrentSessionProvider";
 import { useState } from "react";
-import { copyUserFile } from "@/actions/dive-root";
+import { invokeFunction } from "@/libs/websocket/invokeFunction";
+import { copyFile } from "@/server/functions/fileCopyMove";
+import { enqueueSnackbar } from "notistack";
+import CloseSnackbar from "../ui/CloseSnackbar";
 
 type State = {
     file: File;
@@ -18,30 +20,26 @@ export default createContextMenu<State>({
     label: "Salin ke...",
     component({ state, resolve }) {
 
-        const { user } = useCurrentSession();
-        const [file, setFile] = useState<File | null>();
+        const [target, setTarget] = useState<File | null>();
         const [loading, setLoading] = useState(false);
 
         const handleCopy = async () => {
-            if (!user || loading) return;
+            if (loading) return;
             setLoading(true);
 
-            try {
-
-                await copyUserFile({
-                    uId: user.id,
-                    sourceId: state.file.id,
-                    targetId: file?.id || null
-                });
-
-            } catch (e: any) {
-
-            } finally {
-                setLoading(false);
+            const result = await invokeFunction(copyFile, {
+                sourceId: state.file.id,
+                targetId: target?.id || null
+            })
+            if (!result.success) {
+                enqueueSnackbar(result.error || "Unknown Error", {
+                    variant: 'error',
+                    action: CloseSnackbar
+                })
             }
-        }
 
-        if (!user) return;
+            setLoading(false);
+        }
 
         return (
             <Dialog maxWidth={"xs"} onClose={() => !loading && resolve(false)} fullWidth open>
@@ -51,8 +49,8 @@ export default createContextMenu<State>({
                 <DialogContent>
                     <FolderPicker
                         disabled={loading}
-                        userId={user.id}
-                        onSelectedChange={setFile} />
+                        userId={state.file.uId}
+                        onSelectedChange={setTarget} />
                 </DialogContent>
                 <DialogActions>
                     <Button
@@ -67,7 +65,7 @@ export default createContextMenu<State>({
                         onClick={handleCopy}
                         color="primary"
                         size="small">
-                        Salin Ke {file ? file.name : "My Drive"}
+                        Salin Ke {target ? target.name : "My Drive"}
                     </Button>
                 </DialogActions>
             </Dialog>

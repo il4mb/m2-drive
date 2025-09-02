@@ -9,8 +9,6 @@ import { Box, Stack } from '@mui/material';
 import { AnimatePresence } from 'motion/react';
 import { ReactNode } from 'react';
 
-
-
 export interface layoutProps {
     children?: ReactNode;
 }

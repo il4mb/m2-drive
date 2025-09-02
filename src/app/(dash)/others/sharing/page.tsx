@@ -2,7 +2,7 @@
 
 import Container from '@/components/Container';
 import StickyHeader from '@/components/StickyHeader';
-import { useSharing } from '@/hooks/useSharing';
+import { useSharing } from '@/hooks/useFileSharing';
 import { LinearProgress, Paper, Stack, Typography, Box, Divider } from '@mui/material';
 import { Share2 } from 'lucide-react';
 import { motion } from "motion/react";
@@ -74,7 +74,7 @@ export default function Page() {
                     p: 2,
                     borderRadius: 2,
                     boxShadow: 2,
-                    minHeight: '85dvh',
+                    minHeight: 'max(600px, 85vh)',
                     position: 'relative',
                     bgcolor: 'background.paper'
                 }}>

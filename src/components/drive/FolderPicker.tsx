@@ -1,7 +1,7 @@
 'use client'
 
 import { File } from '@/entity/File';
-import useUserDrive from '@/hooks/useUserDrive';
+import useUserDrive from '@/hooks/useDrive';
 import { getColor } from '@/theme/colors';
 import { Breadcrumbs, List, ListItem, ListItemIcon, ListItemText, Stack, Typography, CircularProgress, Box, Paper, } from '@mui/material';
 import { Folder, ChevronRight } from 'lucide-react';
@@ -20,10 +20,14 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
     const [selected, setSelected] = useState<File | null>(null);
     const [folder, setFolder] = useState<File | null>(null);
     const locked = useRef(false);
-    const { files = [], loading } = useUserDrive(userId, folder?.id, {
-        onlyType: "folder",
-        order: 'desc',
-        sortBy: 'createdAt'
+    const { files = [], loading } = useUserDrive({
+        uId: userId,
+        pId: folder?.id,
+        filter: {
+            onlyType: "folder",
+            order: 'DESC',
+            sortBy: 'createdAt'
+        }
     });
 
     const handleSelected = (file: File) => {
@@ -89,7 +93,7 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
 
             {/* File List */}
             <Stack
-            component={Paper}
+                component={Paper}
                 flex={1}
                 borderRadius={2}
                 overflow={'hidden'}>

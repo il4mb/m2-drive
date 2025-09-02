@@ -3,21 +3,24 @@
 import { ChevronRight, Folder, FolderPlus, HardDrive } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
-import { ChangeEvent, useState } from "react";
-import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
+import { ChangeEvent, useMemo, useState } from "react";
 import { File } from "@/entity/File";
-import { useCreateFolder } from "@/hooks/useCreateFolder";
+import { useCreateFolder } from "@/hooks/useFolderCreate";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
+import useUser from "@/hooks/useUser";
 
-
-export default createContextMenu<{ file: File | null }>({
+export default createContextMenu<{ file: File | null, userId: string }>({
     icon: FolderPlus,
     label: "Buat Folder",
     component({ state, resolve }) {
 
-        const file = state.file;
         const auth = useCurrentSession();
-        const createFolder = useCreateFolder(auth.user?.id);
+        const { user } = useUser(state.userId);
+
+        const file = state.file;
+        const createFolder = useCreateFolder(state.userId);
         const [name, setName] = useState<string>('');
+        const rootLabel = useMemo(() => user && auth.user && auth.user?.id != user?.id ? `${user?.name} Drive` : `My Drive`, [user, auth]);
 
         const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
@@ -52,7 +55,7 @@ export default createContextMenu<{ file: File | null }>({
                                 </>) : (
                                 <>
                                     <HardDrive />
-                                    <Typography>My Drive</Typography>
+                                    <Typography>{rootLabel}</Typography>
                                 </>)}
                         </Stack>
                     </Stack>

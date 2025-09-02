@@ -95,7 +95,7 @@ export default function UploadPage() {
                 </StickyHeader>
 
                 <Paper sx={{ borderRadius: 2, boxShadow: 2 }}>
-                    <Stack minHeight={'85vh'} p={[2, 3, 4]}>
+                    <Stack minHeight={'max(600px, 85vh)'} p={[2, 3, 4]}>
                         {(uploads.length == 0 || isDragging) && (
                             <Stack
                                 flex={1}

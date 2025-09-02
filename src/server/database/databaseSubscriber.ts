@@ -178,7 +178,6 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 }
 
             } else if (eventType == "DELETE") {
-                console.log(event)
                 const deletedId =
                     (event as RemoveEvent<any>).entity?.id ??
                     (event as RemoveEvent<any>).databaseEntity?.id;
@@ -220,7 +219,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
 
             const isValid = validateByConditions(payload.data || {}, conditions);
             const isValid2 = validateByConditions(payload.previousData || {}, conditions);
-            if (collection != payload.collection || (!isValid && !isValid2)) {
+            if (payload.event != "DELETE" && (collection != payload.collection && (!isValid && !isValid2))) {
                 continue;
             }
             const user = socket.data?.user as User | undefined;

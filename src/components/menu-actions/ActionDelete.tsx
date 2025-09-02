@@ -5,8 +5,7 @@ import { Trash } from "lucide-react";
 import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
-import { useCurrentSession } from "../context/CurrentSessionProvider";
-import { useRemoveFile } from "@/hooks/useRemoveFile";
+import { useRemoveFile } from "@/hooks/useFileRemove";
 
 type State = {
     file: File;
@@ -23,9 +22,8 @@ export default createContextMenu<State>({
     }),
     component({ state, resolve }) {
 
-        const { user } = useCurrentSession();
         const { file } = state;
-        const { remove, loading, error } = useRemoveFile(user?.id);
+        const { remove, loading, error } = useRemoveFile(file.uId);
         const handleSubmit = () => remove(file.id, true);
 
         return (

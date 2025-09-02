@@ -130,15 +130,15 @@ export default function ContextMenu<T>({
         return () => document.removeEventListener("keydown", handleEscape);
     }, [position]);
 
-    // Close on scroll
-    useEffect(() => {
-        if (!position) return;
+    // // Close on scroll
+    // useEffect(() => {
+    //     if (!position) return;
 
-        const handleScroll = () => onClose();
-        window.addEventListener("scroll", handleScroll, { capture: true });
+    //     const handleScroll = () => onClose();
+    //     window.addEventListener("scroll", handleScroll, { capture: true });
 
-        return () => window.removeEventListener("scroll", handleScroll, { capture: true });
-    }, [position]);
+    //     return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+    // }, [position]);
 
     // Optional: Fine-tune position after menu actually renders
     useEffect(() => {

@@ -11,7 +11,7 @@ import { useUsers } from "@/hooks/useUsers";
 import StickyHeader from "@/components/StickyHeader";
 import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
-import Menu from "@/components/context-menu/Menu";
+import AnchorMenu from "@/components/context-menu/AnchorMenu";
 
 export default function page() {
 
@@ -75,7 +75,7 @@ export default function page() {
                         </Typography>
                     </Stack>
                     <Stack direction={"row"} spacing={1}>
-                        <Menu items={menuItem}
+                        <AnchorMenu items={menuItem}
                             buttonProps={{ disabled: loading }}
                         />
                         <TextField

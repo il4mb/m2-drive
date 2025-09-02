@@ -6,11 +6,7 @@ import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { useState } from "react";
-import useRequest from "@/hooks/useRequest";
-import { removeUserFile } from "@/actions/dive-root";
-import { useCurrentSession } from "../context/CurrentSessionProvider";
-import RequestError from "../RequestError";
-import { useRemoveFile } from "@/hooks/useRemoveFile";
+import { useRemoveFile } from "@/hooks/useFileRemove";
 
 type State = {
     file: File
@@ -27,11 +23,10 @@ export default createContextMenu<State>({
     }),
     component({ state, resolve }) {
 
-        const { user } = useCurrentSession();
         const { file } = state;
         //@ts-ignore
         const [permanen, setPermanen] = useState(file.type == "folder" && file.meta.itemCount == 0 ? true : false);
-        const { remove, loading, error } = useRemoveFile(user?.id);
+        const { remove, loading, error } = useRemoveFile(file.uId);
         const handleSubmit = () => remove(file.id, permanen);
 
         return (

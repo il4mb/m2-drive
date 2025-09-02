@@ -162,7 +162,7 @@ export default function Page() {
                                             {formatFileSize(Number(s.totalSize))}
                                         </TableCell>
                                         <TableCell align="right">
-                                            <IconButton LinkComponent={Link} href={`/drive-root/${s.userId}`}>
+                                            <IconButton LinkComponent={Link} href={`/drive-root/${s.userId}/drive`}>
                                                 <FolderOpenDot size={16} />
                                             </IconButton>
                                         </TableCell>

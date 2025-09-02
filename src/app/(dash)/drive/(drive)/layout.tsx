@@ -14,20 +14,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode, useMemo, useState } from "react";
 import { File, Folder } from "@/entity/File";
+import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 
 export type DriveLayoutState = {
+    userId: string;
     file: File | null;
     layout: "grid" | "list";
     setLayout: (l: DriveLayoutState["layout"]) => void;
-    order: "asc" | "desc";
+    order: "ASC" | "DESC";
     setOrder: (s: DriveLayoutState["order"]) => void;
     sort: "type" | "name" | "createdAt" | "updatedAt";
     setSort: (s: DriveLayoutState["sort"]) => void;
     setFolder: (f: Folder | null) => void;
     setLoading: (b: boolean) => void;
-};
-
-
+    keyword: string;
+}
 
 export interface layoutProps {
     children?: ReactNode;
@@ -37,15 +38,19 @@ export default function layout({ children }: layoutProps) {
     const router = useRouter();
     const theme = useTheme();
 
+    const { user } = useCurrentSession();
     const [loading, setLoading] = useState(true);
     const [file, setFile] = useState<File | null>(null);
     const [layout, setLayout] = useLocalStorage<DriveLayoutState["layout"]>("drive-layout", "list");
-    const [order, setOrder] = useLocalStorage<DriveLayoutState["order"]>("drive-order", "desc");
+    const [order, setOrder] = useLocalStorage<DriveLayoutState["order"]>("drive-order", "DESC");
     const [sort, setSort] = useLocalStorage<DriveLayoutState["sort"]>("drive-sort", "type");
+    const [keyword, setKeyword] = useState('');
 
     const state: DriveLayoutState = useMemo(() => ({
+        userId: user?.id || '',
+        keyword,
         file, layout, setLayout, order, setOrder, sort, setSort, setFolder: setFile, setLoading
-    }), [file, layout, setLayout, order, setOrder, sort, setSort, setFile, setLoading]);
+    }), [keyword, file, layout, setLayout, order, setOrder, sort, setSort, setFile, setLoading]);
 
     const toggleLayout = () => setLayout(prev => prev == "grid" ? "list" : "grid");
 
@@ -116,15 +121,15 @@ export default function layout({ children }: layoutProps) {
         ActionDivider,
         {
             icon: ({ state, size }) =>
-                state.order === "desc" ? (
+                state.order === "DESC" ? (
                     <ArrowDownWideNarrow size={size} />
                 ) : (
                     <ArrowUpNarrowWide size={size} />
                 ),
             label: ({ state }) =>
-                state.order === "desc" ? "Order ASC" : "Order DESC",
+                state.order === "DESC" ? "Order ASC" : "Order DESC",
             action({ setOrder, order }) {
-                setOrder(order === "desc" ? "asc" : "desc");
+                setOrder(order === "DESC" ? "ASC" : "DESC");
                 return false;
             },
         }
@@ -169,8 +174,9 @@ export default function layout({ children }: layoutProps) {
 
                                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
                                     <TextField
+                                        value={keyword}
+                                        onChange={e => setKeyword(e.target.value)}
                                         autoComplete="off"
-                                        disabled={loading}
                                         size='small'
                                         label={`Cari di ${file ? file.name : 'Drive'}`}
                                         fullWidth />
@@ -195,7 +201,7 @@ export default function layout({ children }: layoutProps) {
                         </Stack>
                     </StickyHeader>
 
-                    <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, borderRadius: 2, boxShadow: 2, minHeight: '85dvh' }}>
+                    <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
                         {children}
                     </Paper>
                 </Container>

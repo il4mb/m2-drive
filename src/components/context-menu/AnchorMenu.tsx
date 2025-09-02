@@ -33,16 +33,16 @@ interface MenuItemAction extends MenuItemBase {
     active?: boolean;
 }
 
-type MenuItemType = MenuItemAction | MenuItemDivider;
+export type AnchorMenuItem = MenuItemAction | MenuItemDivider;
 
 interface MenuProps {
-    items?: MenuItemType[];
+    items?: AnchorMenuItem[];
     children?: ReactElement;
     buttonProps?: Partial<IconButtonProps>;
     menuProps?: Partial<MuiMenuProps>;
 }
 
-const Menu: React.FC<MenuProps> = ({
+const AnchorMenu: React.FC<MenuProps> = ({
     items = [],
     children,
     buttonProps = {},
@@ -122,4 +122,4 @@ const Menu: React.FC<MenuProps> = ({
     );
 };
 
-export default Menu;
+export default AnchorMenu;

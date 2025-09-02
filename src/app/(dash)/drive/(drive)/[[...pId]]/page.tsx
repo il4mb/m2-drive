@@ -1,6 +1,6 @@
 'use client'
 
-import useUserDrive from '@/hooks/useUserDrive';
+import useUserDrive from '@/hooks/useDrive';
 import { File } from '@/entity/File';
 import { LinearProgress, Stack, Typography } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
@@ -26,8 +26,14 @@ export default function page() {
         order: state.order,
         sortBy: state.sort
     }), [state.order, state.sort]);
+    const keyword = useMemo(() => state.keyword, [state.keyword]);
 
-    const { files, loading, parent } = useUserDrive(user?.id || null, lastpid, filter);
+    const { files, loading, parent } = useUserDrive({
+        uId: user?.id || null,
+        pId: lastpid,
+        filter,
+        keyword
+    });
     const [selected, setSelected] = useState<File>();
 
     const handleOpen = (file: File) => {

@@ -5,7 +5,8 @@ import { File } from "@/entity/File";
 import { getRequestContext } from "@/libs/requestContext";
 import { currentTime, generateKey } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
-import { IsNull } from "typeorm";
+import { Brackets, IsNull, JsonContains } from "typeorm";
+import Contributor from "@/entity/Contributor";
 
 
 type CreateFolderProps = {
@@ -139,6 +140,183 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
     return file;
 }
 
+
+
+
+type CopyMoveProps = {
+    userId: string;
+    sourceId: string;
+    targetId: string | null;
+}
+export const copyFile = createFunction<CopyMoveProps>(async ({ userId, sourceId, targetId }) => {
+
+    if (!sourceId || !userId) {
+        throw new Error("400: Request tidak valid!");
+    }
+    if (sourceId == targetId) {
+        throw new Error("401: Tidak dapat menyalin ke folder yang sama!");
+    }
+
+    const source = await getConnection();
+    const fileRepository = source.getRepository(File);
+
+    // helper: generate unique name in target folder
+    const getUniqueName = async (baseName: string, parentId: string | null) => {
+        const siblings = await fileRepository.findBy({
+            pId: parentId ? parentId : IsNull(),
+            uId: userId
+        });
+
+        const siblingNames = new Set(siblings.map(s => s.name));
+        if (!siblingNames.has(baseName)) return baseName;
+
+        let counter = 1;
+        let newName = `${baseName} (copy)`;
+        while (siblingNames.has(newName)) {
+            counter++;
+            newName = `${baseName} (copy ${counter})`;
+        }
+        return newName;
+    };
+
+    const copiedItems = new Map<string, string>();
+    const copyItem = async (fileId: string, newParentId: string | null, uId: string) => {
+        if (copiedItems.has(fileId)) {
+            return copiedItems.get(fileId)!;
+        }
+
+        const original = await fileRepository.findOneBy({
+            id: fileId,
+            uId
+        });
+        if (!original) {
+            throw new Error("404: File not found");
+        }
+
+        const copy = new File();
+        Object.assign(copy, original);
+        copy.id = generateKey(6);
+        copy.uId = uId;
+        copy.pId = newParentId;
+        copy.name = await getUniqueName(original.name, newParentId);
+        copy.createdAt = Date.now();
+        copy.updatedAt = null;
+        copy.meta = { ...original.meta };
+
+        await fileRepository.save(copy);
+        copiedItems.set(fileId, copy.id);
+
+        if (original.type === 'folder') {
+            const children = await fileRepository.findBy({
+                pId: original.id,
+                uId
+            });
+
+            await Promise.all(children.map(child =>
+                copyItem(child.id, copy.id, uId)
+            ));
+        }
+
+        return copy;
+    };
+
+    await copyItem(sourceId, targetId || null, userId);
+
+});
+
+
+export const moveFile = createFunction<CopyMoveProps>(async ({ userId, sourceId, targetId }) => {
+
+    if (sourceId == targetId) {
+        throw new Error("401: Tidak dapat memindah ke folder yang sama!");
+    }
+    if (!sourceId || !userId) {
+        throw new Error("400: Request tidak valid!");
+    }
+
+    const source = await getConnection();
+    const repository = source.getRepository(File);
+
+    const file = await repository
+        .findOneBy({
+            id: sourceId,
+            uId: userId
+        });
+
+    if (!file) {
+        throw new Error("404: File tidak ditemukan");
+    }
+
+    if (file.pId == targetId) {
+        throw new Error("401: Tidak dapat memindah ke tempat yang sama!");
+    }
+
+    // Check if target folder exists
+    if (targetId) {
+        const targetFolder = await repository
+            .findOneBy({ id: targetId, uId: userId, type: 'folder' });
+        if (!targetFolder) {
+            throw new Error("404: Tujuan tidak ditemukan!");
+        }
+    }
+
+    // helper: generate unique name in target folder
+    const getUniqueName = async (baseName: string, parentId: string | null) => {
+        const siblings = await repository.findBy({
+            pId: parentId ? parentId : IsNull(),
+            uId: userId
+        });
+
+        const siblingNames = new Set(siblings.map(s => s.name));
+        if (!siblingNames.has(baseName)) return baseName;
+
+        let counter = 1;
+        let newName = `${baseName} (copy)`;
+        while (siblingNames.has(newName)) {
+            counter++;
+            newName = `${baseName} (copy ${counter})`;
+        }
+        return newName;
+    };
+
+    // Rename if duplicate in target folder
+    file.name = await getUniqueName(file.name, targetId || null);
+
+    const oldParent = file.pId;
+    file.pId = targetId || null;
+    file.updatedAt = currentTime();
+
+    await repository.save(file);
+
+
+
+    if (oldParent) {
+        const parent = await repository
+            .findOneBy({
+                id: oldParent,
+                type: "folder"
+            });
+        if (parent) {
+            // @ts-ignore
+            const itemCount = await repository
+                .countBy({
+                    pId: oldParent
+                });
+            parent.meta = { ...parent.meta, itemCount };
+
+            await repository.save(parent);
+        }
+    }
+
+    return {
+        status: true,
+        message: "File moved successfully"
+    };
+});
+
+
+
+
 type RemoveRestoreProps = {
     userId: string;
     fileId: string;
@@ -151,6 +329,7 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
 
         const source = await getConnection();
         const repository = source.getRepository(File);
+        const contributorRepository = source.getRepository(Contributor);
 
         const file = await repository.findOneBy({
             id: fileId,
@@ -178,15 +357,14 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
             return all;
         };
 
-        if (permanen) {
-            // if folder → get all children first
-            let filesToDelete: File[] = [file];
-            if (file.type === "folder") {
-                const children = await findChildrenRecursive(file.id);
-                filesToDelete.push(...children);
-            }
 
-            // remove S3 objects for files with meta.Key
+        let filesToDelete: File[] = [file];
+        if (file.type === "folder") {
+            const children = await findChildrenRecursive(file.id);
+            filesToDelete.push(...children);
+        }
+
+        if (permanen) {
             for (const f of filesToDelete) {
                 // @ts-ignore
                 if (f.meta?.Key) {
@@ -194,17 +372,107 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
                     addTaskQueue("delete-file", { objectKey: f.meta.Key });
                 }
             }
-
-            // delete all from DB
             await repository.delete(filesToDelete.map(f => f.id));
         } else {
-            // soft delete (move to trash)
-            file.meta = {
-                ...(file.meta || {}),
-                trashed: true,
-                trashedAt: currentTime()
-            };
-            await repository.save(file);
+            // Mark ALL files as trashed
+            const updatedFiles = filesToDelete.map(f => ({
+                ...f,
+                meta: {
+                    ...(f.meta || {}),
+                    trashed: true,
+                    trashedAt: currentTime()
+                }
+            }));
+            const removeContributor = updatedFiles.map(async (f) => {
+                await contributorRepository.delete({ fileId: f.id })
+            })
+
+            await repository.save(updatedFiles);
+            await Promise.all(removeContributor);
+
         }
     }
 );
+
+export const restoreFile = createFunction<RemoveRestoreProps>(async ({ userId, fileId }) => {
+    // Validate input
+    if (!fileId?.trim() || !userId?.trim()) {
+        throw new Error("400: Request tidak valid!");
+    }
+
+    const source = await getConnection();
+    const repository = source.getRepository(File);
+
+    // Find the file with proper error handling
+    const file = await repository.findOneBy({
+        id: fileId,
+        uId: userId
+    });
+
+    if (!file) {
+        throw new Error("404: File tidak ditemukan!");
+    }
+
+    // Check if parent exists and is not trashed
+    if (file.pId) {
+        const parent = await repository.createQueryBuilder("f")
+            .where("f.id = :id", { id: file.pId })
+            .andWhere("f.uId = :userId", { userId })
+            .andWhere(new Brackets((q) => {
+                q.where("f.meta->>'trashed' IS NULL")
+                    .orWhere("f.meta->>'trashed' = false");
+            }))
+            .getOne();
+
+        // If parent doesn't exist or is trashed, detach from parent
+        if (!parent) {
+            file.pId = null;
+        }
+    }
+
+    // Restore the file by removing trash properties
+    // @ts-ignore
+    const { trashed, trashedAt, ...cleanMeta } = file.meta || {};
+    file.meta = cleanMeta;
+
+    await repository.save(file);
+});
+
+
+type EmptyTrashProps = {
+    userId: string;
+};
+
+export const emptyTrash = createFunction<EmptyTrashProps>(async ({ userId }) => {
+    if (!userId?.trim()) {
+        throw new Error("400: Request tidak valid!");
+    }
+
+    const source = await getConnection();
+    const repository = source.getRepository(File);
+
+    // Find all trashed files for this user
+    const trashedFiles = await repository
+        .createQueryBuilder("f")
+        .where("f.uId = :userId", { userId })
+        .andWhere(new Brackets((q) => {
+            q.where("f.meta->>'trashed' = true");
+        }))
+        .getMany();
+
+    if (!trashedFiles.length) {
+        return; // nothing to delete
+    }
+
+    // If they have S3 keys, queue them for deletion
+    for (const f of trashedFiles) {
+        // @ts-ignore
+        if (f.meta?.Key) {
+            // @ts-ignore
+            addTaskQueue("delete-file", { objectKey: f.meta.Key });
+        }
+    }
+
+    // Permanently remove them from the DB
+    await repository.delete(trashedFiles.map(f => f.id));
+});

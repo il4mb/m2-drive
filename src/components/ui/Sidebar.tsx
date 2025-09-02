@@ -34,12 +34,12 @@ const MENU: IMenu[] = [
         icon: <History />,
         href: "/history"
     },
-    {
-        type: "link",
-        label: "Arsip",
-        icon: <Archive />,
-        href: "/archive"
-    },
+    // {
+    //     type: "link",
+    //     label: "Arsip",
+    //     icon: <Archive />,
+    //     href: "/archive"
+    // },
     {
         type: 'group',
         label: "Lain-Lain",

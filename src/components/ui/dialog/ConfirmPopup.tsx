@@ -1,6 +1,6 @@
 'use client'
 
-import useDarkMode from '@/components/hooks/useDarkMode';
+import useDarkMode from '@/hooks/useDarkMode';
 import { ColorName, getColor } from '@/theme/colors';
 import {
     Box,

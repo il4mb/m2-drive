@@ -29,18 +29,8 @@ import RequestError from "@/components/RequestError";
 import Link from "next/link";
 import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
-
-function formatSize(bytes: number) {
-    if (!bytes) return "0 B";
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let i = 0;
-    let size = bytes;
-    while (size >= 1024 && i < units.length - 1) {
-        size /= 1024;
-        i++;
-    }
-    return `${size.toFixed(2)} ${units[i]}`;
-}
+import StickyHeader from "@/components/StickyHeader";
+import { formatFileSize } from "@/libs/utils";
 
 export default function Page() {
     const theme = useTheme();
@@ -63,32 +53,14 @@ export default function Page() {
     return (
         <Container key={'layout'} maxWidth={"lg"} scrollable>
             {/* Sticky Header */}
-            <Paper
-                component={motion.div}
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                layoutId="header"
-                layout
-                sx={{
-                    p: 2,
-                    mb: 2,
-                    position: 'sticky',
-                    top: 17,
-                    zIndex: 10,
-                    boxShadow: 4,
-                    borderRadius: 2,
-                    bgcolor: theme.palette.background.paper
-                }}>
-                <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"space-between"}>
-                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                        <FolderRoot size={28} color={theme.palette.primary.main} />
-                        <Typography fontSize={22} fontWeight={700}>
-                            Drive Root
-                        </Typography>
-                    </Stack>
+            <StickyHeader>
+                <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                    <FolderRoot size={28} color={theme.palette.primary.main} />
+                    <Typography fontSize={22} fontWeight={700}>
+                        Drive Root
+                    </Typography>
                 </Stack>
-            </Paper>
+            </StickyHeader>
 
             <Stack component={Paper} borderRadius={2} sx={{ minHeight: '100dvh' }}>
                 {!isPermitted && (
@@ -134,7 +106,7 @@ export default function Page() {
                             <Paper sx={{ p: 1.5, minWidth: 150, textAlign: "center", borderRadius: 2, flex: 1 }}>
                                 <Typography variant="body2" color="text.secondary">Total Storage</Typography>
                                 <Typography variant="h6" fontWeight={700}>
-                                    {formatSize(summaries.reduce((sum, s) => sum + Number(s.totalSize || 0), 0))}
+                                    {formatFileSize(summaries.reduce((sum, s) => sum + Number(s.totalSize || 0), 0))}
                                 </Typography>
                             </Paper>
                         </Stack>
@@ -187,7 +159,7 @@ export default function Page() {
                                         <TableCell align="right">{s.fileCount}</TableCell>
                                         <TableCell align="right">{s.folderCount}</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                            {formatSize(Number(s.totalSize))}
+                                            {formatFileSize(Number(s.totalSize))}
                                         </TableCell>
                                         <TableCell align="right">
                                             <IconButton LinkComponent={Link} href={`/drive-root/${s.userId}`}>

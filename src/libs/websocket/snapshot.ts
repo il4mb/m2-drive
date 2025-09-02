@@ -69,7 +69,7 @@ export function onSnapshot<
     };
 
     const handleDatabaseChange = (payload: DatabaseChangePayload) => {
-        
+
         if (payload)
             if (isSingle) {
                 switch (payload.event) {
@@ -88,6 +88,8 @@ export function onSnapshot<
                 switch (payload.event) {
                     case 'INSERT':
                         list = [...list, payload.data];
+                        currentData = list;
+                        (callback as (data: E[]) => void)(list);
                         break;
                     case 'UPDATE':
                         list = list.map(item =>
@@ -95,14 +97,13 @@ export function onSnapshot<
                                 ? { ...item, ...payload.data }
                                 : item
                         );
+                        currentData = list;
+                        (callback as (data: E[]) => void)(list);
                         break;
                     case 'DELETE':
-
-                        list = list.filter(item => (item as any).id !== payload.data.id);
+                        socket.emit('execute-query', queryConfig, handleQueryResponse);
                         break;
                 }
-                currentData = list;
-                (callback as (data: E[]) => void)(list);
             }
 
         options?.onMetadata?.({

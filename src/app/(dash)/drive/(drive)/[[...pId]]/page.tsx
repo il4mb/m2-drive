@@ -48,9 +48,6 @@ export default function page() {
             flex={1}
             sx={{ position: 'relative' }}>
             <AnimatePresence>
-                {loading && (
-                    <LinearProgress key={"loading"} sx={{ position: 'absolute', top: -10, left: 0, width: '100%', height: 2 }} />
-                )}
                 {Boolean(files && files.length == 0 && !loading) ? (
                     <Stack key={"empty"} justifyContent={"center"} alignItems={"center"} flex={1}>
                         <Typography color='text.secondary' fontWeight={600} fontSize={18}>Tidak ada File</Typography>

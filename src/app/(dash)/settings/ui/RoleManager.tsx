@@ -4,11 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChangeEvent, useEffect, useState } from "react";
 import TransferList from "./TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
-import useRequest from "@/components/hooks/useRequest";
+import useRequest from "@/hooks/useRequest";
 import { saveRole, deleteRole, getAllRole } from "@/actions/manage-role";
 import RequestError from "@/components/RequestError";
 import Role from "@/entity/Role";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/ui/dialog/ConfirmationDialog";
 import _ from "lodash";
 import { emitSocket } from "@/socket";
 
@@ -320,14 +320,14 @@ export default function RoleManager() {
                 ))}
             </Stack>
 
-            <ConfirmationDialog
+            {/* <ConfirmationDialog
                 open={deleteConfirmOpen}
                 onClose={() => setDeleteConfirmOpen(false)}
                 onConfirm={confirmDelete}
                 title="Hapus Role"
                 message={`Apakah Anda yakin ingin menghapus role "${selectedRole?.label}"?`}
                 loading={requestDelete.pending}
-            />
+            /> */}
 
             <RequestError request={requestDelete} closable />
             <RequestError request={requestSave} closable />

@@ -18,6 +18,7 @@ type BroadcastRuleMap = {
     default: BroadcastRule<any>;
 };
 
+// @ts-ignore
 export const broadcastRules: BroadcastRuleMap = {
     /**
      * Default rule: allow broadcast to authenticated users

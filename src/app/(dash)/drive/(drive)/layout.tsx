@@ -135,7 +135,7 @@ export default function layout({ children }: layoutProps) {
             <Stack flex={1} overflow={"hidden"}>
                 <Container maxWidth='lg' scrollable>
                     {/* Sticky Header */}
-                    <StickyHeader>
+                    <StickyHeader loading={loading}>
                         <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
                             <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
                                 {!loading && !file ? (

@@ -7,7 +7,7 @@ import { getUserFile, getUserDriveSummary, UserDriveSummary } from "@/actions/di
 import { useOnEmit } from "@/socket";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";
-import { validateByConditionsRecursive } from "@/server/database/helper";
+import { validateByConditionsRecursive } from "@/server/database/objectHelper";
 import { QueryCondition } from "@/server/database/types";
 
 type Filter = {

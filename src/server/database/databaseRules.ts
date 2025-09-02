@@ -31,6 +31,7 @@ type DatabaseRuleMap = {
     default: DatabaseRule<any>;
 };
 
+// @ts-ignore
 export const databaseRules: DatabaseRuleMap = {
 
     default: (context) => {
@@ -69,6 +70,9 @@ export const databaseRules: DatabaseRuleMap = {
             if (data?.uId === user?.id || user?.meta.role === "admin") return true;
         }
         if(event == "INSERT") {
+            return Boolean(user);
+        }
+        if(event == "DELETE") {
             return Boolean(user);
         }
         return false;

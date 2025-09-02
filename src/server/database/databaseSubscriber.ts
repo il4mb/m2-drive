@@ -8,7 +8,7 @@ import { databaseRules } from "./databaseRules";
 import { getRequestContext } from "@/libs/requestContext";
 import { DatabaseChangePayload } from "./types";
 import { subscribers } from "../socketHandlers";
-import { validateByConditionsRecursive } from "./helper";
+import { validateByConditions } from "./objectHelper";
 
 export type DatabaseEvent = "INSERT" | "UPDATE" | "DELETE";
 
@@ -157,12 +157,6 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
 
             let { data, previousData, changes } = this.extractEventData(event);
 
-            if (!data) {
-                console.warn(`No data extracted for ${eventType} event on ${collection}`);
-                return;
-            }
-
-
             if (eventType === "INSERT") {
                 const relationFields = event.metadata.relations.map(rel => rel.propertyName);
 
@@ -184,6 +178,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 }
 
             } else if (eventType == "DELETE") {
+                console.log(event)
                 const deletedId =
                     (event as RemoveEvent<any>).entity?.id ??
                     (event as RemoveEvent<any>).databaseEntity?.id;
@@ -198,13 +193,13 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             const payload: DatabaseChangePayload = {
                 event: eventType,
                 collection,
-                data,
+                data: data || {},
                 timestamp: new Date(),
-                changes,
-                previousData
+                changes: changes || {},
+                previousData: previousData || {}
             };
 
-            this.broadcastDatabaseChange(collection, payload, data.id);
+            this.broadcastDatabaseChange(collection, payload, data?.id);
 
         } catch (error) {
             console.error(`Error handling ${eventType} event:`, error);
@@ -223,8 +218,8 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         const rule: BroadcastRule<E> = (broadcastRules as any)[collection] || broadcastRules.default;
         for (const [id, { socket, collection, conditions }] of subscribers) {
 
-            const isValid = validateByConditionsRecursive(payload.data || {}, conditions);
-            const isValid2 = validateByConditionsRecursive(payload.previousData || {}, conditions);
+            const isValid = validateByConditions(payload.data || {}, conditions);
+            const isValid2 = validateByConditions(payload.previousData || {}, conditions);
             if (collection != payload.collection || (!isValid && !isValid2)) {
                 continue;
             }

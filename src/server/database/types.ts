@@ -23,19 +23,32 @@ export type BroadcastRule = (context: BroadcastContext) => boolean;
 
 
 import { EntityName } from ".";
-
-// server/database/types.ts
 export type QueryOperator =
-    | '=='
-    | '!='
-    | '>'
-    | '>='
-    | '<'
-    | '<='
-    | 'LIKE'
-    | 'ILIKE'
-    | 'IN'
-    | 'BETWEEN';
+    | '=='           // Equal
+    | '!='           // Not equal
+    | '>'            // Greater than
+    | '>='           // Greater than or equal
+    | '<'            // Less than
+    | '<='           // Less than or equal
+    | 'LIKE'         // Pattern match (case-sensitive)
+    | 'ILIKE'        // Pattern match (case-insensitive)
+    | 'NOT LIKE'     // Pattern match (case-sensitive)
+    | 'NOT ILIKE'    // Pattern match (case-insensitive)
+    | 'REGEXP'
+    | 'NOT REGEXP'
+    | 'IN'           // Value in list
+    | 'NOT IN'       // Value not in list
+    | 'BETWEEN'      // Range between
+    | 'NOT BETWEEN'  // Range not between
+    | 'IS NULL'      // Value is null
+    | 'IS NOT NULL'  // Value is not null
+    | 'EXISTS'       // Subquery or relation exists
+    | 'NOT EXISTS'   // Subquery or relation does not exist
+    | 'CONTAINS'     // Array contains value
+    | 'NOT CONTAINS' // Array does not contain value
+    | 'STARTS WITH'  // String starts with
+    | 'ENDS WITH';   // String ends with
+
 
 
 export interface QueryCondition {
@@ -61,6 +74,8 @@ export interface QueryConfig {
     limit?: number;
     offset?: number;
     relations: EntityName[];
+    debug?: boolean;
+    group?: string[];
 }
 
 export interface QueryResult<T> {

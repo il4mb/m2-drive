@@ -4,7 +4,7 @@ import { QueryOperator, QueryConfig, QueryType, QueryCondition } from "@/server/
 
 export const IsNull = "@IsNull";
 export const NotNull = "@IsNotNull";
-export const Json = (field: string, ...path: string[]): any => `@Json(${field}.${path.join(".")})`
+export const Json = (field: string, ...path: string[]): any => `@Json("${field}".${path.join(".")})`
 
 
 export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<EntityMap[T]>> {
@@ -16,13 +16,15 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
     private orderByField?: string;
     private orderDirection: "ASC" | "DESC" = "ASC";
     private joinTable: EntityName[] = [];
+    private isDebug: boolean = false;
+    private group: any[] = [];
 
     constructor(collection: T, type: Q) {
         this.collection = collection;
         this.type = type;
     }
 
-    where(field: keyof E, operator: QueryOperator, value: any): this {
+    where<K extends keyof E = keyof E>(field: K | string, operator: QueryOperator, value?: any): this {
         this.conditions.push({
             field: field as any,
             operator,
@@ -32,7 +34,7 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
         return this;
     }
 
-    orWhere(field: keyof E, operator: QueryOperator, value: any): this {
+    orWhere<K extends keyof E = keyof E>(field: K | string, operator: QueryOperator, value: any): this {
         this.conditions.push({
             field: field as any,
             operator,
@@ -41,6 +43,18 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
         });
         return this;
     }
+
+    orderBy<K extends keyof E = keyof E>(field: K | string, direction: "ASC" | "DESC" = "ASC"): this {
+        this.orderByField = field as any;
+        this.orderDirection = direction;
+        return this;
+    }
+
+    groupBy<K extends keyof E = keyof E>(field: K | string) {
+        this.group.push(field);
+        return this;
+    }
+
 
     /** Group multiple AND conditions in parentheses */
     bracketWhere(callback: (q: Query<T, Q, E>) => void): this {
@@ -78,9 +92,8 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
         return this;
     }
 
-    orderBy(field: keyof E, direction: "ASC" | "DESC" = "ASC"): this {
-        this.orderByField = field as any;
-        this.orderDirection = direction;
+    debug() {
+        this.isDebug = true;
         return this;
     }
 
@@ -90,11 +103,13 @@ export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<E
             type: this.type,
             conditions: this.conditions,
             limit: this.limitValue,
+            group: this.group,
             relations: this.joinTable,
             orderBy: this.orderByField ? {
                 field: this.orderByField,
                 direction: this.orderDirection
-            } : undefined
+            } : undefined,
+            debug: this.isDebug
         };
     }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { MenuItem, ListItemIcon, ListItemText, Stack, SxProps } from '@mui/material';
+import { MenuItem, ListItemIcon, ListItemText, Stack, SxProps, Typography } from '@mui/material';
 import { RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { ReactNode, useState } from 'react';
@@ -97,10 +97,13 @@ export function createContextMenu<T>(def: ContextMenuItemDef<T>): React.FC<Conte
                                 : <Icon size={14} state={state} />}
                         </ListItemIcon>
                     )}
-                    <ListItemText>
-                        {typeof def.label == "string"
-                            ? def.label
-                            : <def.label state={state} />}
+                    <ListItemText sx={{ overflow: 'hidden' }}>
+                        <Typography component={"div"} whiteSpace={"nowrap"} overflow={"hidden"} textOverflow={"ellipsis"}>
+                            {typeof def.label == "string"
+                                ? def.label
+                                : <def.label state={state} />}
+                        </Typography>
+
                     </ListItemText>
                 </Stack>
 

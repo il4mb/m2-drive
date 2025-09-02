@@ -10,12 +10,13 @@ import {
     Typography,
     Paper,
 } from "@mui/material";
-import { History, FileText, Clock, Upload, Folder } from "lucide-react";
+import { History, FileText, Clock, Upload, Folder, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
 import { useMyHistory } from "@/hooks/useMyHistory";
+import StickyHeader from "@/components/StickyHeader";
 
 type Response = {
     status: boolean;
@@ -35,29 +36,29 @@ type SectionProps = {
 
 export default function Page() {
 
-    const { files } = useMyHistory();
+    const { files, loading } = useMyHistory();
 
 
-    useEffect(() => {
-        console.log(files)
-    }, [files]);
+    // useEffect(() => {
+    //     console.log(files)
+    // }, [files]);
 
-    const [lastAdd, setLastAdd] = useState<File[]>([]);
-    const [lastUpdate, setLastUpdate] = useState<File[]>([]);
-    const [lastOpen, setLastOpen] = useState<File[]>([]);
+    // const [lastAdd, setLastAdd] = useState<File[]>([]);
+    // const [lastUpdate, setLastUpdate] = useState<File[]>([]);
+    // const [lastOpen, setLastOpen] = useState<File[]>([]);
 
-    const fetchHistory = useRequest<Response>({
-        endpoint: "/api/drive/history",
-        onSuccess(result) {
-            setLastAdd(result.data.lastAdded);
-            setLastUpdate(result.data.lastUpdated);
-            setLastOpen(result.data.lastOpened);
-        },
-    });
+    // const fetchHistory = useRequest<Response>({
+    //     endpoint: "/api/drive/history",
+    //     onSuccess(result) {
+    //         setLastAdd(result.data.lastAdded);
+    //         setLastUpdate(result.data.lastUpdated);
+    //         setLastOpen(result.data.lastOpened);
+    //     },
+    // });
 
-    useEffect(() => {
-        fetchHistory.send();
-    }, []);
+    // useEffect(() => {
+    //     fetchHistory.send();
+    // }, []);
 
     const FileCard = ({ file }: { file: File }) => (
         <motion.div
@@ -118,6 +119,29 @@ export default function Page() {
 
     return (
         <Container maxWidth="lg" scrollable>
+
+            <StickyHeader loading={loading}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
+                    <Stack alignItems="center" spacing={1} direction="row">
+                        <History size={20} />
+                        <Typography fontWeight={600} fontSize={18}>
+                            Riwayat
+                        </Typography>
+                    </Stack>
+                    {/* {isLoading && (
+                        <LinearProgress
+                            sx={{
+                                position: 'absolute',
+                                bottom: -10,
+                                left: 0,
+                                width: '100%',
+                                height: 2
+                            }}
+                        />
+                    )} */}
+                </Stack>
+            </StickyHeader>
+
             <Stack mb={3} component={Paper} p={2} borderRadius={2}>
                 <Stack direction={"row"} spacing={1} alignItems={"center"} mb={3}>
                     <History size={20} />
@@ -127,19 +151,11 @@ export default function Page() {
                 </Stack>
 
                 <Stack px={2}>
-                    {fetchHistory.error && (
-                        <Alert
-                            severity="error"
-                            onClose={fetchHistory.clearError}
-                            sx={{ mb: 2 }}>
-                            <AlertTitle>{fetchHistory.error.type}</AlertTitle>
-                            {fetchHistory.error.message}
-                        </Alert>
-                    )}
 
-                    <Section title="Terakhir Dibuka" icon={<Clock size={16} />} files={lastOpen} />
-                    <Section title="Terakhir Diperbarui" icon={<History size={16} />} files={lastUpdate} />
-                    <Section title="Baru Ditambahkan" icon={<Upload size={16} />} files={lastAdd} />
+
+                    <Section title="Terakhir Dibuka" icon={<Clock size={16} />} files={[]} />
+                    <Section title="Terakhir Diperbarui" icon={<History size={16} />} files={[]} />
+                    <Section title="Baru Ditambahkan" icon={<Upload size={16} />} files={[]} />
                 </Stack>
             </Stack>
         </Container>

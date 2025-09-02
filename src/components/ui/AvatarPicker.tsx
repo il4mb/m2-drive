@@ -5,7 +5,7 @@ import { Avatar, Box, IconButton, Stack, SxProps, Tooltip, Typography } from "@m
 import { AnimatePresence, motion } from "framer-motion";
 import { useSnackbar } from "notistack";
 import { getColor } from "@/theme/colors";
-import useImageResize from "../hooks/useImageResize";
+import useImageResize from "@/hooks/useImageResize";
 import { Upload, User, X } from "lucide-react";
 
 interface AvatarPickerProps {

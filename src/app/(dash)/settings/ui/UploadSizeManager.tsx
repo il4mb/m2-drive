@@ -2,8 +2,8 @@
 
 import { Button, Checkbox, FormControlLabel, IconButton, MenuItem, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { CirclePlus, ShieldUser, Plus, X, Pencil, Ruler } from "lucide-react";
-import useRequest from "@/components/hooks/useRequest";
-import useRoles from "@/components/hooks/useRoles";
+import useRequest from "@/hooks/useRequest";
+import useRoles from "@/hooks/useRoles";
 import { addMaxUploadOptions, getMaxUploadOptions, MaxUploadOption, UploadUnit } from "@/actions/options-max-upload";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";

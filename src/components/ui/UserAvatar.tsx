@@ -21,7 +21,6 @@ export default function UserAvatar({ userId, size = 45, sx }: UserAvatarProps) {
         const query = getOne("user").where("id", "==", userId);
         const unsubscribe = onSnapshot(query, (data) => {
             setUser(data);
-            console.log(data)
         });
         return unsubscribe;
     }, [userId])

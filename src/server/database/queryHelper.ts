@@ -1,5 +1,5 @@
 import { Brackets, SelectQueryBuilder } from "typeorm";
-import { QueryCondition, isSpecialValue } from "@/server/database/types";
+import { QueryCondition, QueryOperator } from "@/server/database/types";
 import { WhereExpressionBuilder } from "typeorm/browser";
 
 /** Recursive helper to apply conditions with brackets */
@@ -36,14 +36,40 @@ export function applyConditions(
                 ? (() => {
                     const pathMatch = field.match(/\@Json\((.*?)\)/);
                     if (!pathMatch?.[1]) throw new Error(`Invalid JSON path: ${field}`);
-                    const pathParts = pathMatch[1].split(".");
-                    const rootField = pathParts.shift();
+                    const fieldMath = pathMatch[1].match(/^\"(.*)\"\.(.*)$/);
+                    if (!fieldMath?.[1] || !fieldMath?.[2]) throw new Error(`Invalid JSON path: ${field}`);
+                    const pathParts = fieldMath[2].split(".");
+                    const rootField = fieldMath[1];
                     const jsonPathSql = pathParts.map((p) => `'${p}'`).join("->>");
+                    if (rootField.startsWith("$")) {
+                        return `${rootField.replace(/^\$/, '')}->>${jsonPathSql}`;
+                    }
                     return `${alias}.${rootField}->>${jsonPathSql}`;
                 })()
-                : `${alias}.${String(field)}`;
+                : field.startsWith("$")
+                    ? `${String(field.replace(/^\$/, ''))}`
+                    : `${alias}.${String(field)}`;
 
-            // Special value handlers
+            const paramBase = `p_${idx}_${String(field).replace(/\W+/g, "_")}`;
+
+            // Handle special operators that don't require values
+            if (operator === "IS NULL" || operator === "IS NOT NULL") {
+                const clause = `${qualified} ${operator}`;
+                applyClause(qbInner, idx, logical, clause, {});
+                return;
+            }
+
+            // Handle EXISTS and NOT EXISTS (typically used with subqueries)
+            if (operator === "EXISTS" || operator === "NOT EXISTS") {
+                if (typeof value !== "string") {
+                    throw new Error(`${operator} requires a subquery string`);
+                }
+                const clause = `${operator} (${value})`;
+                applyClause(qbInner, idx, logical, clause, {});
+                return;
+            }
+
+            // Handle special value tokens
             if (value === "@IsNull" || value === "@NotNull") {
                 const clause =
                     value === "@IsNull"
@@ -53,9 +79,7 @@ export function applyConditions(
                 return;
             }
 
-            const paramBase = `p_${idx}_${String(field).replace(/\W+/g, "_")}`;
-
-            // Standard operators
+            // Standard operators mapping
             const opMap: Record<string, string> = {
                 "==": "=",
                 "!=": "!=",
@@ -63,24 +87,70 @@ export function applyConditions(
                 ">=": ">=",
                 "<": "<",
                 "<=": "<=",
-                LIKE: "LIKE",
-                ILIKE: "ILIKE",
+                "LIKE": "LIKE",
+                "ILIKE": "ILIKE",
+                "NOT LIKE": "NOT LIKE",
+                "NOT ILIKE": "NOT ILIKE",
+                "REGEXP": "~",
+                "NOT REGEXP": "!~",
+                "STARTS WITH": "LIKE",
+                "ENDS WITH": "LIKE"
             };
 
-            if (operator === "IN") {
+            // Handle IN and NOT IN operators
+            if (operator === "IN" || operator === "NOT IN") {
                 const vals = Array.isArray(value) ? value : [value];
-                const clause = `${qualified} IN (:...${paramBase})`;
+                const clause = `${qualified} ${operator} (:...${paramBase})`;
                 applyClause(qbInner, idx, logical, clause, { [paramBase]: vals });
-            } else if (operator === "BETWEEN") {
-                if (!Array.isArray(value) || value.length !== 2)
-                    throw new Error("BETWEEN requires [min, max]");
-                const [a, b] = value;
-                const clause = `${qualified} BETWEEN :${paramBase}_a AND :${paramBase}_b`;
-                applyClause(qbInner, idx, logical, clause, { [`${paramBase}_a`]: a, [`${paramBase}_b`]: b });
-            } else {
-                const clause = `${qualified} ${opMap[operator] ?? "="} :${paramBase}`;
-                applyClause(qbInner, idx, logical, clause, { [paramBase]: value });
+                return;
             }
+
+            // Handle BETWEEN and NOT BETWEEN operators
+            if (operator === "BETWEEN" || operator === "NOT BETWEEN") {
+                if (!Array.isArray(value) || value.length !== 2) {
+                    throw new Error(`${operator} requires [min, max]`);
+                }
+                const [a, b] = value;
+                const clause = `${qualified} ${operator} :${paramBase}_a AND :${paramBase}_b`;
+                applyClause(qbInner, idx, logical, clause, {
+                    [`${paramBase}_a`]: a,
+                    [`${paramBase}_b`]: b
+                });
+                return;
+            }
+
+            // Handle CONTAINS and NOT CONTAINS (PostgreSQL array operators)
+            if (operator === "CONTAINS" || operator === "NOT CONTAINS") {
+                const arrayOperator = operator === "CONTAINS" ? "@>" : "!@>";
+                const clause = `${qualified} ${arrayOperator} :${paramBase}`;
+                applyClause(qbInner, idx, logical, clause, { [paramBase]: value });
+                return;
+            }
+
+            // Handle STARTS WITH and ENDS WITH (special LIKE cases)
+            if (operator === "STARTS WITH" || operator === "ENDS WITH") {
+                let likeValue: string;
+                if (typeof value !== "string") {
+                    throw new Error(`${operator} requires a string value`);
+                }
+                if (operator === "STARTS WITH") {
+                    likeValue = `${value}%`;
+                } else {
+                    likeValue = `%${value}`;
+                }
+                const clause = `${qualified} LIKE :${paramBase}`;
+                applyClause(qbInner, idx, logical, clause, { [paramBase]: likeValue });
+                return;
+            }
+
+            // Handle standard operators from the map
+            if (opMap[operator]) {
+                const clause = `${qualified} ${opMap[operator]} :${paramBase}`;
+                applyClause(qbInner, idx, logical, clause, { [paramBase]: value });
+                return;
+            }
+
+            throw new Error(`Unsupported operator: ${operator}`);
         });
     }));
 }

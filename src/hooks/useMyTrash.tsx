@@ -1,10 +1,8 @@
 'use client'
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider"
 import { File } from "@/entity/File";
-import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { getMany, Json } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";
-import { listUserDrive } from "@/server/functions/userDrive";
 import { useEffect, useState } from "react";
 
 export const useMyTrash = () => {
@@ -21,7 +19,8 @@ export const useMyTrash = () => {
             .where(Json("meta", "trashed"), "==", true);
 
         const unsubscribe = onSnapshot(query, (data) => {
-            setFiles(data);
+            // @ts-ignore
+            setFiles(data.filter(e => e.meta?.trashed));
             setLoading(false);
         })
 

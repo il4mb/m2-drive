@@ -2,12 +2,12 @@
 
 import { File } from '@/entity/File';
 import { formatFileSize } from '@/libs/utils';
-import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Paper, Stack, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
 import { Folder } from 'lucide-react';
-import { MouseEvent } from 'react';
+import { FC, MouseEvent } from 'react';
 import ContextMenu from '../context-menu/ContextMenu';
-import { contextMenuStack } from '../context-menu/ContextMenuItem';
+import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextMenuItem';
 import ActionOpen from '../menu-actions/ActionOpen';
 import ActionShare from '../menu-actions/ActionShare';
 import { useContributors } from '@/hooks/useContributors';
@@ -16,29 +16,32 @@ import ActionCopy from '../menu-actions/ActionCopy';
 import ActionMove from '../menu-actions/ActionMove';
 import ActionRename from '../menu-actions/ActionRename';
 import ActionTrash from '../menu-actions/ActionTrash';
-import { getColor } from '@/theme/colors';
 import UserAvatar from '../ui/UserAvatar';
 
-type FileMenuState = {
+export type FileMenuState = {
     file: File;
-    onOpen: (f: File) => void;
+    onOpen?: (f: File) => void;
 }
 
-export interface FileViewProps<T> {
+export interface FileViewProps<T = {}> {
     file: File;
     onOpen?: (file: File) => void;
     onSelect?: (file: File) => void;
     size?: number;
     selected?: boolean;
     layout?: "list" | "grid";
+    menu?: FC<ContextMenuItemProps<T>>[],
+    menuState?: T
 }
-export default function FileView<T>({
+export default function FileView<T = any>({
     file,
     onOpen,
     onSelect,
     size = 18,
     selected = false,
     layout = "list",
+    menu,
+    menuState: additionalMenuState
 }: FileViewProps<T>) {
 
     const { contributors } = useContributors(file.id);
@@ -52,15 +55,16 @@ export default function FileView<T>({
         onSelect?.(file);
     }
 
-    const menuState: FileMenuState = {
+    const menuState: FileMenuState & T = {
         file,
-        onOpen(f) {
+        onOpen(f: any) {
             onOpen?.(f);
-        }
-    }
+        },
+        ...additionalMenuState
+    } as any;
 
 
-    const menu = contextMenuStack<FileMenuState>([
+    const menuItem = contextMenuStack<FileMenuState>([
         ActionOpen,
         ActionShare,
         ActionDivider,
@@ -68,10 +72,10 @@ export default function FileView<T>({
         ActionMove,
         ActionRename,
         ActionTrash
-    ])
+    ]);
 
     return (
-        <ContextMenu state={menuState} menu={menu}>
+        <ContextMenu state={menuState} menu={menu ? menu : menuItem}>
             <Stack
                 component={Paper}
                 direction={layout == "list" ? "row" : "column"}

@@ -3,8 +3,8 @@
 import { handleAddUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
-import useRequest from "@/components/hooks/useRequest";
-import useRoles from "@/components/hooks/useRoles";
+import useRequest from "@/hooks/useRequest";
+import useRoles from "@/hooks/useRoles";
 import RequestError from "@/components/RequestError";
 import AvatarPicker from "@/components/ui/AvatarPicker";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";

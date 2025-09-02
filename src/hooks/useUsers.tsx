@@ -1,3 +1,4 @@
+import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 import User from "@/entity/User";
 import { getMany } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";
@@ -5,33 +6,41 @@ import { useEffect, useState, useRef } from "react";
 
 type QueryProps = {
     keyword?: string;
-    sortBy?: "name" | "updatedAt" | "createdAt";
+    sortBy?: keyof typeof User['prototype'];
     order?: "ASC" | "DESC";
+    limit?: number;
+    exclude?: string[];
 };
 
-export const useUsers = ({ keyword, sortBy, order }: QueryProps) => {
+export const useUsers = ({ keyword, sortBy, order, limit, exclude }: QueryProps) => {
+    const { user: me } = useCurrentSession();
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        if (!keyword) {
-            setUsers([]);
-            return;
-        }
-        setLoading(true);
 
-        // Clear any previous timeout (cancel)
+        setLoading(true);
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
 
         timeoutRef.current = setTimeout(() => {
 
-            const query = getMany("user").limit(10)
-                .where("name", "LIKE", `${keyword}%`)
-                .orWhere("email", "LIKE", `${keyword}%`);
+            const query = getMany("user")
+            if (keyword) {
+                query.bracketWhere(q => {
+                    q.where("name", "STARTS WITH", `${keyword}`)
+                        .orWhere("email", "STARTS WITH", `${keyword}`);
+                })
+            }
 
+            if (exclude) {
+                query.where("id", "NOT IN", exclude)
+            }
+            if (limit) {
+                query.limit(limit);
+            }
             if (sortBy && order) {
                 query.orderBy(sortBy, order);
             }
@@ -53,7 +62,7 @@ export const useUsers = ({ keyword, sortBy, order }: QueryProps) => {
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [keyword, sortBy, order]);
+    }, [keyword, sortBy, order, exclude, me]);
 
     return { users, loading };
 };

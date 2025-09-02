@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, CircularProgress, MenuItem, LinearProgress } from '@mui/material';
 import User from '@/entity/User';
 import { Plus, X } from 'lucide-react';
@@ -8,16 +8,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { File } from '@/entity/File';
 import { useContributors } from '@/hooks/useContributors';
 import { useUsers } from '@/hooks/useUsers';
+import { useCurrentSession } from './context/CurrentSessionProvider';
 
 type ContributorManagerProps = {
     file: File;
 }
 const ContributorManager = ({ file }: ContributorManagerProps) => {
 
+    const { user } = useCurrentSession();
     const [open, setOpen] = useState(false);
-    const [keyword, setKeyword] = useState('');
-    const { users, loading } = useUsers({ keyword });
     const { contributors, loading: loading2, addContributor, updateContributor, removeContributor } = useContributors(file.id);
+    const [keyword, setKeyword] = useState('');
+    const exclude = useMemo(() => [user?.id, ...contributors.map(e => e.userId)].filter(e => e != null), [user, contributors]);
+    const { users, loading } = useUsers({ keyword, exclude, limit: 6 });
 
     const handleAddContributor = async (user: User) => {
         await addContributor(user.id, "viewer");
@@ -32,8 +35,8 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
 
             <Stack flex={1} sx={{ position: "relative" }}>
                 <AnimatePresence>
-                    {loading || loading2 && (
-                        <LinearProgress sx={{ position: 'absolute', top: 0, height: 2, left: 0, width: '100%' }} />
+                    {loading2 && (
+                        <LinearProgress key={'loading'} sx={{ position: 'absolute', top: 0, height: 2, left: 0, width: '100%' }} />
                     )}
                     {contributors.length === 0 && (
                         <motion.div
@@ -51,57 +54,55 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                 </AnimatePresence>
 
                 <AnimatePresence>
-                    {contributors.length > 0 && (
-                        <List dense>
-                            {contributors.map((c, i) => (
-                                <motion.li
-                                    key={c.id}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 10 }}
-                                    transition={{ duration: 0.25 }}>
+                    <List key={'list'} dense>
+                        {contributors.map((c, i) => (
+                            <motion.li
+                                key={c.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 10 }}
+                                transition={{ duration: 0.25 }}>
 
-                                    <ListItem
-                                        secondaryAction={
-                                            <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                                                <TextField
-                                                    select
-                                                    variant="standard"
-                                                    sx={{
-                                                        maxWidth: 200,
-                                                        width: '100%',
-                                                        '& .MuiInputBase-root:before': { borderBottom: 'none' },
-                                                        '& .MuiInputBase-root:after': { borderBottom: 'none' },
-                                                        '& .MuiInputBase-input': { paddingY: 1 },
-                                                    }}
-                                                    defaultValue="viewer"
-                                                    value={c.role}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        updateContributor(c.id, val as any);
-                                                    }}>
-                                                    <MenuItem value="viewer">Hanya Lihat</MenuItem>
-                                                    <MenuItem value="editor">Mengedit</MenuItem>
-                                                </TextField>
-                                                {open && (
-                                                    <IconButton onClick={() => removeContributor(c.id)}>
-                                                        <X size={16} />
-                                                    </IconButton>
-                                                )}
-                                            </Stack>
+                                <ListItem
+                                    secondaryAction={
+                                        <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                            <TextField
+                                                select
+                                                variant="standard"
+                                                sx={{
+                                                    maxWidth: 200,
+                                                    width: '100%',
+                                                    '& .MuiInputBase-root:before': { borderBottom: 'none' },
+                                                    '& .MuiInputBase-root:after': { borderBottom: 'none' },
+                                                    '& .MuiInputBase-input': { paddingY: 1 },
+                                                }}
+                                                defaultValue="viewer"
+                                                value={c.role}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    updateContributor(c.id, val as any);
+                                                }}>
+                                                <MenuItem value="viewer">Hanya Lihat</MenuItem>
+                                                <MenuItem value="editor">Mengedit</MenuItem>
+                                            </TextField>
+                                            {open && (
+                                                <IconButton onClick={() => removeContributor(c.id)}>
+                                                    <X size={16} />
+                                                </IconButton>
+                                            )}
+                                        </Stack>
 
 
-                                        }>
-                                        <Avatar src={c.user.meta.avatar} sx={{ mr: 1 }}>
-                                            {c.user.name?.[0]}
-                                        </Avatar>
-                                        <ListItemText primary={c.user.name} secondary={c.user.email} />
-                                    </ListItem>
+                                    }>
+                                    <Avatar src={c.user.meta.avatar} sx={{ mr: 1 }}>
+                                        {c.user.name?.[0]}
+                                    </Avatar>
+                                    <ListItemText primary={c.user.name} secondary={c.user.email} />
+                                </ListItem>
 
-                                </motion.li>
-                            ))}
-                        </List>
-                    )}
+                            </motion.li>
+                        ))}
+                    </List>
                 </AnimatePresence>
 
                 {open ? (
@@ -128,18 +129,17 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                 </Button>
                             </Stack>
 
-                            <AnimatePresence>
-                                {users.length == 0 && !loading && (
-                                    <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
-                                        <Typography color='text.secondary'>Tidak ada hasil!</Typography>
-                                    </Stack>
+                            <Stack flex={1} position={"relative"}>
+                                {loading && (
+                                    <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 2 }} />
                                 )}
-                                {loading ? (
-                                    <Stack flex={1} alignItems={"center"} justifyContent={"center"}>
-                                        <CircularProgress />
-                                    </Stack>
-                                ) : users.length > 0 && (
-                                    <List dense>
+                                <AnimatePresence>
+                                    {users.length == 0 && !loading && (
+                                        <Stack key={'empty'} flex={1} alignItems={"center"} justifyContent={"center"}>
+                                            <Typography color='text.secondary'>Tidak ada hasil!</Typography>
+                                        </Stack>
+                                    )}
+                                    <List key={'list'} dense>
                                         {users.map((u, i) => (
                                             <motion.li
                                                 key={u.id}
@@ -162,8 +162,8 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                             </motion.li>
                                         ))}
                                     </List>
-                                )}
-                            </AnimatePresence>
+                                </AnimatePresence>
+                            </Stack>
                         </Stack>
                     </motion.div>
                 ) : (

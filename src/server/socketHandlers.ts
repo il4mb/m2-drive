@@ -50,6 +50,7 @@ export const subscribers = new Map<
         socket: Socket;
         collection: QueryConfig['collection'];
         conditions?: QueryConfig['conditions'];
+        debug?: boolean
     }>();
 
 export function setupSocketHandlers(io: Server): void {
@@ -96,7 +97,8 @@ export function setupSocketHandlers(io: Server): void {
                 subscribers.set(id, {
                     socket,
                     collection: data.collection,
-                    conditions: data.conditions
+                    conditions: data.conditions,
+                    debug: data.debug
                 });
                 callback(id);
             }

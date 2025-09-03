@@ -205,22 +205,30 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    async broadcastDatabaseChange<
-        N extends EntityName,
-        E = InstanceType<EntityMap[N]>
-    >(
-        collection: N,
-        payload: DatabaseChangePayload,
-        dataId?: string | number
-    ) {
+    async broadcastDatabaseChange<N extends EntityName, E = InstanceType<EntityMap[N]>>
+        (
+            collection: N,
+            payload: DatabaseChangePayload,
+            dataId?: string | number
+        ) {
 
         const rule: BroadcastRule<E> = (broadcastRules as any)[collection] || broadcastRules.default;
-        for (const [id, { socket, collection, conditions }] of subscribers) {
+        for (const [id, { socket, collection, conditions, debug }] of subscribers) {
 
-            if (collection != payload.collection) continue;
+            if (collection != payload.collection) {
+                if (debug) {
+                    console.log("SKIPED", collection, payload.collection);
+                }
+                continue;
+            }
             const isValid = validateByConditions(payload.data || {}, conditions);
             const isValid2 = validateByConditions(payload.previousData || {}, conditions);
-            if (payload.event == "UPDATE" && (!isValid && !isValid2)) continue;
+            if (payload.event == "UPDATE" && (!isValid && !isValid2)) {
+                console.log("DATA", payload.data);
+                console.log("PREV DATA", payload.previousData);
+                console.log("IS VALID", isValid, isValid2);
+                continue;
+            }
 
             const user = socket.data?.user as User | undefined;
             const context: BroadcastContext<E> = {
@@ -238,7 +246,12 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
 
             try {
                 const allowed = await rule(context);
-                if (!allowed) continue;
+                if (!allowed) {
+                    if(debug) {
+                        console.log("SKIPPED", "RULE NOT ALLOWED");
+                    }
+                    continue;
+                }
                 socket.emit(`change-${id}`, payload);
             } catch (error) {
                 console.error(

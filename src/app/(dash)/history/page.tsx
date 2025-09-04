@@ -1,32 +1,19 @@
 "use client";
 
-import useRequest from "@/hooks/useRequest";
 import { File } from "@/entity/File";
 import {
-    Alert,
-    AlertTitle,
-    Box,
     Stack,
     Typography,
     Paper,
 } from "@mui/material";
-import { History, FileText, Clock, Upload, Folder, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { History, Clock, Upload, Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
 import { useMyHistory } from "@/hooks/useMyHistory";
 import StickyHeader from "@/components/StickyHeader";
 
-type Response = {
-    status: boolean;
-    message: string;
-    data: {
-        lastAdded: File[];
-        lastUpdated: File[];
-        lastOpened: File[];
-    };
-};
+
 
 type SectionProps = {
     title: string;
@@ -37,28 +24,6 @@ type SectionProps = {
 export default function Page() {
 
     const { files, loading } = useMyHistory();
-
-
-    // useEffect(() => {
-    //     console.log(files)
-    // }, [files]);
-
-    // const [lastAdd, setLastAdd] = useState<File[]>([]);
-    // const [lastUpdate, setLastUpdate] = useState<File[]>([]);
-    // const [lastOpen, setLastOpen] = useState<File[]>([]);
-
-    // const fetchHistory = useRequest<Response>({
-    //     endpoint: "/api/drive/history",
-    //     onSuccess(result) {
-    //         setLastAdd(result.data.lastAdded);
-    //         setLastUpdate(result.data.lastUpdated);
-    //         setLastOpen(result.data.lastOpened);
-    //     },
-    // });
-
-    // useEffect(() => {
-    //     fetchHistory.send();
-    // }, []);
 
     const FileCard = ({ file }: { file: File }) => (
         <motion.div
@@ -81,7 +46,16 @@ export default function Page() {
                     gap: 1,
                     width: "100%",
                 }}>
-                {file.type == "folder" ? <Folder size={28} strokeWidth={1} /> : <FileIcon variant="solid" size={28} strokeWidth={3} type={file.meta?.mimeType || file.type} />}
+                {file.type == "folder"
+                    ? <Folder
+                        size={28}
+                        strokeWidth={1} />
+                    : <FileIcon
+                        variant="solid"
+                        size={28}
+                        strokeWidth={3}
+                        // @ts-ignore
+                        type={file.meta?.mimeType || file.type} />}
 
                 <Stack flex={1} minWidth={0}>
                     <Typography

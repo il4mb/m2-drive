@@ -31,7 +31,7 @@ export default function useUserDrive({
 
     const [loading, setLoading] = useState(true);
     const [files, setFiles] = useState<File[]>();
-    const [parent, setParent] = useState<Folder | null>(null);
+    const [parent, setParent] = useState<File | null>(null);
 
     useEffect(() => {
          if (!uId) return;

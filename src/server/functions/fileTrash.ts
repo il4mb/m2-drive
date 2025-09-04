@@ -7,6 +7,7 @@ import { createFunction } from "../funcHelper";
 import { Brackets } from "typeorm";
 import Contributor from "@/entity/Contributor";
 import { getRequestContext } from "@/libs/requestContext";
+import { addTaskQueue } from "@/server/taskQueue";
 
 
 type RemoveRestoreProps = {
@@ -33,7 +34,7 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
             throw new Error("403: Menghapus tidak diperbolehkan!");
         }
 
-        if (actor?.meta.role != "admin" && actor?.id != file.uId) {
+        if (actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
             throw new Error("403: Not allowed to delete this " + file.type);
         }
 
@@ -75,12 +76,13 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
                 // @ts-ignore
                 const key = f.meta?.Key;
                 if (key) {
-                    const existsElsewhere = await repository.createQueryBuilder('f')
-                        .where('f.id != :id', { id: f.id })
+                    const ussageCount = await repository.createQueryBuilder('f')
                         .where('f.meta->>\'Key\' = :key', { key })
-                        .getExists()
+                        .getCount()
 
-                    if (!existsElsewhere) {
+                        console.log(ussageCount)
+
+                    if (ussageCount <= 1) {
                         // @ts-ignore
                         addTaskQueue("delete-file", { objectKey: key });
                     }
@@ -127,7 +129,7 @@ export const restoreFile = createFunction<RemoveRestoreProps>(async ({ fileId })
         throw new Error("404: File tidak ditemukan!");
     }
 
-    if (actor?.meta.role != "admin" && actor?.id != file.uId) {
+    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
         throw new Error("403: Not allowed to restore this " + file.type);
     }
 
@@ -168,7 +170,7 @@ export const emptyTrash = createFunction<EmptyTrashProps>(async ({ userId }) => 
     const source = await getConnection();
     const repository = source.getRepository(File);
 
-    if (actor?.meta.role != "admin" && actor?.id != userId) {
+    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
         throw new Error("403: Not allowed to performs this action");
     }
 
@@ -187,7 +189,7 @@ export const emptyTrash = createFunction<EmptyTrashProps>(async ({ userId }) => 
 
     // If they have S3 keys, queue them for deletion
     for (const f of trashedFiles) {
-        if (actor?.meta.role != "admin" && actor?.id != f.uId) {
+        if (actor != "system" && actor?.meta.role != "admin" && actor?.id != f.uId) {
             throw new Error("403: Not allowed to delete this " + f.type);
         }
 

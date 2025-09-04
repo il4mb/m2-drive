@@ -3,8 +3,10 @@
 import ContextInjector from '@/components/context/ContextInjector';
 import { CurrentSessionProvider } from '@/components/context/CurrentSessionProvider';
 import { SimpleMediaViewerProvider } from '@/components/context/SimpleMediaViewer';
+import { ViewerManager } from '@/components/context/ViewerManager';
 import Pattern from '@/components/icon/Pattern';
-import Sidebar from '@/components/ui/Sidebar';
+import SidebarDrawer from '@/components/ui/navigation/SidebarDrawer';
+import { SidebarProvider } from '@/components/ui/navigation/SidebarProvider';
 import { Box, Stack } from '@mui/material';
 import { AnimatePresence } from 'motion/react';
 import { ReactNode } from 'react';
@@ -17,7 +19,7 @@ export default function layout({ children }: layoutProps) {
         <CurrentSessionProvider>
             <ContextInjector>
                 <AnimatePresence mode={"wait"}>
-                    <SimpleMediaViewerProvider>
+                    <ViewerManager endpoint='/open/{ID}'>
                         <Stack
                             sx={{
                                 position: 'relative',
@@ -25,13 +27,11 @@ export default function layout({ children }: layoutProps) {
                             }}
                             flex={1}
                             direction={"row"}
-                            maxHeight={'100vh'}
-                            onContextMenu={(e) => e.preventDefault()}>
-                            <Sidebar />
-                            <Stack flex={1}>
+                            height={'100vh'}
+                            overflow={"hidden"}>
+                            <SidebarProvider>
                                 {children}
-                            </Stack>
-
+                            </SidebarProvider>
                         </Stack>
                         <Box
                             sx={{
@@ -48,7 +48,7 @@ export default function layout({ children }: layoutProps) {
                                 height={'100%'}
                                 opacity={0.8} />
                         </Box>
-                    </SimpleMediaViewerProvider>
+                    </ViewerManager>
                 </AnimatePresence>
             </ContextInjector>
         </CurrentSessionProvider>

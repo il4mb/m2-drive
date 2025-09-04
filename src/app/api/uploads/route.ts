@@ -88,7 +88,7 @@ export const POST = withApi(async (req) => {
 
     // Key can come from request if you want to resume by client-provided key
     // otherwise generate new
-    const objKey = Key || `drive/${generateKey()}`;
+    const objKey = Key || `drive/${generateKey(18)}`;
 
     // 🔍 check if there's already an incomplete multipart upload
     const listCommand = new ListMultipartUploadsCommand({

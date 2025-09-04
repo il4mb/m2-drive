@@ -18,17 +18,22 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { enqueueSnackbar } from "notistack";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import useUser from "@/hooks/useUser";
+import { useUserUpdate } from "@/hooks/useUserUpdate";
 
 export default function page() {
 
     const checkPermission = useCheckMyPermission();
     const canEditUser = checkPermission('can-edit-user');
 
-    const { uid } = useParams<{ uid: string }>();
-    const [user, setUser] = useState<User>();
-
     const roles = useRoles();
+
+    const { uid } = useParams<{ uid: string }>();
+    const { user, loading: getLoading } = useUser(uid);
+    const { update, loading: updateLoading } = useUserUpdate(uid);
+
+
     const [changePw, setChangePw] = useState(false);
 
     const [avatar, setAvatar] = useState<File | null>(null);
@@ -37,66 +42,32 @@ export default function page() {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('user');
 
-    const requestGetUser = useRequest({
-        action: getUser,
-        params: { uid },
-        onSuccess(result) {
-            const user = result.data?.user;
-            setUser(user);
-        },
-    });
+    const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
+    const emailValid = isEmailValid(email) && email.length >= 6 && email.length <= 64;
+    const roleValid = !!role && roles.some(r => r.name === role);
+    const passwordValid = useMemo(() => {
+        return changePw ? (password || '').length >= 8 && (password || '').length <= 64 : true
+    }, [changePw, password]);
 
-    const requestUpdate = useRequest({
-        action: handleUpdateUser,
-        params: { uid, name, email, role, avatar, ...(changePw && { password }) },
-        validator({ name, email, role, avatar, password }) {
+    const isValid = nameValid && emailValid && roleValid && passwordValid && (
+        Boolean(avatar
+            || user?.name != name
+            || user.email != email
+            || user.meta.role != role
+            || (password && password.length >= 8)
+        )
+    );
 
-            const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
-            const emailValid = isEmailValid(email) && email.length >= 6 && email.length <= 64;
-            const roleValid = !!role && roles.some(r => r.name === role);
 
-            let passwordValid = true;
-            if (changePw) {
-                passwordValid = (password || '').length >= 8 && (password || '').length <= 64;
-            }
-
-            return nameValid && emailValid && roleValid && passwordValid && (
-                Boolean(avatar
-                    || user?.name != name
-                    || user.email != email
-                    || user.meta.role != role
-                    || (password && password.length >= 8)
-                )
-            );
-        },
-        async onSuccess(result) {
-            await requestGetUser.send();
-            setAvatar(null);
-            setPassword('');
-            setChangePw(false);
-            enqueueSnackbar('Pengguna berhasil diperbarui', {
-                variant: 'success',
-                action: CloseSnackbar
-            });
-            emitSocket("update", {
-                collection: "user",
-                columns: {
-                    id: uid
-                },
-                data: result.data
-            });
-        },
-    })
-
-    useEffect(() => {
-        requestGetUser.send();
-    }, [uid]);
+    const handleSubmit = async () => {
+        const result = await update({ name, email, password, meta: { role } })
+    }
 
     useEffect(() => {
         setName(user?.name || "");
         setEmail(user?.email || '');
         setRole(user?.meta.role || '');
-    }, [user])
+    }, [user]);
 
 
     return (
@@ -126,16 +97,8 @@ export default function page() {
                         </Alert>
                     )}
 
-                    <RequestError
-                        request={requestGetUser}
-                        tryagain />
-
-                    <RequestError
-                        request={requestUpdate}
-                        closable />
-
                     <AvatarPicker
-                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                        disabled={!canEditUser || updateLoading || getLoading}
                         src={user?.meta.avatar}
                         size={{ width: 100, height: 100 }}
                         value={avatar} onChange={setAvatar}>
@@ -146,7 +109,7 @@ export default function page() {
                         <TextField
                             label="Nama"
                             value={name}
-                            disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                            disabled={!canEditUser || updateLoading || getLoading}
                             onChange={e => {
                                 const value = e.target.value.trim();
                                 if (value.length > 64) return;
@@ -162,7 +125,7 @@ export default function page() {
                             type="email"
                             label="Alamat Surel"
                             value={email}
-                            disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                            disabled={!canEditUser || updateLoading || getLoading}
                             onChange={e => {
                                 const value = e.target.value.trim().toLowerCase();
                                 if (value.length > 64) return;
@@ -177,7 +140,7 @@ export default function page() {
                         label="Jabatan"
                         placeholder="Pilih Jabatan Pengguna"
                         value={role}
-                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                        disabled={!canEditUser || updateLoading || getLoading}
                         onChange={e => setRole(e.target.value)} select>
                         {roles.map((role, i) => (
                             <MenuItem key={i} value={role.name}>
@@ -190,7 +153,7 @@ export default function page() {
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                                    disabled={!canEditUser || updateLoading || getLoading}
                                     checked={changePw}
                                     onChange={e => setChangePw(e.target.checked)} />
                             }
@@ -202,7 +165,7 @@ export default function page() {
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: 10, opacity: 0 }}>
                                     <PasswordField
-                                        disabled={!canEditUser || requestUpdate.pending || requestGetUser.pending}
+                                        disabled={!canEditUser || updateLoading || getLoading}
                                         value={password}
                                         onChange={(e) => {
                                             if (e.length > 64) return;
@@ -221,9 +184,9 @@ export default function page() {
 
                     {canEditUser && (
                         <Button
-                            loading={requestUpdate.pending}
-                            disabled={!requestUpdate.isValid}
-                            onClick={requestUpdate.send}
+                            loading={updateLoading || getLoading}
+                            disabled={!isValid}
+                            onClick={handleSubmit}
                             variant="contained"
                             sx={{
                                 alignSelf: "flex-end",

@@ -1,37 +1,28 @@
 'use client'
 
-import { getUser } from "@/actions/user";
-import useRequest from "./useRequest";
 import { useEffect, useState } from "react";
 import User from "@/entity/User";
-import { useOnEmit } from "@/socket";
+import { onSnapshot } from "@/libs/websocket/snapshot";
+import { getOne } from "@/libs/websocket/query";
 
-export default function useUser(uId: string) {
+export default function useUser(uId?: string|null) {
 
-    const [user, setUser] = useState<User>();
-
-    const request = useRequest({
-        action: getUser,
-        params: { uId },
-        validator(data) {
-            return Boolean(data.uId);
-        },
-        onSuccess(result) {
-            setUser(result.data);
-        },
-    });
-
-    useOnEmit("update", {
-        collection: 'user',
-        columns: { id: uId },
-        callback() {
-            request.send();
-        },
-    }, [uId]);
+    const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState<User|null>();
 
     useEffect(() => {
-        request.send();
+        if (!uId) return;
+        setLoading(true);
+        const unsubscribe = onSnapshot(
+            getOne("user").where("id", "==", uId),
+            (data) => {
+                setUser(data);
+                setLoading(false);
+            }
+        );
+
+        return unsubscribe;
     }, [uId]);
 
-    return { user }
+    return { user, loading }
 }

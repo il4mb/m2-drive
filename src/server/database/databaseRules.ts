@@ -6,7 +6,7 @@ import { DataSource } from "typeorm";
 import { File } from "@/entity/File";
 
 export interface DatabaseRuleContext<E = any> {
-    user?: User;
+    user?: User | "system";
     collection: EntityName;
     event: DatabaseEvent;
     data?: Partial<E>;
@@ -43,6 +43,7 @@ export const databaseRules: DatabaseRuleMap = {
         const { user, event, data } = context;
         // Must be logged in
         if (!user) return false;
+        if (user == "system") return true;
 
         if (event === "INSERT") {
             // Only admins can create users
@@ -66,28 +67,34 @@ export const databaseRules: DatabaseRuleMap = {
 
     file: (context) => {
         const { user, event, data } = context;
+        if (user == "system") return true;
+
+
         if (event === "UPDATE") {
-            const tags = data?.meta?.tags || [];
             if (data?.uId === user?.id || user?.meta.role === "admin") return true;
         }
-        if(event == "INSERT") {
+        if (event == "INSERT") {
             return Boolean(user);
         }
-        if(event == "DELETE") {
+        if (event == "DELETE") {
             return Boolean(user);
         }
         return false;
     },
 
     contributor: async (context) => {
+
         const { connection, user, data } = context;
+
+        if (user == "system") return true;
+
         const file = await connection.getRepository(File).findOneBy({ id: data?.fileId })
         if (file && (file.uId == user?.id || user?.meta.role === "admin")) {
             return true;
         }
         return false;
     },
-    
+
     token: () => {
         return true;
     }

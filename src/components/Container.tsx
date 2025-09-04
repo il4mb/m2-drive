@@ -11,7 +11,7 @@ export default function Container({ children, scrollable = false, maxWidth = "md
 
 
     return (
-        <Stack flex={1} overflow={scrollable ? "auto" : 'hidden'} direction={"column"} sx={sx}>
+        <Stack px={[1, 1, 2]} flex={1} overflow={scrollable ? "auto" : 'hidden'} direction={"column"} sx={sx}>
             <Stack flex={1} m={2} maxWidth={maxWidth} width={'100%'} mx={'auto'} direction={"column"}>
                 {children}
             </Stack>

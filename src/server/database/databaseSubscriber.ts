@@ -224,9 +224,11 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             const isValid = validateByConditions(payload.data || {}, conditions);
             const isValid2 = validateByConditions(payload.previousData || {}, conditions);
             if (payload.event == "UPDATE" && (!isValid && !isValid2)) {
-                console.log("DATA", payload.data);
-                console.log("PREV DATA", payload.previousData);
-                console.log("IS VALID", isValid, isValid2);
+                if (debug) {
+                    console.log("DATA", payload.data);
+                    console.log("PREV DATA", payload.previousData);
+                    console.log("IS VALID", isValid, isValid2);
+                }
                 continue;
             }
 
@@ -247,7 +249,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             try {
                 const allowed = await rule(context);
                 if (!allowed) {
-                    if(debug) {
+                    if (debug) {
                         console.log("SKIPPED", "RULE NOT ALLOWED");
                     }
                     continue;

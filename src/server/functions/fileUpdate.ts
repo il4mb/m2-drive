@@ -23,7 +23,7 @@ export const createFolder = createFunction<CreateFolderProps>(async ({ userId, n
         throw new Error("400: userId tidak boleh kosong!");
     }
 
-    if (actor?.meta.role != "admin" && actor?.id != userId) {
+    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
         throw new Error("403: Not allowed to performs this action");
     }
 
@@ -89,11 +89,12 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
     const file = await fileRepository.findOneBy({ id });
     if (!file) throw new Error("404: File not found");
 
-    const isAdmin = actor?.meta.role === "admin";
-    const isOwner = actor?.id === file.uId;
+    const isSystem = actor == "system";
+    const isAdmin = !isSystem && actor?.meta.role === "admin";
+    const isOwner = !isSystem && actor?.id === file.uId;
 
     // Check permissions
-    if (!isAdmin && !isOwner) {
+    if (!isSystem && !isAdmin && !isOwner) {
         throw new Error("403: Not allowed to perform this action");
     }
 

@@ -8,13 +8,18 @@ import { contextMenuStack } from "@/components/context-menu/ContextMenuItem";
 import ActionDivider from "@/components/menu-actions/ActionDivider";
 import ActionNewFolder from "@/components/menu-actions/ActionNewFolder";
 import { getColor } from "@/theme/colors";
-import { alpha, Button, IconButton, Paper, Skeleton, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, ChevronLeft, Clock, CloudUpload, FileDigit, FolderOpen, Funnel, HardDrive, LayoutGrid, StretchHorizontal, } from "lucide-react";
+import { alpha, Breakpoint, Button, IconButton, Paper, Skeleton, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, ChevronLeft, Clock, CloudUpload, FileDigit, FolderOpen, Funnel, HardDrive, LayoutGrid, Search, StretchHorizontal, } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ReactNode, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Dispatch, ReactNode, SetStateAction, useEffect, useMemo, useState } from "react";
 import { File, Folder } from "@/entity/File";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
+import MobileAction from "@/components/MobileAction";
+import { FileIcon } from "@untitledui/file-icons";
+import { ViewerManager } from "@/components/context/ViewerManager";
+import { StickyHeaderManager } from "@/components/StickyHeaderManager";
+import { AnimatePresence } from "motion/react";
 
 export type DriveLayoutState = {
     userId: string;
@@ -25,9 +30,10 @@ export type DriveLayoutState = {
     setOrder: (s: DriveLayoutState["order"]) => void;
     sort: "type" | "name" | "createdAt" | "updatedAt";
     setSort: (s: DriveLayoutState["sort"]) => void;
-    setFolder: (f: Folder | null) => void;
+    setParent: (f: File | null) => void;
     setLoading: (b: boolean) => void;
     keyword: string;
+    setMaxWidth: Dispatch<SetStateAction<Breakpoint>>;
 }
 
 export interface layoutProps {
@@ -37,20 +43,20 @@ export default function layout({ children }: layoutProps) {
 
     const router = useRouter();
     const theme = useTheme();
-
     const { user } = useCurrentSession();
     const [loading, setLoading] = useState(true);
-    const [folder, setFolder] = useState<File | null>(null);
+    const [parent, setParent] = useState<File | null>(null);
     const [layout, setLayout] = useLocalStorage<DriveLayoutState["layout"]>("drive-layout", "list");
     const [order, setOrder] = useLocalStorage<DriveLayoutState["order"]>("drive-order", "DESC");
     const [sort, setSort] = useLocalStorage<DriveLayoutState["sort"]>("drive-sort", "type");
     const [keyword, setKeyword] = useState('');
+    const [maxWidth, setMaxWidth] = useState<Breakpoint>("lg");
 
     const state: DriveLayoutState = useMemo(() => ({
         userId: user?.id || '',
         keyword,
-        folder, layout, setLayout, order, setOrder, sort, setSort, setFolder, setLoading
-    }), [user, keyword, folder, layout, order, sort, setLayout, setOrder, setSort, setFolder, setLoading]);
+        folder: parent, layout, setLayout, order, setOrder, sort, setSort, setParent, setLoading, setMaxWidth
+    }), [user, keyword, parent, layout, order, sort, setLayout, setOrder, setSort, setParent, setLoading, maxWidth, setMaxWidth]);
 
     const toggleLayout = () => setLayout(prev => prev == "grid" ? "list" : "grid");
 
@@ -136,76 +142,100 @@ export default function layout({ children }: layoutProps) {
     ])
 
     return (
-        <ContextMenu state={state} menu={menu} maxWidth={210}>
-            <Stack flex={1} overflow={"hidden"}>
-                <Container maxWidth='lg' scrollable>
-                    {/* Sticky Header */}
-                    <StickyHeader loading={loading}>
-                        <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
-                            <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
-                                {!loading && !folder ? (
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <HardDrive size={28} color={theme.palette.primary.main} />
-                                        <Typography component={"div"} fontSize={22} fontWeight={700}>
-                                            My Drive
-                                        </Typography>
-                                    </Stack>
-                                ) : folder ? (
-                                    <Stack direction={"row"} spacing={2} alignItems={"center"}>
-                                        <IconButton onClick={() => router.back()}>
-                                            <ChevronLeft size={16} />
-                                        </IconButton>
-                                        <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                                            <FolderOpen />
-                                            <Typography component={"div"}>
-                                                {folder.name}
-                                            </Typography>
+        <AnimatePresence mode={"wait"}>
+            {/* <ViewerManager endpoint="/drive/open/{ID}"> */}
+                <ContextMenu state={state} menu={menu} maxWidth={230}>
+                    <Stack flex={1} overflow={"hidden"}>
+                        <Container maxWidth={maxWidth} scrollable>
+                            <StickyHeaderManager>
+                                <StickyHeader loading={loading}>
+                                    <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
+                                        <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
+                                            {!loading && !parent ? (
+                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                    <HardDrive size={28} color={theme.palette.primary.main} />
+                                                    <Typography component={"div"} fontSize={22} fontWeight={700}>
+                                                        My Drive
+                                                    </Typography>
+                                                </Stack>
+                                            ) : parent ? (
+                                                <Stack direction={"row"} spacing={2} alignItems={"center"}>
+                                                    <IconButton onClick={() => router.back()}>
+                                                        <ChevronLeft size={16} />
+                                                    </IconButton>
+                                                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                                        <Stack minWidth={30} justifyContent={"center"} alignItems={"center"}>
+                                                            {parent.type == "folder"
+                                                                ? <FolderOpen />
+                                                                : <FileIcon
+                                                                    size={22}
+                                                                    variant="solid"
+                                                                    // @ts-ignore
+                                                                    type={parent.meta.mimeType} />}
+                                                        </Stack>
+                                                        <Typography component={"div"}>
+                                                            {parent.name}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Stack>
+                                            ) : (
+                                                <Stack flex={1} direction={"row"} spacing={1} alignItems={"flex-end"}>
+                                                    <Skeleton component={"div"} variant='rounded' width={30} height={30} />
+                                                    <Skeleton component={"div"} variant='rounded' width={150} height={20} />
+                                                </Stack>
+                                            )}
                                         </Stack>
+
+                                        {(parent == null || parent.type == "folder") && (
+                                            <Stack direction={"row"} alignItems={"center"} spacing={4}>
+
+                                                <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                                                    <MobileAction
+                                                        id="search"
+                                                        icon={<Search size={18} />}>
+                                                        <TextField
+                                                            value={keyword}
+                                                            onChange={e => setKeyword(e.target.value)}
+                                                            autoComplete="off"
+                                                            size='small'
+                                                            label={`Cari di ${parent ? parent.name : 'Drive'}`}
+                                                            fullWidth />
+                                                    </MobileAction>
+
+                                                    <MobileAction id="filter">
+                                                        <IconButton disabled={loading}>
+                                                            <Funnel size={16} />
+                                                        </IconButton>
+                                                    </MobileAction>
+                                                    <MobileAction id="layout">
+                                                        <IconButton onClick={toggleLayout}>
+                                                            {layout == "grid" ? <LayoutGrid size={16} /> : <StretchHorizontal size={16} />}
+                                                        </IconButton>
+                                                    </MobileAction>
+                                                </Stack>
+
+                                                <Tooltip title={`Unggah file`} arrow>
+                                                    <Button
+                                                        LinkComponent={Link}
+                                                        href={`/drive/upload`}
+                                                        variant='contained'
+                                                        startIcon={<CloudUpload size={18} />}>
+                                                        Unggah
+                                                    </Button>
+                                                </Tooltip>
+                                            </Stack>
+                                        )}
                                     </Stack>
-                                ) : (
-                                    <Stack flex={1} direction={"row"} spacing={1} alignItems={"flex-end"}>
-                                        <Skeleton component={"div"} variant='rounded' width={30} height={30} />
-                                        <Skeleton component={"div"} variant='rounded' width={150} height={20} />
-                                    </Stack>
-                                )}
-                            </Stack>
+                                </StickyHeader>
 
-                            <Stack direction={"row"} alignItems={"center"} spacing={4}>
-
-                                <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                                    <TextField
-                                        value={keyword}
-                                        onChange={e => setKeyword(e.target.value)}
-                                        autoComplete="off"
-                                        size='small'
-                                        label={`Cari di ${folder ? folder.name : 'Drive'}`}
-                                        fullWidth />
-                                    <IconButton disabled={loading}>
-                                        <Funnel size={16} />
-                                    </IconButton>
-                                    <IconButton onClick={toggleLayout}>
-                                        {layout == "grid" ? <LayoutGrid size={16} /> : <StretchHorizontal size={16} />}
-                                    </IconButton>
-                                </Stack>
-
-                                <Tooltip title={`Unggah file`} arrow>
-                                    <Button
-                                        LinkComponent={Link}
-                                        href={`/drive/upload`}
-                                        variant='contained'
-                                        startIcon={<CloudUpload size={18} />}>
-                                        Unggah
-                                    </Button>
-                                </Tooltip>
-                            </Stack>
-                        </Stack>
-                    </StickyHeader>
-
-                    <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
-                        {children}
-                    </Paper>
-                </Container>
-            </Stack>
-        </ContextMenu>
+                                <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
+                                    {children}
+                                </Paper>
+                            </StickyHeaderManager>
+                        </Container>
+                    </Stack>
+                </ContextMenu>
+            {/* </ViewerManager> */}
+        </AnimatePresence>
     );
 }

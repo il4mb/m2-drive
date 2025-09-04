@@ -4,7 +4,7 @@ import { LinearProgress, Stack, Typography, Tooltip, Button } from "@mui/materia
 import { motion } from "framer-motion";
 import { getColor } from "@/theme/colors";
 import { useEffect, useMemo, useState } from "react";
-import { Upload } from "@/types";
+import { FileUpload } from "@/types";
 import { formatFileSize } from "@/libs/utils";
 import { Pause, Trash, RefreshCcw, Play } from "lucide-react";
 import { FileIcon } from "@untitledui/file-icons";
@@ -18,7 +18,7 @@ type ActionState = {
     [key in ActionName]?: () => Promise<void>;
 }
 export interface Props extends ActionState {
-    upload: Upload;
+    upload: FileUpload;
     index: number;
 }
 
@@ -31,7 +31,7 @@ export default function UploadItem({ upload, index }: Props) {
     const progress = Math.floor((upload.chunkIndex / (upload.totalChunks ?? 1)) * 100);
 
     useEffect(() => {
-        console.log(upload.status)
+        console.log(upload)
     }, [upload])
 
     const color = useMemo(() => getColor(

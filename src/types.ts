@@ -9,14 +9,14 @@ export type LinkMenu = {
     href: string;
     permission?: PERMISSION_NAMES;
     icon?: ReactNode;
-};
+}
 
 export type GroupMenu = {
     type: "group";
     label: string;
     icon?: ReactNode;
     children: IMenu[];
-};
+}
 
 export type IMenu<T extends MenuTypeName = any> = T extends "link" ? LinkMenu : GroupMenu;
 
@@ -53,25 +53,32 @@ export function isFolder(file: IFile): file is TypeFolder {
 
 
 
-export type Upload = {
+export type FileUpload = {
     id: string;
     uId: string;
-    status: "pending" | "uploading" | "pause" | "error" | "finishing" | "done";
+    status: "pending" | "uploading" | "pause" | "error" | "stop" | "finishing" | "done";
     error?: string;
     fId: string | null;
+
     fileName: string;
     fileType: string;
     fileSize: number;
+    thumbnail?: ArrayBuffer;
+
     chunkIndex: number;
     totalChunks: number;
-    chunks: Blob[];
-
+    progress?: number;
     UploadId?: string;
     Key?: string;
     etags?: {
         ETag: string,
         PartNumber: number
     }[];
+}
+
+export type FileBlob = {
+    fileId: string;
+    chunks: Blob[];
 }
 
 

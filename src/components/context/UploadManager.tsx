@@ -3,7 +3,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, } from 'react';
 import { ClientTaskQueue } from '@/libs/clientTaskQueue';
 import { useUploadsIdb } from './IDBMProvider';
-import { Upload } from '@/types';
+import { FileUpload } from '@/types';
 import { useUploads } from './UploadsProvider';
 import useRequest from '@/hooks/useRequest';
 
@@ -14,7 +14,7 @@ type Props = {
 };
 
 type UploadManagerContext = {
-    uploads: Upload[];
+    uploads: FileUpload[];
     pauseUpload: (id: string) => Promise<void>;
     resumeUpload: (id: string) => Promise<void>;
     removeUpload: (id: string) => Promise<void>;
@@ -45,7 +45,7 @@ export default function UploadManager({ children }: Props) {
 
 
     /** Update upload entry in DB */
-    const updateUpload = useCallback((id: string, data: Partial<Upload>) => db.update({ id }, data), [db]);
+    const updateUpload = useCallback((id: string, data: Partial<FileUpload>) => db.update({ id }, data), [db]);
 
     /** Upload handler for each file */
     const uploadHandler = useCallback(

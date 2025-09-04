@@ -5,7 +5,7 @@ import { formatFileSize } from '@/libs/utils';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
 import { Folder } from 'lucide-react';
-import { FC, MouseEvent } from 'react';
+import { FC, MouseEvent, useEffect } from 'react';
 import ContextMenu from '../context-menu/ContextMenu';
 import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextMenuItem';
 import ActionOpen from '../menu-actions/ActionOpen';
@@ -18,6 +18,8 @@ import ActionRename from '../menu-actions/ActionRename';
 import ActionTrash from '../menu-actions/ActionTrash';
 import UserAvatar from '../ui/UserAvatar';
 import ActionDetails from '../menu-actions/ActionDetails';
+import usePresignUrl from '@/hooks/usePresignUrl';
+import ActionOpenWith from '../menu-actions/ActionOpenWith';
 
 export type FileMenuState = {
     file: File;
@@ -69,6 +71,7 @@ export default function FileView<T = any>({
 
     const menuItem = contextMenuStack<FileMenuState>([
         ActionOpen,
+        ActionOpenWith,
         ActionDetails,
         ActionShare,
         ActionDivider,
@@ -80,7 +83,7 @@ export default function FileView<T = any>({
     ]);
 
     return (
-        <ContextMenu state={menuState} menu={menu ? menu : menuItem}>
+        <ContextMenu state={menuState} menu={menu ? menu : menuItem} maxWidth={230}>
             <Stack
                 component={Paper}
                 direction={layout == "list" ? "row" : "column"}
@@ -98,7 +101,12 @@ export default function FileView<T = any>({
                     overflow: 'hidden',
                     "&:hover": {
                         bgcolor: "action.hover"
-                    }
+                    },
+                    // @ts-ignore
+                    ...(layout == "grid" && file.meta?.thumbnail && {
+                        // @ts-ignore
+                        background: `url(/s3/${file.meta?.thumbnail})`
+                    })
                 }}>
                 {layout == "grid"
                     ? (
@@ -108,27 +116,39 @@ export default function FileView<T = any>({
                             alignItems={"center"}
                             overflow={"hidden"}>
                             <Stack
+                                flex={1}
                                 justifyContent={"center"}
                                 alignItems={"center"}>
-                                {file.type == "folder"
-                                    ? <Folder
-                                        strokeWidth={1}
-                                        size={size * 2} />
-                                    : <FileIcon
-                                        variant={"solid"}
-                                        size={size * 2}
-                                        // @ts-ignore
-                                        type={file.meta?.mimeType || ''} />}
+                                {!Boolean((file.meta as any)?.thumbnail) && (
+                                    <>
+                                        {file.type == "folder"
+                                            ? <Folder
+                                                strokeWidth={1}
+                                                size={size * 2} />
+                                            : <FileIcon
+                                                variant={"solid"}
+                                                size={size * 2}
+                                                // @ts-ignore
+                                                type={file.meta?.mimeType || ''} />}
+                                    </>
+                                )}
+
                             </Stack>
                             <Typography
-                                maxWidth={'150px'}
+                                maxWidth="150px"
                                 fontSize={size - ((40 / 100) * size)}
-                                textAlign={"center"}
-                                overflow={"hidden"}
-                                textOverflow={"ellipsis"}>
+                                textAlign="center"
+                                sx={{
+                                    display: "-webkit-box",
+                                    overflow: "hidden",
+                                    WebkitBoxOrient: "vertical",
+                                    WebkitLineClamp: 2, // Max 2 lines
+                                    lineHeight: "1.2em",
+                                }}>
                                 {file.name}
                             </Typography>
-                            <Typography color='text.secondary' fontSize={10} textAlign={"center"}>
+
+                            <Typography color='text.secondary' fontSize={10} textAlign={"center"} mb={0.4}>
                                 {file.type == "folder"
                                     // @ts-ignore
                                     ? `${file.meta?.itemCount || 0} items`

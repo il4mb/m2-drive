@@ -38,7 +38,7 @@ export const copyFile = createFunction<CopyMoveProps>(
                 throw new Error("404: Target folder not found");
             }
             // Check if user has permission to copy to target folder
-            if (actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
+            if (actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
                 throw new Error("403: No permission to copy to this folder");
             }
         }
@@ -221,7 +221,7 @@ export const moveFile = createFunction<CopyMoveProps>(
         }
 
         // Check permission - user can only move their own files unless no userId is provided
-        if (actor?.meta.role != "admin" && userId && file.uId !== userId) {
+        if (actor != "system" && actor?.meta.role != "admin" && userId && file.uId !== userId) {
             throw new Error("403: No permission to move this file");
         }
 
@@ -241,7 +241,7 @@ export const moveFile = createFunction<CopyMoveProps>(
             }
 
             // Check if user has permission to move to target folder
-            if (actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
+            if (actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
                 throw new Error("403: No permission to move to this folder");
             }
         }

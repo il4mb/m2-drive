@@ -350,8 +350,12 @@ export default function useRequest<
 
                     throw new HttpError(statusText, errorMessage, response.status);
                 }
+
             } else {
                 throw new Error("Invalid request configuration");
+            }
+            if (responseData?.status === false) {
+                throw new Error(responseData?.message || "Unknown Error");
             }
 
             setState(prev => ({ ...prev, data: responseData as T }));
@@ -408,7 +412,7 @@ export default function useRequest<
     useEffect(() => {
         if (!props.autoSend) return;
         const propsInString = JSON.stringify(props);
-        if(propsInString == signature.current) return;
+        if (propsInString == signature.current) return;
         send();
         signature.current = propsInString;
     }, [props.autoSend, ...deps]);

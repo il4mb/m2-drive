@@ -4,11 +4,11 @@ import { useRef, useEffect, useState } from "react";
 import { Stack, Typography, Button, Paper } from "@mui/material";
 import { Upload, CloudUpload, Infinity } from "lucide-react";
 import { useUploads } from "@/components/context/UploadsProvider";
-import UploadItem from "@/components/ui/drive/UploadItem";
 import { getColor } from "@/theme/colors";
 import { useDrive } from "@/components/context/DriveProvider";
 import StickyHeader from "@/components/StickyHeader";
 import Container from "@/components/Container";
+import UploadManager from "@/components/ui/upload/UploadManager";
 
 export default function UploadPage() {
 
@@ -122,15 +122,7 @@ export default function UploadPage() {
                                 </Stack>
                             </Stack>
                         )}
-
-                        <Stack spacing={2}>
-                            {uploads.map((u, i) => (
-                                <UploadItem
-                                    key={u.id}
-                                    upload={u}
-                                    index={i} />
-                            ))}
-                        </Stack>
+                        <UploadManager uploads={uploads} />
                     </Stack>
                 </Paper>
 

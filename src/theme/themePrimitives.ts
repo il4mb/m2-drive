@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import { createTheme, alpha, PaletteMode, Shadows } from '@mui/material/styles';
 
-const fontFamily = 'Quicksand, sans-serif';
+const fontFamily = 'Figtree, sans-serif';
 
 declare module '@mui/material/Paper' {
 	interface PaperPropsVariantOverrides {

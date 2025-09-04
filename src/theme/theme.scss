@@ -1,11 +1,6 @@
 @font-face {
-    font-family: Quicksand;
-    src: url("./fonts/Quicksand/Quicksand-VariableFont_wght.ttf") format("truetype");
-}
-
-@font-face {
-    font-family: Montserrat;
-    src: url("./fonts/Montserrat.ttf") format("truetype");
+    font-family: Figtree;
+    src: url("./fonts/Figtree.ttf") format("truetype");
 }
 
 * {
@@ -20,7 +15,7 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    font-family: Quicksand, Arial, Helvetica, sans-serif;
+    font-family: Figtree, Arial, Helvetica, sans-serif;
 }
 
 input:-internal-autofill-selected {

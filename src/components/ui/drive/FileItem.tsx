@@ -1,7 +1,7 @@
 "use client"
 
-import usePresignUrl from '@/components/hooks/usePresignUrl';
-import { IFiles } from '@/entity/File';
+import usePresignUrl from '@/hooks/usePresignUrl';
+import { File } from '@/entity/File';
 import { Avatar, Stack, Typography } from '@mui/material';
 import { FileImage, Folder } from 'lucide-react';
 import ContextMenu from '../../context-menu/ContextMenu';
@@ -12,17 +12,17 @@ import { formatLocaleDate } from '@/libs/utils';
 
 
 export type FileContextMenu = {
-    file: IFiles;
+    file: File;
     refresh: () => void;
-    onOpen?: (file: IFiles) => void;
+    onOpen?: (file: File) => void;
 }
 
 export interface FileItemProps {
-    file: IFiles;
+    file: File;
     layout?: "list" | "grid";
     index?: number;
     menu?: React.FC<ContextMenuItemProps<FileContextMenu>>[];
-    onOpen?: (file: IFiles) => void;
+    onOpen?: (file: File) => void;
     onRefresh?: () => void;
 }
 export default function FileItem({ index = 0, file, menu = [], layout = "grid", onOpen, onRefresh }: FileItemProps) {

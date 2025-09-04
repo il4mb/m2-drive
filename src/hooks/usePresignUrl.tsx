@@ -1,15 +1,12 @@
-import { File } from "@/entity/File";
 import useCache from "./useCache";
 import { useEffect } from "react";
 import useRequest from "./useRequest";
 
-export default function usePresignUrl(file?: File) {
+export default function usePresignUrl(objKey?: string) {
 
-
-    const [cache, setCache, locked] = useCache(file?.id || "");
+    const [cache, setCache, pending] = useCache(objKey);
     const request = useRequest({
-        endpoint: "/api/drive/presign-url",
-        queryParams: { id: file?.id },
+        endpoint: `/api/presign-url/${objKey}`,
         onSuccess(result) {
             setCache({
                 value: result.data.url,
@@ -19,14 +16,13 @@ export default function usePresignUrl(file?: File) {
     });
 
     useEffect(() => {
-
-        if (file?.type != "file" || locked) return;
+        if (pending) return;
         if (cache && cache.exp <= Date.now()) {
             request.send()
         } else if (!cache) {
             request.send()
         }
-    }, [locked, cache]);
+    }, [pending, cache]);
 
-    return !file ? null : cache?.value || undefined;
+    return cache?.value || undefined;
 }

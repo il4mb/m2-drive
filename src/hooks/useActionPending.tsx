@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 
-export const useActionPending = <T extends (...args: any[]) => void | Promise<any>>(action: T): [boolean, () => void] => {
+export const useActionPending = <
+    T extends (...args: any[]) => any
+>(
+    action: T
+): [boolean, (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>>] => {
     const [loading, setLoading] = useState(false);
 
-    const invoke = async (...args: Parameters<T>): Promise<ReturnType<T> | void> => {
-        if (loading) return;
+    const invoke = async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
+        if (loading) return undefined as Awaited<ReturnType<T>>;
         setLoading(true);
         try {
-            // Await in case it's async
             return await action(...args);
         } catch (e) {
             console.error("useActionPending error:", e);
-            throw e; // rethrow if you want to handle outside
+            throw e;
         } finally {
-            // Small delay so loading state feels smooth
             setTimeout(() => setLoading(false), 300);
         }
     };

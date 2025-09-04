@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export interface IApi<T> {
+export interface ApiResponse<T> {
     status: boolean;
     message: string;
     data?: T;
 }
 
-type AppRouteHandler<T> = (req: NextRequest) => Promise<IApi<T>> | IApi<T>;
+export interface NextRequestContext<J> extends Omit<NextResponse, 'json'> {
+    json: () => Promise<J>;
+}
 
-export function withApi<T = unknown>(handler: AppRouteHandler<T>) {
+export interface NextResponseContext<P> extends NextResponse {
+    params: Promise<P>;
+}
 
-    return async (req: NextRequest): Promise<Response> => {
+export type ApiHandler<T, Json, Param> = (req: NextRequestContext<Json>, res: NextResponseContext<Param>) => Promise<ApiResponse<T>> | ApiResponse<T>;
+
+export function withApi<T = any, Json = any, Param = any>(handler: ApiHandler<T, Json, Param>) {
+
+    return async (req: NextRequest, res: NextResponse): Promise<Response> => {
 
         let data: any;
 
         try {
 
-            const res = await handler(req as any);
+            const response = await handler(req as any, res as any);
 
-            if (!res.status) {
-                if (res.data) data = res.data;
-                throw new Error(res.message);
+            if (!response.status) {
+                if (response.data) data = response.data;
+                throw new Error(response.message);
             }
 
-            return NextResponse.json(res, { status: 200 });
+            return NextResponse.json(response, { status: 200 });
 
         } catch (err: any) {
 

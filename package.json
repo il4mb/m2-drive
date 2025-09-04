@@ -18,6 +18,7 @@
     "@mui/material": "^7.3.1",
     "@untitledui/file-icons": "^0.0.8",
     "bcrypt": "^6.0.0",
+    "image-size": "^2.0.2",
     "jose": "^6.0.12",
     "lodash": "^4.17.21",
     "lucide-react": "^0.539.0",

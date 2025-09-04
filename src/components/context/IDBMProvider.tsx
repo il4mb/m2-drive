@@ -2,14 +2,15 @@
 
 
 import { IDBM } from "@/libs/idxdb/IDBM";
-import { Cache, Upload } from "@/types";
+import { Cache, FileBlob, FileUpload } from "@/types";
 import { createContext, ReactNode, useContext, useMemo } from "react";
 
 type Schema = {
-    uploads: Upload;
+    uploads: FileUpload;
+    fileBlob: FileBlob;
     cache: Cache;
 };
-const idbm = new IDBM<Schema>('MerapiPanel', 5);
+const idbm = new IDBM<Schema>('MerapiPanel', 6);
 const createIDBM = () => idbm.init({
     uploads: {
         autoIncrement: false,
@@ -17,6 +18,10 @@ const createIDBM = () => idbm.init({
         index: {
             byId: ['id']
         }
+    },
+    fileBlob: {
+        autoIncrement: false,
+        key: ['fileId']
     },
     cache: {
         autoIncrement: false,
@@ -47,4 +52,5 @@ export default function IDBMProvider({ children }: IIdbProviderProps) {
 }
 
 export const useUploadsIdb = () => useIDBM("uploads");
+export const useFileBlobIdb = () => useIDBM("fileBlob");
 export const useCacheIdb = () => useIDBM('cache');

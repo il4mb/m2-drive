@@ -6,13 +6,15 @@ import { createContext, useContext, useState, ReactNode, useMemo, useEffect } fr
 import useRequest from '@/hooks/useRequest';
 import { getCurrentSession } from '@/actions/current-session';
 import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
-import { emitSocket, socket, useOnEmit } from '@/socket';
+import useUser from '@/hooks/useUser';
+import { enqueueSnackbar } from 'notistack';
+import { useRouter } from 'next/navigation';
 
 interface CurrentSessionProviderState {
     tokenId?: string;
     createdAt?: number;
     expiredAt?: number;
-    user?: Omit<User, "password">;
+    user?: User | null;
     refreshToken: () => void;
 }
 
@@ -25,15 +27,22 @@ type CurrentSessionProviderProps = {
 export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps) => {
 
     const [token, setToken] = useState<Token>();
-    const [user, setUser] = useState<User>();
+    const [userId, setUserId] = useState<string | null>(null);
+    const { user } = useUser(userId);
+    const router = useRouter();
 
     const request = useRequest({
         action: getCurrentSession,
         onSuccess(result) {
             setToken(result.data?.token);
-            setUser(result.data?.user as User);
+            setUserId(result.data?.userId || null);
         },
-    });
+        onError(error) {
+            enqueueSnackbar(error.message, { variant: "error" })
+            router.push('/auth');
+        },
+    }, [router]);
+    
     const refreshToken = () => request.send();
 
     const stateValue = useMemo(() => ({
@@ -42,21 +51,15 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
         refreshToken
     }), [token, user, refreshToken]);
 
-    useOnEmit("update", {
-        collection: "user",
-        columns: { id: user?.id },
-        callback(data) {
-            setUser(data);
-        },
-    }, [user]);
-
     useEffect(() => {
         refreshToken();
     }, []);
 
+
+
     return (
         <CurrentSessionProviderContext.Provider value={stateValue}>
-            <CurrentUserAbilitiesProvider user={user}>
+            <CurrentUserAbilitiesProvider user={user || undefined}>
                 {children}
             </CurrentUserAbilitiesProvider>
         </CurrentSessionProviderContext.Provider>

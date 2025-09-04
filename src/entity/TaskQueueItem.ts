@@ -4,7 +4,7 @@ export type TaskStatus = "pending" | "processing" | "completed" | "failed";
 
 @Entity("task_queue")
 export class TaskQueueItem<T = any> {
-    
+
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
@@ -27,6 +27,15 @@ export class TaskQueueItem<T = any> {
     @Column({ type: "int", nullable: true })
     updatedAt!: number | null;
 
+    @Column({ type: "int", nullable: true })
+    startedAt!: number | null;
+
+    @Column({ type: "int", nullable: true })
+    completedAt!: number | null;
+
     @Column({ type: "text", nullable: true })
     error?: string | null;
+
+    @Column({ type: 'int', default: 0 })
+    priority?: number;
 }

@@ -2,7 +2,7 @@ import User from "@/entity/User";
 import { AsyncLocalStorage } from "async_hooks";
 
 type RequestContextType = {
-    user?: User;
+    user?: User | 'system';
 };
 
 export const requestContext = new AsyncLocalStorage<RequestContextType>();

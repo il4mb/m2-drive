@@ -1,25 +1,25 @@
 import type { NextConfig } from "next";
 
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const S3_ENDPOINT = process.env.S3_ENDPOINT
+
 const nextConfig: NextConfig = {
     webpack: (config, { isServer }) => {
         if (isServer) {
-            // Make sure externals is an array
-            if (!Array.isArray(config.externals)) {
-                config.externals = [];
-            }
-
-            // Ignore typeorm (already done)
-            config.externals.push("typeorm");
-
-            // Ignore anything in src/server (server-only code)
-            config.externals.push(({ request }, callback) => {
-                if (request && request.startsWith("./src/server")) {
-                    return callback(null, `commonjs ${request}`);
-                }
-                callback();
-            });
+            config.externals = config.externals || [];
+            if (!Array.isArray(config.externals)) config.externals = [config.externals];
+            config.externals.push("typeorm", "pg", "sqlite3");
         }
         return config;
+    },
+
+    async rewrites() {
+        return [
+            {
+                source: "/s3/:path*",
+                destination: `${S3_ENDPOINT}/${S3_BUCKET_NAME}/:path*`,
+            },
+        ];
     }
 };
 

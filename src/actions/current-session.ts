@@ -24,7 +24,11 @@ export const getCurrentToken = async () => {
     const { tokenRepository } = await getRepositories();
 
     const token = await tokenRepository.findOneBy({ id: tokenId });
-    if (!token) throw new Error("401: Invalid token.");
+    if (!token) {
+        const cookiesJar = await cookies();
+        cookiesJar.delete("token-id");
+        throw new Error("401: Invalid token.");
+    }
     return token;
 }
 
@@ -44,14 +48,14 @@ export const getUserByToken = async (token: Token) => {
 
 
 
-export const getCurrentSession = withAction<{}, { token: Token, user: Omit<User, "password"> }>(async () => {
+export const getCurrentSession = withAction<{}, { token: Token, userId: string }>(async () => {
 
     const token = await getCurrentToken();
     const { password, ...user } = await getUserByToken(token);
     const data = JSON.parse(
         JSON.stringify({
             token,
-            user
+            userId: user.id
         })
     )
     return {

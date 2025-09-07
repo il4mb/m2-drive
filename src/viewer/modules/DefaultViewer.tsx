@@ -224,6 +224,6 @@ export default {
     id: 'default-viewer',
     name: "File Viewer",
     icon: <Square strokeWidth={3} size={18} />,
-    supports: () => true,
+    supports: (_, file) => file.type == "file",
     component: DefaultViewerComponent,
 } as ViewerModule;

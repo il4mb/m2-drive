@@ -4,8 +4,8 @@ import { File } from '@/entity/File';
 import { formatFileSize } from '@/libs/utils';
 import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
-import { Eye, Folder } from 'lucide-react';
-import { FC, MouseEvent, useEffect } from 'react';
+import { Folder } from 'lucide-react';
+import { FC, MouseEvent } from 'react';
 import ContextMenu from '../context-menu/ContextMenu';
 import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextMenuItem';
 import ActionOpen from '../menu-actions/ActionOpen';
@@ -18,10 +18,7 @@ import ActionRename from '../menu-actions/ActionRename';
 import ActionTrash from '../menu-actions/ActionTrash';
 import UserAvatar from '../ui/UserAvatar';
 import ActionDetails from '../menu-actions/ActionDetails';
-import usePresignUrl from '@/hooks/usePresignUrl';
 import ActionOpenWith from '../menu-actions/ActionOpenWith';
-import WhoViewer from '../file-viewers/WhoViewer';
-import { socket } from '@/socket';
 import { useFileViewersByFile } from '../file-viewers/FileViewersProvider';
 
 export type FileMenuState = {
@@ -71,7 +68,7 @@ export default function FileView<T = any>({
         ...additionalMenuState
     } as any;
 
-    const menuItem = contextMenuStack<FileMenuState>([
+    const menuItem = contextMenuStack<FileMenuState>({
         ActionOpen,
         ActionOpenWith,
         ActionDetails,
@@ -81,13 +78,12 @@ export default function FileView<T = any>({
         ActionMove,
         ActionRename,
         ActionTrash,
-        ...(appendMenu || [])
-    ]);
+    });
 
-    const { viewers } = useFileViewersByFile(file.id);
+    const viewers = useFileViewersByFile(file.id);
 
     return (
-        <ContextMenu state={menuState} menu={menu ? menu : menuItem} maxWidth={230}>
+        <ContextMenu state={menuState} menu={menuItem} maxWidth={230}>
             <Stack
                 component={Paper}
                 direction={layout == "list" ? "row" : "column"}

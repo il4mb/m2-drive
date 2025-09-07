@@ -44,7 +44,7 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint }: F
     return (
         <Context.Provider value={{ lastId, firstId, listId: pathList, setFile }}>
             <AnimatePresence mode={'wait'}>
-                <Stack sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
+                <Stack flex={1} overflow={"hidden"} sx={{ maxWidth: 1600, mx: 'auto', width: '100%', px: 1 }}>
                     <ModuleViewerManager endpoint={pageEndpoint}>
                         <FileViewersProvider path={pathList}>
                             <Stack flex={1} overflow={"hidden"}>

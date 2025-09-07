@@ -10,6 +10,7 @@ import ContributorManager from "../ContributorManager";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useFileTags } from "@/hooks/useFileTag";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
@@ -17,6 +18,14 @@ type State = {
 
 type GeneralPermit = "none" | "viewer" | "editor";
 export default createContextMenu<State>({
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Share2,
     label: "Berbagi",
     component({ state, resolve }) {

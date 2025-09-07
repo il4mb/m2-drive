@@ -8,12 +8,20 @@ import { File } from "@/entity/File";
 import { useState } from "react";
 import { useRemoveFile } from "@/hooks/useFileRemove";
 import { useFileTags } from "@/hooks/useFileTag";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File
 }
 export default createContextMenu<State>({
-
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Trash,
     label: ({ state }) => (`Hapus ${state.file.type[0].toUpperCase() + state.file.type.slice(1)}`),
     style: () => ({

@@ -11,6 +11,14 @@ import useUser from "@/hooks/useUser";
 import { useFileTags } from "@/hooks/useFileTag";
 
 export default createContextMenu<{ folder: File | null, userId: string }>({
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: FolderPlus,
     label: "Buat Folder",
     component({ state, resolve }) {
@@ -23,7 +31,7 @@ export default createContextMenu<{ folder: File | null, userId: string }>({
 
         const createFolder = useCreateFolder(state.userId);
         const [name, setName] = useState<string>('');
-        const rootLabel = useMemo(() => user && auth.user && auth.user?.id != user?.id ? `${user?.name} Drive` : `My Drive`, [user, auth]);
+        const rootLabel = useMemo(() => user && auth?.user && auth?.user?.id != user?.id ? `${user?.name} Drive` : `My Drive`, [user, auth]);
 
         const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
@@ -53,7 +61,7 @@ export default createContextMenu<{ folder: File | null, userId: string }>({
 
 
                     {createFolder.error && (
-                        <Alert severity="error" sx={{ mb: 2}}>
+                        <Alert severity="error" sx={{ mb: 2 }}>
                             <AlertTitle>Failed</AlertTitle>
                             {createFolder.error}
                         </Alert>

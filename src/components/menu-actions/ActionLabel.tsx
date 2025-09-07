@@ -7,6 +7,7 @@ import { File, FileTags } from "@/entity/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { isEqual } from "lodash";
 import { FileIcon } from "@untitledui/file-icons";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 
 const FLAG_LIST: TransferListItem<FileTags>[] = [
@@ -36,6 +37,14 @@ const FLAG_LIST: TransferListItem<FileTags>[] = [
 ]
 
 export default createContextMenu<{ file: File }>({
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Flag,
     label: "Sunting Tags",
     component({ state, resolve }) {

@@ -8,12 +8,20 @@ import { enqueueSnackbar } from "notistack";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { restoreFile } from "@/server/functions/fileTrash";
 import CloseSnackbar from "../ui/CloseSnackbar";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
 }
 export default createContextMenu<State>({
-
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: RotateCcw,
     label: ({ state }) => (
         <Tooltip title={`Pulihkan ${state.file.name}`}>

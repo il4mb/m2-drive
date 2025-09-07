@@ -1,29 +1,21 @@
 'use client'
 
-import { FolderOpen } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
-import { useViewerForFile, ViewerModule } from "../../viewer/ModuleViewerManager";
-import { useRouter } from "next/navigation";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useViewerForFile, useViewerManager } from "../../viewer/ModuleViewerManager";
 
 type State = {
     file: File;
     onOpen?: (f: File) => void;
 };
 
-type AdditionalState = {
-    module: ViewerModule | null;
-    router: AppRouterInstance;
-};
-
 export default createContextMenu<State>({
     state({ file }) {
-        const router = useRouter();
+        const { openWithSupportedViewer } = useViewerManager();
         const module = useViewerForFile(file);
         return {
             module,
-            router
+            openWithSupportedViewer
         }
     },
     icon: ({ state }) => (
@@ -40,9 +32,9 @@ export default createContextMenu<State>({
             <>Buka Dengan <strong>{module?.name}</strong></>
         );
     },
-    action({ onOpen, file, module, router }) {
+    action({ onOpen, file, module, openWithSupportedViewer }) {
         if (module) {
-            return router.push(`/open/${file.id}?with=${module.id}`);
+            return openWithSupportedViewer(file, module.id);
         }
         onOpen?.(file);
     },

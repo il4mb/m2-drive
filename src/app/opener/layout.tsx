@@ -1,6 +1,8 @@
 'use client'
 
+import ContextMenu from '@/components/context-menu/ContextMenu';
 import FileViewerLayout from '@/viewer/FileViewerLayout';
+import { Stack } from '@mui/material';
 import { useParams } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -13,8 +15,12 @@ export default function layout({ children }: layoutProps) {
     const firstId = filesId?.[0];
 
     return (
-        <FileViewerLayout pathList={filesId} pageEndpoint={`/opener/${firstId}/{ID}`}>
-            {children}
-        </FileViewerLayout>
+        <ContextMenu>
+            <Stack flex={1} overflow={"hidden"}>
+                <FileViewerLayout pathList={filesId} pageEndpoint={`/opener/${firstId}/{ID}`}>
+                    {children}
+                </FileViewerLayout>
+            </Stack>
+        </ContextMenu>
     );
 }

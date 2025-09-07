@@ -30,7 +30,7 @@ interface ViewerManagerState {
     getViewerForFile: (file: File, source?: string) => ViewerModule | null;
     getViewerById: (id: string) => ViewerModule | null;
     getSupportedViewers: (file: File) => ViewerModule[];
-    openWithSupportedViewer: (file: File) => void;
+    openWithSupportedViewer: (file: File, viewerId?: string) => void;
 }
 
 interface ViewerManagerProps {
@@ -131,12 +131,12 @@ export const ModuleViewerManager = ({ children, defaultModules = defaultViewerMo
         return modules.find(e => e.id == id) || null
     }
 
-    const openWithSupportedViewer = (file: File) => {
+    const openWithSupportedViewer = (file: File, viewerId?: string) => {
 
-        const viewer = file ? getViewerForFile(file) : null;
+        const viewer = viewerId ? getViewerById(viewerId) : file ? getViewerForFile(file) : null;
         if (!file || !viewer) {
             return enqueueSnackbar(
-                "Tidak ada aplikasi yang mendukung jenis file!",
+                "Aplikasi tidak ditemukan atau, tidak ada aplikasi yang mendukung jenis file!",
                 {
                     variant: 'warning',
                     action: CloseSnackbar

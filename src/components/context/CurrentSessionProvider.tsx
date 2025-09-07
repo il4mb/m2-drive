@@ -65,8 +65,4 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
     );
 };
 
-export const useCurrentSession = () => {
-    const context = useContext(CurrentSessionProviderContext);
-    if (!context) throw new Error('useCurrentSessionProvider must be used within a CurrentSessionProvider');
-    return context;
-};
+export const useCurrentSession = () => useContext(CurrentSessionProviderContext);

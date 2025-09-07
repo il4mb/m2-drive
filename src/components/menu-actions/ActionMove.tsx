@@ -11,12 +11,21 @@ import { moveFile } from "@/server/functions/fileCopyMove";
 import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useFileTags } from "@/hooks/useFileTag";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
 }
 
 export default createContextMenu<State>({
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Move,
     label: "Pindah ke...",
     component({ state, resolve }) {

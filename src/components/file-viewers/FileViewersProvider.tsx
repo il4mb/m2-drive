@@ -17,21 +17,40 @@ export default function FileViewersProvider({ children, path }: FileViewersProps
 
     useEffect(() => {
         const onViewersChange = (data: Viewer[]) => {
-            const usersId = data
-                .filter(u => !u.isGuest && u.uid)
-                .map(u => u.uid);
+            setViewers(prev => {
+                const updated: Viewers = [];
+                data.forEach(newViewer => {
+                    const existing = prev.find(v => v.uid === newViewer.uid);
+                    if (existing) {
+                        updated.push({
+                            ...existing,
+                            ...newViewer
+                        });
+                    } else {
+                        updated.push(newViewer);
+                    }
+                });
 
-            setExistUsersId(usersId as any);
-            setViewers(data);
-        }
+                // Detect and remove viewers not in `data`
+                const currentUids = new Set(data.map(v => v.uid));
+                return updated.filter(v => currentUids.has(v.uid));
+            });
+
+            // Keep existUsersId for Firestore sync
+            setExistUsersId(
+                data.filter(u => !u.isGuest && u.uid).map(u => u.uid) as string[]
+            );
+        };
+
         socket.on("viewers-change", onViewersChange);
         socket.emit("viewer-join", path);
 
         return () => {
             socket.off("viewers-change", onViewersChange);
             socket.emit("viewer-leave", path);
-        }
+        };
     }, [path]);
+
 
     useEffect(() => {
         if (!existUsersId.length) return;
@@ -65,10 +84,7 @@ export default function FileViewersProvider({ children, path }: FileViewersProps
 
 const Context = createContext<Viewers | undefined>(undefined);
 
-export const useFileViewers = () => {
-    const context = useContext(Context);
-    return context;
-}
+export const useFileViewers = () => useContext(Context);
 
 
 

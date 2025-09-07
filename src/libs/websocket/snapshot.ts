@@ -5,15 +5,14 @@ import { EntityMap, EntityName } from '@/server/database';
 import { QueryType } from '@/server/database/types';
 import { DatabaseChangePayload } from '@/server/database/types';
 import { validateByConditions } from '@/server/database/objectHelper';
+import { Unsubscribe } from '@/types/global';
 
 export interface SnapshotOptions {
     onError?: (error: Error) => void;
     onMetadata?: (metadata: { lastUpdate: Date; count: number }) => void;
 }
 
-export interface Unsubscribe {
-    (): void;
-}
+
 
 // Single-item overload
 export function onSnapshot<T extends EntityName, Q extends 'one', E = InstanceType<EntityMap[T]>>(

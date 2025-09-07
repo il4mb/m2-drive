@@ -11,4 +11,8 @@ declare global {
     }
 }
 
+export interface Unsubscribe {
+    (): void;
+}
+
 export { };

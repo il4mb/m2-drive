@@ -7,12 +7,21 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { useFileTags } from "@/hooks/useFileTag";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
 }
 
 export default createContextMenu<State>({
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Pen,
     label: "Ganti Nama",
     component({ state, resolve }) {

@@ -6,12 +6,20 @@ import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { useRemoveFile } from "@/hooks/useFileRemove";
+import { useCurrentSession } from "../context/CurrentSessionProvider";
 
 type State = {
     file: File;
 }
 export default createContextMenu<State>({
-
+    state() {
+        return {
+            session: useCurrentSession()
+        }
+    },
+    show({ session }) {
+        return Boolean(session?.user);
+    },
     icon: Trash,
     label: ({ state }) => (`Hapus ${state.file.type[0].toUpperCase() + state.file.type.slice(1)}`),
     style: () => ({

@@ -124,7 +124,10 @@ export function createContextMenu<
                 </Stack>
 
                 {open && Component && (
-                    <Component state={{ ...state, ...additional }} resolve={resolve} anchor={anchor} />
+                    <Component
+                        state={{ ...state, ...additional }}
+                        resolve={resolve}
+                        anchor={anchor} />
                 )}
             </>
         );
@@ -138,7 +141,9 @@ export function createContextMenu<
 
 
 export function contextMenuStack<T, S = any>(
-    defs: (ContextMenuItemDef<T, S> | React.FC<ContextMenuItemProps<T>>)[]
-): React.FC<ContextMenuItemProps<T>>[] {
-    return defs.map(e => typeof e === "function" ? e : createContextMenu(e as any)) as any;
+    defs: Record<string, ContextMenuItemDef<T, S> | React.FC<ContextMenuItemProps<T>>>
+): Record<string, React.FC<ContextMenuItemProps<T>>> {
+    return Object.fromEntries(
+        Object.entries(defs).map(([id, menu]) => [id, typeof menu == "function" ? menu : createContextMenu(menu)])
+    ) as Record<string, React.FC<ContextMenuItemProps<T>>>;
 }

@@ -160,7 +160,7 @@ type CustomSocket = Omit<Socket, 'data'> & {
     data: {
         displayName: string;
         isGuest: boolean;
-        uid: string | null;
+        uid: string;
         token: Token | null;
     }
 }

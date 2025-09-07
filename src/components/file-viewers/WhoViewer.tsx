@@ -7,7 +7,14 @@ export interface WhoViewerProps {
     children?: ReactNode;
 }
 export default function WhoViewer() {
-    const { viewers } = useFileViewers();
+
+    const viewers = useFileViewers();
+
+    useEffect(() => {
+        return () => {
+            console.log("UNMOUNT")
+        }
+    }, [])
 
     return (
         <Stack direction={"row"} mr={2}>
@@ -15,8 +22,8 @@ export default function WhoViewer() {
                 {viewers?.map((p, i) => (
                     <Box
                         component={motion.div}
-                        initial={{ x: 20, opacity: 0 }}
-                        animate={{ x: 20, opacity: 1 }}
+                        initial={{ x: 10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
                         exit={{ x: -20, opacity: 0 }}
                         key={p.uid}>
                         <Tooltip title={`${p.displayName || "Unknown"}${p.isGuest ? " (tamu)" : ""}`} arrow>

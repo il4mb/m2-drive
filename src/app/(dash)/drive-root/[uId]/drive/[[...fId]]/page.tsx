@@ -10,7 +10,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from "motion/react";
 import AnchorMenu from '@/components/context-menu/AnchorMenu';
-import { useContextMenuState } from '@/components/context-menu/ContextMenu';
+import { useContextMenu } from '@/components/context-menu/ContextMenu';
 import { DriveLayoutState } from '../layout';
 import ActionDivider from '@/components/menu-actions/ActionDivider';
 import ActionLabel from '@/components/menu-actions/ActionLabel';
@@ -20,7 +20,7 @@ export interface pageProps {
 }
 export default function page() {
 
-    const { layout, sort: sortBy, order, setLayout, setFolder, setOrder, setSort } = useContextMenuState<DriveLayoutState>();
+    const { layout, sort: sortBy, order, setLayout, setFolder, setOrder, setSort } = useContextMenu<DriveLayoutState>();
     const router = useRouter();
     const { uId, fId = [] } = useParams<{ uId: string; fId: string[] }>();
     const { user } = useUser(uId);

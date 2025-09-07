@@ -3,34 +3,41 @@
 import { Folder } from "lucide-react"
 import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entity/File";
-import { useEffect, useState } from "react";
-import { getMany } from "@/libs/websocket/query";
+import { useEffect, useMemo, useState } from "react";
+import { getMany, Query } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { motion } from "motion/react"
 import FileView from "@/components/drive/FileView";
 import { Stack } from "@mui/material";
+import { useContextMenu } from "@/components/context-menu/ContextMenu";
+import { createContextMenu } from "@/components/context-menu/ContextMenuItem";
 
+type CustonFolderViewerComponentProps = {
+    files?: File[];
+    query: Query<'file', 'list'>;
+    handleOpen: (file: File) => void;
+}
+export const CustomFolderViewerComponent = ({ handleOpen, query }: CustonFolderViewerComponentProps) => {
 
-
-export const FolderViewerComponent: React.FC<{ file: File }> = ({ file }) => {
-
+    const contextMenu = useContextMenu();
     const [files, setFiles] = useState<File[]>([]);
-    const { openWithSupportedViewer } = useViewerManager();
 
-    const handleOpen = (file: File) => {
-        openWithSupportedViewer(file);
-    }
-
+    useEffect(() => {
+        return contextMenu.addMenu(
+            "",
+            createContextMenu({
+                label: "Test"
+            })
+        )
+    }, [])
 
 
     useEffect(() => {
-        const query = getMany("file").where("pId", "==", file.id);
         const unsubscribe = onSnapshot(query, (data) => {
             setFiles(data);
         })
         return unsubscribe;
-    }, [file]);
-
+    }, [query]);
 
     return (
         <Stack flex={1} width={"100%"} height={"100%"}>
@@ -57,6 +64,21 @@ export const FolderViewerComponent: React.FC<{ file: File }> = ({ file }) => {
                 </motion.div>
             ))}
         </Stack>
+    )
+}
+
+export const FolderViewerComponent: React.FC<{ file: File }> = ({ file }) => {
+
+    const query = useMemo(() => getMany("file").where("pId", "==", file.id), [file])
+    const { openWithSupportedViewer } = useViewerManager();
+    const handleOpen = (file: File) => {
+        openWithSupportedViewer(file);
+    }
+
+    return (
+        <CustomFolderViewerComponent
+            query={query}
+            handleOpen={handleOpen} />
     )
 }
 

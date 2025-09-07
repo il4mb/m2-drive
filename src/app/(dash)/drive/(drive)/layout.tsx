@@ -11,7 +11,7 @@ import { getColor } from "@/theme/colors";
 import { alpha, Breakpoint, Button, IconButton, Paper, Skeleton, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, ChevronLeft, Clock, CloudUpload, FileDigit, FolderOpen, Funnel, HardDrive, LayoutGrid, Search, StretchHorizontal, } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from "react";
 import { File } from "@/entity/File";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
@@ -20,6 +20,7 @@ import { FileIcon } from "@untitledui/file-icons";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { StickyHeaderManager } from "@/components/StickyHeaderManager";
 import { AnimatePresence } from "motion/react";
+import FileViewerLayout from "@/viewer/FileViewerLayout";
 
 export type DriveLayoutState = {
     userId: string;
@@ -140,6 +141,17 @@ export default function layout({ children }: layoutProps) {
             },
         }
     ])
+
+    const { pId } = useParams<{ pId: string[] }>();
+    const firstId = pId?.[0];
+
+    if (pId?.length > 0) {
+        return (
+            <FileViewerLayout pathList={pId} pageEndpoint={`/drive/${firstId}/{ID}`}>
+                {children}
+            </FileViewerLayout>
+        )
+    }
 
     return (
         <AnimatePresence mode={"wait"}>

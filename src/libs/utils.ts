@@ -12,6 +12,36 @@ export function formatFileSize(bytes: number, decimals = 2): string {
 	return `${size} ${units[i]}`;
 }
 
+export type TypeUnit = {
+	value: number;
+	unit: string | null;
+};
+
+export const parseUnit = (value: string): TypeUnit => {
+	const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/i);
+	return {
+		value: parseFloat(match?.[1] || '0'),
+		unit: match?.[2]?.toUpperCase() || null
+	};
+};
+
+export const getFileSizeFromUnit = (value: string | TypeUnit): number => {
+	const { value: num, unit } = typeof value == "string" ? parseUnit(value) : value;
+	if (!unit) return num;
+
+	const units: Record<string, number> = {
+		B: 1,
+		KB: 1024,
+		MB: 1024 ** 2,
+		GB: 1024 ** 3,
+		TB: 1024 ** 4,
+		PB: 1024 ** 5
+	};
+
+	return num * (units[unit] || 1);
+};
+
+
 
 export const DATE_EPOCH = 1700000000;
 export const DATE_FORMAT_INTL: Intl.DateTimeFormatOptions = {
@@ -52,7 +82,7 @@ export const toRelativeTime = (time: number) => {
 		if (diff >= unit.seconds) {
 			const value = Math.floor(diff / unit.seconds);
 			const label = `${value} ${unit.name}`;
-			return isFuture ? `dalam ${label}` : `${label} lagi`;
+			return isFuture ? `dalam ${label}` : `${label}`;
 		}
 	}
 

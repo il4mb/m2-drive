@@ -2,9 +2,9 @@
 
 import { File } from '@/entity/File';
 import { formatFileSize } from '@/libs/utils';
-import { Box, Paper, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
-import { Folder } from 'lucide-react';
+import { Eye, Folder } from 'lucide-react';
 import { FC, MouseEvent, useEffect } from 'react';
 import ContextMenu from '../context-menu/ContextMenu';
 import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextMenuItem';
@@ -20,6 +20,9 @@ import UserAvatar from '../ui/UserAvatar';
 import ActionDetails from '../menu-actions/ActionDetails';
 import usePresignUrl from '@/hooks/usePresignUrl';
 import ActionOpenWith from '../menu-actions/ActionOpenWith';
+import WhoViewer from '../file-viewers/WhoViewer';
+import { socket } from '@/socket';
+import { useFileViewersByFile } from '../file-viewers/FileViewersProvider';
 
 export type FileMenuState = {
     file: File;
@@ -68,7 +71,6 @@ export default function FileView<T = any>({
         ...additionalMenuState
     } as any;
 
-
     const menuItem = contextMenuStack<FileMenuState>([
         ActionOpen,
         ActionOpenWith,
@@ -81,6 +83,8 @@ export default function FileView<T = any>({
         ActionTrash,
         ...(appendMenu || [])
     ]);
+
+    const { viewers } = useFileViewersByFile(file.id);
 
     return (
         <ContextMenu state={menuState} menu={menu ? menu : menuItem} maxWidth={230}>
@@ -173,7 +177,7 @@ export default function FileView<T = any>({
                                 </Typography>
                             </Stack>
 
-                            <Typography>
+                            <Typography flexBasis={200}>
                                 {file.type == "folder"
                                     // @ts-ignore
                                     ? `${file.meta?.itemCount || 0} items`
@@ -200,6 +204,19 @@ export default function FileView<T = any>({
                                                 size={18} />
                                         ))}
                                     </Stack>
+                                </Stack>
+                            )}
+
+
+                            {viewers.length > 0 && (
+                                <Stack direction={'row'} alignItems={"center"} ml={"auto"}>
+                                    {viewers.map((p, i) => (
+                                        <Tooltip title={`${p.displayName || "Unknown"}${p.isGuest ? " (tamu)" : ""}`} key={p.uid || i} arrow>
+                                            <Avatar sx={{ width: 18, height: 18, ml: -1, fontSize: 12 }} src={p.avatar}>
+                                                {p.isGuest ? "?" : `${p.displayName || "Unknown"}`.substring(1, -1)}
+                                            </Avatar>
+                                        </Tooltip>
+                                    ))}
                                 </Stack>
                             )}
                         </>

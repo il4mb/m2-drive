@@ -1,5 +1,6 @@
 import Theme from "@/theme/Theme";
 import "./globals.css";
+import { SessionManager } from "@/components/context/SessionManager";
 
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
 
@@ -7,7 +8,9 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
         <html lang="en">
             <body>
                 <Theme>
-                    {children}
+                    <SessionManager>
+                        {children}
+                    </SessionManager>
                 </Theme>
             </body>
         </html>

@@ -135,7 +135,8 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
                         flex={1}
                         sx={{
                             minWidth: 'min(calc(100dvw - 85px), 800px)',
-                            position: 'relative'
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
                         {children}
                     </Stack>

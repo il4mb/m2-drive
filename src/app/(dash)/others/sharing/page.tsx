@@ -7,11 +7,20 @@ import { LinearProgress, Paper, Stack, Typography, Box, Divider } from '@mui/mat
 import { Share2 } from 'lucide-react';
 import { motion } from "motion/react";
 import FileView from '@/components/drive/FileView';
+import { File } from '@/entity/File';
+import { useRouter } from 'next/navigation';
+import { useViewerManager } from '@/viewer/ModuleViewerManager';
 
 export default function Page() {
-    
+
+    const { openWithSupportedViewer } = useViewerManager();
+    const router = useRouter();
     const { fromMe, toMe, loading } = useSharing();
     const isLoading = loading.fromMe || loading.toMe;
+
+    const handleOnOpen = (file: File) => {
+        openWithSupportedViewer(file);
+    }
 
     const renderList = (items: typeof fromMe, emptyMessage: string) => (
         <Stack spacing={1} mt={1}>
@@ -23,7 +32,7 @@ export default function Page() {
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ delay: 0.05 * i }}
                         key={c.id}>
-                        <FileView menu={[]} menuState={{}} size={26} file={c.file} />
+                        <FileView onOpen={handleOnOpen} menu={[]} menuState={{}} size={26} file={c.file} />
                     </motion.div>
                 ))
             ) : (

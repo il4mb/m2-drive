@@ -1,9 +1,13 @@
 import { File } from '@/entity/File';
 import { useRouter } from 'next/navigation';
 import { enqueueSnackbar } from 'notistack';
-import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
-import CloseSnackbar from '../ui/CloseSnackbar';
-import TextEditor from '../viewer/TextEditor';
+import { createContext, useContext, useState, ReactNode } from 'react';
+import CloseSnackbar from '@/components/ui/CloseSnackbar';
+import TextEditor from '@/viewer/modules/TextEditor';
+import FolderViewer from '@/viewer/modules/FolderViewer';
+import VideoPlayer from './modules/VideoPlayer';
+import DefaultViewer from './modules/DefaultViewer';
+import ImageViewer from './modules/ImageViewer';
 
 export type ViewerModuleComponentProps = {
     file: File;
@@ -37,20 +41,8 @@ interface ViewerManagerProps {
 
 // Create default modules
 const defaultViewerModules: ViewerModule[] = [
-    {
-        id: 'image-viewer',
-        name: 'Image Viewer',
-        icon: '🖼️',
-        supports: ['image/*'],
-        component: ({ file, source }) => (
-            <img
-                src={source}
-                alt={file.name}
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-        ),
-        priority: 10
-    },
+    FolderViewer,
+    ImageViewer,
     {
         id: 'pdf-viewer',
         name: 'PDF Viewer',
@@ -67,20 +59,9 @@ const defaultViewerModules: ViewerModule[] = [
         ),
         priority: 10
     },
-    {
-        id: 'video-viewer',
-        name: 'Video Player',
-        icon: '🎬',
-        supports: ['video/*'],
-        component: ({ file, source }) => (
-            <video
-                controls
-                style={{ width: '100%', maxHeight: '100%' }}>
-                <source src={source} type={(file.meta as any)?.mimeType} />
-            </video>
-        ),
-        priority: 10
-    },
+    // DocumentViewer,
+    VideoPlayer,
+    TextEditor,
     {
         id: 'audio-viewer',
         name: 'Audio Player',
@@ -93,34 +74,12 @@ const defaultViewerModules: ViewerModule[] = [
         ),
         priority: 10
     },
-    {
-        id: 'text-viewer',
-        name: 'Text Viewer',
-        icon: '📝',
-        supports: (mimeType) =>
-            mimeType?.startsWith('text/') ||
-            mimeType?.includes('json') ||
-            mimeType?.includes('xml') ||
-            mimeType?.includes('code'),
-        component: ({ file, source }) => {
-            const [content, setContent] = useState('');
-            const [loading, setLoading] = useState(true);
-
-            // Fetch text content (simplified)
-            return (
-                <pre style={{ padding: 16, overflow: 'auto' }}>
-                    {loading ? 'Loading...' : content}
-                </pre>
-            );
-        },
-        priority: 10
-    },
-    TextEditor
+    DefaultViewer
 ]
 
 const ViewerManagerContext = createContext<ViewerManagerState | undefined>(undefined);
 
-export const ViewerManager = ({ children, defaultModules = defaultViewerModules, endpoint }: ViewerManagerProps) => {
+export const ModuleViewerManager = ({ children, defaultModules = defaultViewerModules, endpoint }: ViewerManagerProps) => {
 
     const [modules, setModules] = useState<ViewerModule[]>(defaultModules);
     const router = useRouter();
@@ -243,58 +202,3 @@ export const createViewerModule = (definition: Omit<ViewerModule, 'id'> & { id?:
         priority: definition.priority || 5
     };
 };
-
-
-
-
-
-
-// // Example usage component
-// export const FileViewer = ({ file, source }: { file: File; source?: string }) => {
-//     const { getViewerForFile } = useViewerManager();
-//     const viewerModule = getViewerForFile(file, source);
-
-//     if (!viewerModule) {
-//         return <div>No viewer available for this file type</div>;
-//     }
-
-//     const ViewerComponent = viewerModule.component;
-//     return <ViewerComponent file={file} source={source} />;
-// };
-
-// // Example of a custom viewer module
-// export const createCustomImageViewer = (): ViewerModule =>
-//     createViewerModule({
-//         id: 'custom-image-viewer',
-//         name: 'Custom Image Viewer',
-//         icon: '🎨',
-//         supports: ['image/*'],
-//         component: ({ file, source }) => (
-//             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-//                 <img
-//                     src={source}
-//                     alt={file.name}
-//                     style={{
-//                         width: '100%',
-//                         height: '100%',
-//                         objectFit: 'contain',
-//                         filter: 'brightness(1.1) contrast(1.1)'
-//                     }}
-//                 />
-//                 <div style={{
-//                     position: 'absolute',
-//                     bottom: 10,
-//                     right: 10,
-//                     background: 'rgba(0,0,0,0.7)',
-//                     color: 'white',
-//                     padding: '5px 10px',
-//                     borderRadius: 5,
-//                     fontSize: 12
-//                 }}>
-//                     Custom Viewer
-//                 </div>
-//             </div>
-//         ),
-//         priority: 15 // Higher priority than default image viewer
-//     });
-

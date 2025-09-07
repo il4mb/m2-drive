@@ -1,7 +1,7 @@
 'use client'
 
 import Container from '@/components/Container';
-import { useViewerManager, ViewerModule, useViewerForFile } from '@/components/context/ViewerManager';
+import { useViewerManager, ViewerModule, useViewerForFile } from '@/viewer/ModuleViewerManager';
 import MobileAction from '@/components/MobileAction';
 import StickyHeader from '@/components/StickyHeader';
 import { File } from '@/entity/File';
@@ -189,7 +189,7 @@ export default function FileViewerPage() {
     };
 
     return (
-        <Container maxWidth='xl' scrollable>
+        <>
             <StickyHeader>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%', py: 1 }}>
                     {/* Back Button */}
@@ -289,11 +289,11 @@ export default function FileViewerPage() {
                     overflow: 'hidden',
                     borderRadius: 2,
                     boxShadow: 2,
-                    maxHeight: 'min(900px, 85dvh)',
+                    // maxHeight: 'min(900px, 85dvh)',
                     bgcolor: 'background.paper',
                 }}>
                 {renderContent()}
             </Paper>
-        </Container>
+        </>
     );
 }

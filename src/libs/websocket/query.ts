@@ -6,7 +6,6 @@ export const IsNull = "@IsNull";
 export const NotNull = "@IsNotNull";
 export const Json = (field: string, ...path: string[]): any => `@Json("${field}".${path.join(".")})`
 
-
 export class Query<T extends EntityName, Q extends QueryType, E = InstanceType<EntityMap[T]>> {
 
     private type: Q;

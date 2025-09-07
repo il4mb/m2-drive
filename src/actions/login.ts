@@ -13,7 +13,9 @@ type LoginProps = {
 };
 
 export async function handleLoginAsync({ email, password }: LoginProps) {
+    
     try {
+
         const source = await getConnection();
         const userRepository = source.getRepository(User);
         const tokenRepository = source.getRepository(Token);
@@ -35,8 +37,8 @@ export async function handleLoginAsync({ email, password }: LoginProps) {
         const token = tokenRepository.create({
             id: generateKey(),
             uid: user.id,
-            createdAt: currentTime(),       // epoch (ms or s based on your utils)
-            expiredAt: currentTime('1d'),  // epoch + 1 day
+            createdAt: currentTime(),
+            expiredAt: currentTime('1d'),
         });
 
         // Remove old token(s) for this user

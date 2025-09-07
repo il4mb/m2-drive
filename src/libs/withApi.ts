@@ -10,11 +10,11 @@ export interface NextRequestContext<J> extends Omit<NextResponse, 'json'> {
     json: () => Promise<J>;
 }
 
-export interface NextResponseContext<P> extends NextResponse {
+export interface NextResponseContext<P = any> extends NextResponse {
     params: Promise<P>;
 }
 
-export type ApiHandler<T, Json, Param> = (req: NextRequestContext<Json>, res: NextResponseContext<Param>) => Promise<ApiResponse<T>> | ApiResponse<T>;
+export type ApiHandler<T, Json, Param=any> = (req: NextRequestContext<Json>, res?: NextResponseContext<Param>) => Promise<ApiResponse<T>> | ApiResponse<T>;
 
 export function withApi<T = any, Json = any, Param = any>(handler: ApiHandler<T, Json, Param>) {
 
@@ -67,7 +67,7 @@ export interface IAction<R> {
     code: number;
     data?: R;
 }
-type ActionHandler<T, R> = (data: T) => Promise<Omit<IAction<R>, 'code'>>;
+type ActionHandler<T, R= any> = (data: T) => Promise<Omit<IAction<R>, 'code'>>;
 export function withAction<T = any, R = any>(handler: ActionHandler<T, R>) {
 
     return async (payload: T) => {

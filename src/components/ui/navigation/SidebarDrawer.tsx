@@ -2,7 +2,7 @@
 
 import { Box, IconButton, List, Paper, Stack, Typography, useMediaQuery, Theme } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu } from 'lucide-react';
+import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from '../MenuItem';
 import MenuGroup from '../MenuGroup';
@@ -51,6 +51,13 @@ const MENU: IMenu[] = [
                 href: "/others/sharing"
             },
         ]
+    },
+    {
+        type: "link",
+        label: "Socket Metrics",
+        icon: <ChartArea />,
+        href: "/socket-metrics",
+        permission: 'can-manage-socket-connection'
     },
     {
         type: "link",
@@ -129,7 +136,7 @@ export default function SidebarDrawer() {
                             right: 0,
                             bottom: 0,
                             backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                            backdropFilter:'blur(2px)',
+                            backdropFilter: 'blur(2px)',
                             zIndex: 1199,
                         }}
                         onClick={() => setOpen(false)}

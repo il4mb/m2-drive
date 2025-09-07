@@ -1,0 +1,57 @@
+import User from '@/entity/User';
+import { getMany, Json } from '@/libs/websocket/query';
+import { onSnapshot } from '@/libs/websocket/snapshot';
+import { Stack, Typography, Avatar, Tooltip } from '@mui/material';
+import { useEffect, useState } from 'react';
+import UserAvatar from './ui/UserAvatar';
+import RelativeTime from './RelativeTime';
+
+export default function OnlineUsers() {
+    const [users, setUsers] = useState<User[]>([]);
+
+    useEffect(() => {
+        const query = getMany('user').where(Json("meta", "isActive"), "==", true);
+        const unsubscribe = onSnapshot(query, setUsers);
+        return unsubscribe;
+    }, []);
+
+    const maxDisplay = 5;
+    const displayedUsers = users.slice(0, maxDisplay);
+    const extraCount = users.length - maxDisplay;
+
+    return (
+        <Stack>
+            <Typography fontSize={18} fontWeight={600} mb={1}>Pengguna Yang Aktif</Typography>
+            <Stack direction="row" justifyContent="start" alignItems="center" ml={2} mb={1}>
+                {displayedUsers.map(e => (
+                    <UserAvatar
+                        key={e.id}
+                        user={e}
+                        tooltip={
+                            <>
+                                {e.name} Aktif <RelativeTime timestamp={e.meta.activeAt || 0} />
+                            </>
+                        }
+                        sx={{ ml: -1, boxShadow: 1 }}
+                    />
+                ))}
+
+                {extraCount > 0 && (
+                    <Tooltip title={`${extraCount} pengguna lainnya`}>
+                        <Avatar
+                            sx={{
+                                ml: -1,
+                                bgcolor: 'primary.main',
+                                fontSize: 14,
+                                width: 45,
+                                height: 45,
+                            }}>
+                            +{extraCount}
+                        </Avatar>
+                    </Tooltip>
+                )}
+            </Stack>
+            <Typography color='text.secondary' variant='caption'>{users.length} pengguna aktif</Typography>
+        </Stack>
+    );
+}

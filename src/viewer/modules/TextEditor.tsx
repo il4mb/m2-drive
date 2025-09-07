@@ -1,18 +1,18 @@
 import { PencilLine, Save, Download, AlertCircle } from "lucide-react"
-import { ViewerModule } from "../context/ViewerManager";
+import { ViewerModule } from "../ModuleViewerManager";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Alert, Stack, IconButton, LinearProgress, Typography, Box, Paper, Button } from "@mui/material";
+import { Alert, Stack, IconButton, LinearProgress, Typography, Box, Paper, Button, TextField } from "@mui/material";
 import { formatFileSize } from "@/libs/utils";
 
 // Maximum file size to handle (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 124 * 1024;
 
 export default {
     priority: 5,
     id: 'text-editor',
     name: "Text Editor",
     icon: <PencilLine size={18} />,
-    supports: () => true,
+    supports: (_, file) => file.type == "file",
     component({ file, source }) {
         const [text, setText] = useState<string>('');
         const [originalText, setOriginalText] = useState<string>('');
@@ -29,7 +29,7 @@ export default {
             if (!source) return;
 
             // Warn for large files but still load them
-            if (fileSize > 2 * 1024 * 1024) { // 2MB warning threshold
+            if (fileSize > MAX_FILE_SIZE) { // 2MB warning threshold
                 setShowLargeFileWarning(true);
             }
 
@@ -42,7 +42,7 @@ export default {
                     if (!response.ok) {
                         throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
                     }
-                    
+
                     const reader = response.body?.getReader();
                     const decoder = new TextDecoder("utf-8");
                     let content = "";
@@ -54,7 +54,7 @@ export default {
                             done = streamDone;
                             if (value) {
                                 content += decoder.decode(value, { stream: !done });
-                                
+
                                 // Update text progressively for very large files
                                 if (content.length > 1000000) { // Update every 1MB
                                     setText(content);
@@ -87,10 +87,10 @@ export default {
             try {
                 // Simulate save operation
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 setOriginalText(text);
                 setIsDirty(false);
-                
+
                 console.log("File saved");
             } catch (err: any) {
                 setError(err?.message || "Failed to save file");
@@ -141,9 +141,9 @@ export default {
                         <Button variant="outlined" onClick={handleDownload}>
                             Download Instead
                         </Button>
-                        <Button variant="contained" onClick={handleAcceptLargeFile}>
+                        {/* <Button variant="contained" onClick={handleAcceptLargeFile}>
                             Continue Anyway
-                        </Button>
+                        </Button> */}
                     </Stack>
                 </Stack>
             );
@@ -160,7 +160,7 @@ export default {
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                                 Size: {formatFileSize(fileSize)}
-                                {fileSize > 1000000 && " (Large file - editing may be slow)"}
+                                {fileSize > MAX_FILE_SIZE && " (Large file - editing may be slow)"}
                             </Typography>
                         </Stack>
 
@@ -205,8 +205,9 @@ export default {
 
                 {/* Optimized textarea for large files */}
                 <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                    <textarea
-                        ref={textareaRef}
+                    <TextField
+                        multiline
+                        inputRef={textareaRef}
                         value={text}
                         onChange={handleTextChange}
                         placeholder="File content will appear here..."

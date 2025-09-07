@@ -1,13 +1,9 @@
 'use client'
 
-import { File, Folder } from "@/entity/File";
-import { useEffect, useRef, useState } from "react";
-import useRequest from "./useRequest";
-import { getUserFile, getUserDriveSummary, UserDriveSummary } from "@/actions/dive-root";
-import { useOnEmit } from "@/socket";
+import { File } from "@/entity/File";
+import { useEffect, useState } from "react";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";
-
 
 export type Filter = {
     sortBy?: string;
@@ -34,6 +30,7 @@ export default function useUserDrive({
     const [parent, setParent] = useState<File | null>(null);
 
     useEffect(() => {
+
          if (!uId) return;
         setLoading(true);
 
@@ -90,70 +87,70 @@ export default function useUserDrive({
 
 
 
-export function useUserDriveSummary(uId: string) {
+// export function useUserDriveSummary(uId: string) {
 
-    const [summary, setSummary] = useState<UserDriveSummary & { mimeBreakdown: Record<string, number> } | undefined>();
+//     const [summary, setSummary] = useState<UserDriveSummary & { mimeBreakdown: Record<string, number> } | undefined>();
 
-    const request = useRequest({
-        action: getUserDriveSummary,
-        params: { uId },
-        validator(data) {
-            return Boolean(data.uId);
-        },
-        onSuccess(result) {
-            setSummary(result.data);
-        },
-    }, [uId]);
+//     const request = useRequest({
+//         action: getUserDriveSummary,
+//         params: { uId },
+//         validator(data) {
+//             return Boolean(data.uId);
+//         },
+//         onSuccess(result) {
+//             setSummary(result.data);
+//         },
+//     }, [uId]);
 
-    useOnEmit("update", {
-        collection: 'file',
-        columns: { uId },
-        callback() {
-            request.send();
-        },
-    }, [uId]);
+//     useOnEmit("update", {
+//         collection: 'file',
+//         columns: { uId },
+//         callback() {
+//             request.send();
+//         },
+//     }, [uId]);
 
-    useEffect(() => {
-        request.send();
-    }, [uId]);
+//     useEffect(() => {
+//         request.send();
+//     }, [uId]);
 
-    return { summary }
-}
+//     return { summary }
+// }
 
-export function useUserDriveFile(uId: string | null, id: string | null) {
+// export function useUserDriveFile(uId: string | null, id: string | null) {
 
-    const [loading, setLoading] = useState(true);
-    const [file, setFile] = useState<File>();
+//     const [loading, setLoading] = useState(true);
+//     const [file, setFile] = useState<File>();
 
-    const request = useRequest({
-        action: getUserFile,
-        params: { uId: uId || '', id },
-        validator(data) {
-            return Boolean(data.uId);
-        },
-        onSuccess(result) {
-            setFile(result.data?.file);
-        },
-        onComplete() {
-            setLoading(false);
-        },
-    }, [uId, id]);
+//     const request = useRequest({
+//         action: getUserFile,
+//         params: { uId: uId || '', id },
+//         validator(data) {
+//             return Boolean(data.uId);
+//         },
+//         onSuccess(result) {
+//             setFile(result.data?.file);
+//         },
+//         onComplete() {
+//             setLoading(false);
+//         },
+//     }, [uId, id]);
 
-    useOnEmit("update", {
-        collection: 'file',
-        columns: { uId, id },
-        callback() {
-            if (!id) return setLoading(false);
-            setLoading(true);
-            request.send();
-        },
-    }, [uId, id]);
+//     useOnEmit("update", {
+//         collection: 'file',
+//         columns: { uId, id },
+//         callback() {
+//             if (!id) return setLoading(false);
+//             setLoading(true);
+//             request.send();
+//         },
+//     }, [uId, id]);
 
-    useEffect(() => {
-        if (!id) return setLoading(false);
-        setLoading(true);
-        request.send();
-    }, [uId]);
+//     useEffect(() => {
+//         if (!id) return setLoading(false);
+//         setLoading(true);
+//         request.send();
+//     }, [uId]);
 
-    return { file, loading }
-}
+//     return { file, loading }
+// }

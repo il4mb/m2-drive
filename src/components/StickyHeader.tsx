@@ -17,9 +17,10 @@ export default function StickyHeader({ children, sx, loading = false }: StickyHe
         return (
             <Paper
                 component={motion.div}
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
+                // initial={{ y: -20, opacity: 0 }}
+                // animate={{ y: 0, opacity: 1 }}
+                // exit={{ y: -20, opacity: 0 }}
+                layoutId='sticky-header'
                 layout
                 sx={(theme) => ({
                     p: 2,

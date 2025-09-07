@@ -11,7 +11,9 @@ import FileView from '@/components/drive/FileView';
 import { useContextMenuState } from '@/components/context-menu/ContextMenu';
 import { DriveLayoutState } from '../layout';
 import FileContent from '@/components/drive/FileContent';
-import { useViewerManager } from '@/components/context/ViewerManager';
+import { useViewerManager } from '@/viewer/ModuleViewerManager';
+import FolderViewer, { FolderViewerComponent } from '@/viewer/modules/FolderViewer';
+import FileContentViewer from '@/viewer/FileContentViewer';
 
 export interface pageProps {
     children?: ReactNode;
@@ -39,13 +41,8 @@ export default function page() {
     });
     const [selected, setSelected] = useState<File>();
 
-
-
     const handleOpen = (file: File) => {
-        if (file.type == "file") {
-            return openWithSupportedViewer(file);
-        }
-        router.push(`/drive/${[...pId, file.id].join("/")}`);
+        return openWithSupportedViewer(file);
     }
 
     useEffect(() => {
@@ -55,6 +52,12 @@ export default function page() {
     useEffect(() => {
         state.setLoading(loading);
     }, [loading]);
+
+    // if (lastpid) {
+    //     return (
+    //         <FileContentViewer fileId={lastpid} />
+    //     )
+    // }
 
     return (
         <Stack

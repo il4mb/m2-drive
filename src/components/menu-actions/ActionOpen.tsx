@@ -3,7 +3,7 @@
 import { FolderOpen } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
-import { useViewerForFile, ViewerModule } from "../context/ViewerManager";
+import { useViewerForFile, ViewerModule } from "../../viewer/ModuleViewerManager";
 import { useRouter } from "next/navigation";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 

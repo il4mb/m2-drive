@@ -4,7 +4,7 @@ import { AppWindow, FolderOpen } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { Box, ListItemIcon, ListItemText, MenuItem, Popover, Stack, Typography, Divider, Button, Chip } from "@mui/material";
-import { useViewerManager } from "../context/ViewerManager";
+import { useViewerManager } from "../../viewer/ModuleViewerManager";
 import { useMemo, useState } from "react";
 import { Download, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";

@@ -18,7 +18,7 @@ export const getUserByToken = async (token: Token) => {
     const source = await getConnection();
     const userRepository = source.getRepository(User);
     const now = currentTime();
-    if (now >= token.expiredAt) {
+    if (now >= token?.expiredAt) {
         throw new Error("401: Token expired");
     }
 

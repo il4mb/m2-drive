@@ -11,13 +11,13 @@ import { getColor } from "@/theme/colors";
 import { alpha, Breakpoint, Button, IconButton, Paper, Skeleton, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, ChevronLeft, Clock, CloudUpload, FileDigit, FolderOpen, Funnel, HardDrive, LayoutGrid, Search, StretchHorizontal, } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Dispatch, ReactNode, SetStateAction, useEffect, useMemo, useState } from "react";
-import { File, Folder } from "@/entity/File";
+import { useRouter } from "next/navigation";
+import { Dispatch, ReactNode, SetStateAction, useMemo, useState } from "react";
+import { File } from "@/entity/File";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 import MobileAction from "@/components/MobileAction";
 import { FileIcon } from "@untitledui/file-icons";
-import { ViewerManager } from "@/components/context/ViewerManager";
+import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { StickyHeaderManager } from "@/components/StickyHeaderManager";
 import { AnimatePresence } from "motion/react";
 
@@ -143,7 +143,7 @@ export default function layout({ children }: layoutProps) {
 
     return (
         <AnimatePresence mode={"wait"}>
-            {/* <ViewerManager endpoint="/drive/open/{ID}"> */}
+            <ModuleViewerManager endpoint="/drive/{ID}">
                 <ContextMenu state={state} menu={menu} maxWidth={230}>
                     <Stack flex={1} overflow={"hidden"}>
                         <Container maxWidth={maxWidth} scrollable>
@@ -235,7 +235,7 @@ export default function layout({ children }: layoutProps) {
                         </Container>
                     </Stack>
                 </ContextMenu>
-            {/* </ViewerManager> */}
+            </ModuleViewerManager>
         </AnimatePresence>
     );
 }

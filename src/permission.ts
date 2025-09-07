@@ -1,3 +1,4 @@
+import { Label } from "recharts";
 import Role from "./entity/Role";
 
 export type TPermission = {
@@ -31,7 +32,8 @@ export const PERMISSION_LIST = [
     { label: "Akses Laporan Aktivitas", value: "can-access-activity-report" },
     { label: "Mengatur Role & Permission", value: "can-manage-roles" },
     { label: "Mengubah Pengaturan Sistem", value: "can-change-system-settings" },
-    { label: "Mengelola Drive Root", value: "can-manage-drive-root" }
+    { label: "Mengelola Drive Root", value: "can-manage-drive-root" },
+    { Label: 'Mengelola Socket Connection', value: 'can-manage-socket-connection' }
 ] as const;
 
 // ✅ This now becomes a tuple of string literals
@@ -57,6 +59,7 @@ export const SYSTEM_ROLES: (Role & { editable?: boolean })[] = [
 ];
 
 export function getPermissionLabel(value: PERMISSION_NAMES): string {
+    // @ts-ignore
     return PERMISSION_LIST.find(p => p.value === value)?.label || value;
 }
 

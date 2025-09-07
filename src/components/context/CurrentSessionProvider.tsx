@@ -8,7 +8,7 @@ import { getCurrentSession } from '@/actions/current-session';
 import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
 import useUser from '@/hooks/useUser';
 import { enqueueSnackbar } from 'notistack';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface CurrentSessionProviderState {
     tokenId?: string;
@@ -26,6 +26,7 @@ type CurrentSessionProviderProps = {
 }
 export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps) => {
 
+    const pathname = usePathname();
     const [token, setToken] = useState<Token>();
     const [userId, setUserId] = useState<string | null>(null);
     const { user } = useUser(userId);
@@ -39,10 +40,10 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
         },
         onError(error) {
             enqueueSnackbar(error.message, { variant: "error" })
-            router.push('/auth');
+            router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         },
     }, [router]);
-    
+
     const refreshToken = () => request.send();
 
     const stateValue = useMemo(() => ({
@@ -54,8 +55,6 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
     useEffect(() => {
         refreshToken();
     }, []);
-
-
 
     return (
         <CurrentSessionProviderContext.Provider value={stateValue}>

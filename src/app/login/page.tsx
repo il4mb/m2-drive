@@ -7,8 +7,10 @@ import RequestError from "@/components/RequestError";
 import { isEmailValid } from "@/libs/validator";
 import { Button, Stack, TextField, Typography, Paper, Box, Alert, AlertTitle } from "@mui/material";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+import { useSessionManager } from "@/components/context/SessionManager";
+import { socket } from "@/socket";
 
 export interface PageProps {
     children?: ReactNode;
@@ -16,10 +18,13 @@ export interface PageProps {
 
 export default function Page({ children }: PageProps) {
 
+    const { userId } = useSessionManager();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [tokenId, setTokenId] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const request = useRequest({
         action: handleLoginAsync,
@@ -28,7 +33,6 @@ export default function Page({ children }: PageProps) {
             return Boolean(isEmailValid(email) && password.length >= 8);
         },
         onSuccess({ data }) {
-            console.log(data)
             setTokenId(data?.tokenId || "");
         }
     });
@@ -37,18 +41,40 @@ export default function Page({ children }: PageProps) {
         action: handleStartSession,
         params: { tokenId },
         onSuccess() {
-            router.push("/");
+            resetSocket();
         }
     });
+    const handleLogin = () => request.send();
+
+
+    const resetSocket = () => {
+        if (loading) return;
+        setLoading(true);
+        socket.close();
+        socket.connect();
+        socket.emit("session-validate");
+    }
+
+    const handleRedirect = () => {
+        setLoading(true);
+        const redirect = searchParams.get("redirect");
+        if (redirect) {
+            router.push(redirect)
+        } else {
+            router.push("/");
+        }
+    }
 
     useEffect(() => {
         if (!tokenId) return;
         requestStartSession.send();
     }, [tokenId]);
 
-    const handleLogin = () => {
-        request.send();
-    };
+    useEffect(() => {
+        if (userId) handleRedirect();
+    }, [userId]);
+
+
 
     return (
         <Stack
@@ -79,7 +105,7 @@ export default function Page({ children }: PageProps) {
 
                 <Stack spacing={2}>
                     <TextField
-                        disabled={request.pending || requestStartSession.pending}
+                        disabled={request.pending || requestStartSession.pending || loading}
                         label="Alamat Surel"
                         placeholder="contoh: jhon-doe@gmail.com"
                         type="email"
@@ -90,7 +116,7 @@ export default function Page({ children }: PageProps) {
                     />
                     <Stack>
                         <TextField
-                            disabled={request.pending || requestStartSession.pending}
+                            disabled={request.pending || requestStartSession.pending || loading}
                             label="Kata Sandi"
                             type="password"
                             variant="outlined"
@@ -101,13 +127,22 @@ export default function Page({ children }: PageProps) {
                         <Typography component={'small'} fontSize={12}>Lupa Kata Sandi?</Typography>
                     </Stack>
 
+                    {loading && (
+                        <Typography
+                            textAlign={"center"}
+                            variant={"caption"}
+                            my={2}>
+                            Mohon tunggu sebentar...
+                        </Typography>
+                    )}
+
                     <Button
                         variant="contained"
                         fullWidth
                         sx={{ mt: 1, borderRadius: 2 }}
                         disabled={!request.isValid}
                         onClick={handleLogin}
-                        loading={request.pending || requestStartSession.pending}>
+                        loading={request.pending || requestStartSession.pending || loading}>
                         Login
                     </Button>
                 </Stack>

@@ -3,7 +3,7 @@
 import ContextInjector from '@/components/context/ContextInjector';
 import { CurrentSessionProvider } from '@/components/context/CurrentSessionProvider';
 import { SimpleMediaViewerProvider } from '@/components/context/SimpleMediaViewer';
-import { ViewerManager } from '@/components/context/ViewerManager';
+import { ModuleViewerManager } from '@/viewer/ModuleViewerManager';
 import Pattern from '@/components/icon/Pattern';
 import SidebarDrawer from '@/components/ui/navigation/SidebarDrawer';
 import { SidebarProvider } from '@/components/ui/navigation/SidebarProvider';
@@ -19,7 +19,7 @@ export default function layout({ children }: layoutProps) {
         <CurrentSessionProvider>
             <ContextInjector>
                 <AnimatePresence mode={"wait"}>
-                    <ViewerManager endpoint='/open/{ID}'>
+                    <ModuleViewerManager endpoint='/open/{ID}'>
                         <Stack
                             sx={{
                                 position: 'relative',
@@ -48,7 +48,7 @@ export default function layout({ children }: layoutProps) {
                                 height={'100%'}
                                 opacity={0.8} />
                         </Box>
-                    </ViewerManager>
+                    </ModuleViewerManager>
                 </AnimatePresence>
             </ContextInjector>
         </CurrentSessionProvider>

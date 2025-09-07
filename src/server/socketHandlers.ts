@@ -298,46 +298,6 @@ export function setupSocketHandlers(io: Server): void {
             }
         });
 
-        // Set guest display name
-        socket.on('guest-set-name', (displayName: string) => {
-            if (!socket.data.isGuest) {
-                socket.emit('error', { message: 'Only guests can set display names' });
-                return;
-            }
-
-            const guestId = socket.id;
-            const guestData = guestUsers.get(guestId) || {
-                socket,
-                createdAt: currentTime(),
-                lastActivity: currentTime()
-            };
-
-            guestData.displayName = displayName;
-            guestData.lastActivity = currentTime();
-            guestUsers.set(guestId, guestData);
-
-            // Update in all rooms
-            for (const [roomId, room] of rooms) {
-                const userEntry = room.users.get(guestId);
-                if (userEntry) {
-                    userEntry.displayName = displayName;
-                    userEntry.lastActivity = currentTime();
-
-                    // Convert Map to object for emitting
-                    const roomUsersObj = Object.fromEntries(room.users);
-                    io.to(roomId).emit('room-change', {
-                        id: roomId,
-                        users: roomUsersObj,
-                        createdAt: room.createdAt,
-                        updatedAt: currentTime(),
-                        isPublic: room.isPublic,
-                        maxUsers: room.maxUsers
-                    });
-                }
-            }
-
-            socket.emit('guest-name-set', { displayName });
-        });
 
         socket.on('subscribe', (data: QueryConfig, callback: (data: Result) => void) => {
             const isGuest = socket.data.isGuest;
@@ -417,7 +377,7 @@ export function setupSocketHandlers(io: Server): void {
             }
 
             try {
-                const user = isGuest ? null : await getUserByToken(socket.data.token!);
+                const user = isGuest ? undefined : await getUserByToken(socket.data.token!);
 
                 await requestContext.run({ user }, async () => {
                     try {

@@ -32,7 +32,7 @@ export default function Page() {
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ delay: 0.05 * i }}
                         key={c.id}>
-                        <FileView onOpen={handleOnOpen} menu={[]} menuState={{}} size={26} file={c.file} />
+                        <FileView onOpen={handleOnOpen} menu={{}} menuState={{}} size={26} file={c.file} />
                     </motion.div>
                 ))
             ) : (

@@ -33,8 +33,8 @@ export interface FileViewProps<T = {}> {
     size?: number;
     selected?: boolean;
     layout?: "list" | "grid";
-    menu?: FC<ContextMenuItemProps<T>>[],
-    appendMenu?: FC<ContextMenuItemProps<FileMenuState>>[],
+    menu?: Record<string, FC<ContextMenuItemProps<FileMenuState>>>,
+    appendMenu?: Record<string, FC<ContextMenuItemProps<FileMenuState>>>,
     menuState?: T
 }
 export default function FileView<T = any>({
@@ -44,6 +44,7 @@ export default function FileView<T = any>({
     size = 18,
     selected = false,
     layout = "list",
+    menu: customMenu,
     menuState: additionalMenuState
 }: FileViewProps<T>) {
 
@@ -80,7 +81,7 @@ export default function FileView<T = any>({
     const viewers = useFileViewersByFile(file.id);
 
     return (
-        <ContextMenu state={menuState} menu={menuItem} maxWidth={230}>
+        <ContextMenu state={menuState} menu={customMenu || menuItem} maxWidth={230}>
             <Stack
                 component={Paper}
                 direction={layout == "list" ? "row" : "column"}

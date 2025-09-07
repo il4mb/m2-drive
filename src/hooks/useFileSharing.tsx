@@ -5,16 +5,16 @@ import { onSnapshot } from "@/libs/websocket/snapshot";
 import { useEffect, useMemo, useState } from "react";
 
 export const useSharing = () => {
-    const { user } = useCurrentSession();
+    const session = useCurrentSession();
     const [fromMe, setFromMe] = useState<Contributor[]>([]);
     const [toMe, setToMe] = useState<Contributor[]>([]);
     const [loading, setLoading] = useState({ fromMe: false, toMe: false });
     const fromMeQuery = useMemo(() =>
         getMany("file")
-            .where("uId", "==", user?.id), [user?.id])
+            .where("uId", "==", session?.user?.id), [session?.user?.id])
 
     useEffect(() => {
-        if (!user?.id) return;
+        if (!session?.user?.id) return;
         setLoading({ fromMe: true, toMe: true });
 
 
@@ -22,7 +22,7 @@ export const useSharing = () => {
             onSnapshot(
                 getMany('contributor')
                     .relations(['file', 'user'])
-                    .where('$file.uId', '==', user.id)
+                    .where('$file.uId', '==', session?.user.id)
                     .groupBy('$file.id')
                     .bracketWhere(e => {
                         e.where(Json("$file.meta", "trashed"), "==", IsNull)
@@ -36,7 +36,7 @@ export const useSharing = () => {
             onSnapshot(
                 getMany('contributor')
                     .relations(['file', 'user'])
-                    .where('userId', '==', user.id)
+                    .where('userId', '==', session?.user.id)
                     .bracketWhere(e => {
                         e.where(Json("$file.meta", "trashed"), "==", IsNull)
                             .orWhere(Json("$file.meta", "trashed"), "==", false)
@@ -51,7 +51,7 @@ export const useSharing = () => {
         return () => {
             unsubscribers.map(e => e())
         }
-    }, [fromMeQuery, user]);
+    }, [fromMeQuery, session?.user]);
 
 
 

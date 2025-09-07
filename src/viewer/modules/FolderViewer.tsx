@@ -3,7 +3,7 @@
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, Clock, FileDigit, Folder, LayoutGrid, StretchHorizontal } from "lucide-react"
 import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entity/File";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { getMany, Query } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { motion } from "motion/react"
@@ -13,33 +13,40 @@ import { useContextMenu } from "@/components/context-menu/ContextMenu";
 import { createContextMenu } from "@/components/context-menu/ContextMenuItem";
 import useLocalStorage from "@/hooks/useLocalstorage";
 import { getColor } from "@/theme/colors";
-import MobileAction from "@/components/navigation/MobileAction";
+import { useActionsProvider } from "@/components/navigation/ActionsProvider";
 
-type CustonFolderViewerComponentProps = {
+interface CustomFolderViewerComponentProps {
     files?: File[];
     query: Query<'file', 'list'>;
     handleOpen: (file: File) => void;
 }
-export const CustomFolderViewerComponent = ({ handleOpen, query }: CustonFolderViewerComponentProps) => {
 
+export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderViewerComponentProps) => {
     const [layout, setLayout] = useLocalStorage<string>("drive-layout", "list");
     const [order, setOrder] = useLocalStorage<string>("drive-order", "DESC");
     const [sort, setSort] = useLocalStorage<string>("drive-sort", "type");
-
     const contextMenu = useContextMenu();
     const [files, setFiles] = useState<File[]>([]);
+    const { addAction } = useActionsProvider()!;
 
-    const activeStyle = (active: boolean) =>
-        active
-            ? {
+    // Memoize context menu state to prevent unnecessary re-renders
+    const contextMenuState = useMemo(() => ({
+        layout, order, sort,
+        setLayout, setOrder, setSort
+    }), [layout, order, sort, setLayout, setOrder, setSort]);
+
+    // Memoize active style function
+    const activeStyle = useCallback((active: boolean) =>
+        active ? {
+            background: alpha(getColor("primary")[400], 0.3),
+            "&:hover": {
                 background: alpha(getColor("primary")[400], 0.3),
-                "&:hover": {
-                    background: alpha(getColor("primary")[400], 0.3),
-                },
-            }
-            : undefined;
+            },
+        } : undefined,
+        []);
 
-    const menu = useMemo<ReturnType<typeof createContextMenu>[]>(() => [
+    // Memoize context menu items
+    const menu = useMemo(() => [
         createContextMenu({
             icon: ({ state, size }) =>
                 state.layout === "list" ? (
@@ -103,93 +110,117 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustonFolderV
                 return false;
             },
         })
-    ], []);
+    ], [activeStyle]);
 
+    // Add context menu state and menu items
     useEffect(() => {
-        contextMenu.addState({
-            layout, order, sort,
-            setLayout, setOrder, setSort
-        });
-    }, [layout, order, sort, setLayout, setOrder, setSort]);
+        const unsubState = contextMenu.addState(contextMenuState);
+        const unsubMenu = contextMenu.addMenu("folder-menu", menu);
 
-    useEffect(() => {
-        return contextMenu.addMenu("folder-menu", menu);
-    }, []);
+        return () => {
+            unsubState();
+            unsubMenu();
+        };
+    }, [contextMenuState, menu]);
 
+    // Handle query subscription with proper cleanup
     useEffect(() => {
         query.orderBy(sort, (["DESC", "ASC"].includes(order) ? order : undefined) as any);
-        const unsubscribe = onSnapshot(query, (data) => {
-            setFiles(data);
-        })
+        const unsubscribe = onSnapshot(query, setFiles);
         return unsubscribe;
     }, [query, order, sort]);
 
+    const handleToggleLayout = useCallback(() => {
+        setLayout(prev => prev === "grid" ? "list" : "grid");
+    }, [setLayout]);
 
-    const handleToggleLayout = () => setLayout(prev => prev == "grid" ? "list" : "grid");
+    // Memoize file view props to prevent unnecessary re-renders
+    const fileViewProps = useMemo(() => ({
+        size: 22,
+        onOpen: handleOpen,
+        layout: layout as "grid" | "list",
+    }), [handleOpen, layout]);
+
+
+
+
+    useEffect(() => {
+        return addAction("layout", {
+            position: 2,
+            component: (
+                <IconButton onClick={handleToggleLayout}>
+                    {layout === "grid" ? <LayoutGrid size={18} /> : <StretchHorizontal size={18} />}
+                </IconButton>
+            ),
+            icon: undefined
+        })
+    }, [layout]);
+
+    useEffect(() => {
+        return addAction("search", {
+            position: 1,
+            component: (
+                <TextField size="small" label={"Search..."}/>
+            ),
+            icon: undefined
+        })
+    }, [])
 
     return (
         <>
-            <MobileAction id="search">
-                <TextField size="small" label={"Search"} />
-            </MobileAction>
-            <MobileAction id="layout">
-                <IconButton onClick={handleToggleLayout}>
-                    {layout == "grid" ? <LayoutGrid size={18} /> : <StretchHorizontal size={18} />}
-                </IconButton>
-            </MobileAction>
             <Stack
                 key={layout}
-                direction={layout == "grid" ? "row" : "column"}
-                gap={layout == "grid" ? 3 : 0}
+                direction={layout === "grid" ? "row" : "column"}
+                gap={layout === "grid" ? 3 : 0}
                 alignItems={"flex-start"}
                 justifyContent={"flex-start"}
                 flexWrap={"wrap"}
                 p={2}>
-                {files?.map((file, i) => (
+                {files?.map((file, index) => (
                     <motion.div
+                        key={`${layout}-${file.id}`}
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{
-                            delay: 0.02 * i
-                        }}
+                        transition={{ delay: 0.02 * index }}
                         style={{
-                            maxWidth: layout == "grid" ? '200px' : '100%',
+                            maxWidth: layout === "grid" ? '200px' : '100%',
                             width: '100%'
-                        }}
-                        key={`${layout}-${file.id}`}>
+                        }}>
                         <FileView
-                            size={22}
-                            onOpen={handleOpen}
-                            layout={layout as any}
+                            {...fileViewProps}
                             file={file}
                         />
                     </motion.div>
                 ))}
             </Stack>
         </>
-    )
-}
+    );
+};
 
 export const FolderViewerComponent: React.FC<{ file: File }> = ({ file }) => {
-
-    const query = useMemo(() => getMany("file").where("pId", "==", file.id), [file])
+    const query = useMemo(() => getMany("file").where("pId", "==", file.id), [file.id]);
     const { openWithSupportedViewer } = useViewerManager();
-    const handleOpen = (file: File) => {
+
+    const handleOpen = useCallback((file: File) => {
         openWithSupportedViewer(file);
-    }
+    }, [openWithSupportedViewer]);
 
     return (
         <CustomFolderViewerComponent
             query={query}
-            handleOpen={handleOpen} />
-    )
-}
+            handleOpen={handleOpen}
+        />
+    );
+};
 
-export default {
+// Memoize the viewer module to prevent re-creation
+const FolderViewerModule: ViewerModule = {
     priority: 10,
     id: 'folder',
     name: "Folder",
     icon: <Folder size={18} />,
-    supports: (_, file) => file.type == "folder",
+    supports: (_, file) => file.type === "folder",
     component: FolderViewerComponent
-} as ViewerModule;
+};
+
+export default FolderViewerModule;

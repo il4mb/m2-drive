@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node --max-old-space-size=8192 server.ts",
-    "dev:ts": "NODE_ENV=development node --env-file=.env --max-old-space-size=8192 -r ts-node/register/transpile-only -r tsconfig-paths/register server.ts",
+    "dev": "NODE_ENV=development node --env-file=.env --max-old-space-size=8192 -r ts-node/register/transpile-only -r tsconfig-paths/register server.ts",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "start": "NODE_ENV=production node --env-file=.env -r ts-node/register/transpile-only -r tsconfig-paths/register server.ts",
     "lint": "next lint"
   },
   "dependencies": {

@@ -316,7 +316,7 @@ export const addTaskQueue = <T extends HandlerName>(
     priority: number = 0
 ) => {
     taskQueue.add(handler, payload, priority);
-    logger.debug(`Task added to queue: ${handler}`, payload);
+    logger.debug(`Task added to queue: ${String(handler)}`, payload);
     taskQueueEvents.emit('taskAdded', handler, payload);
 };
 

@@ -13,7 +13,8 @@ type QueryProps = {
 };
 
 export const useUsers = ({ keyword, sortBy, order, limit, exclude }: QueryProps) => {
-    const { user: me } = useCurrentSession();
+    const session = useCurrentSession();
+    const me = session?.user;
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -27,7 +27,7 @@ export default function FolderPickerDialog({ title, onClose, onSelect, disabled 
         handleOnClose();
     }
 
-    if (!auth.user) return;
+    if (!auth?.user) return;
 
     return (
         <Dialog

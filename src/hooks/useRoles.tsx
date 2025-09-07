@@ -19,7 +19,7 @@ export default function useRoles() {
     const [roles, setRoles] = useState<Role[]>(SYSTEM_ROLES);
     useEffect(() => {
         return onSnapshot(getMany("role"), (roles) => {
-            setRoles(roles);
+            setRoles(mergeRolesDeep(roles, SYSTEM_ROLES));
         })
     }, []);
 

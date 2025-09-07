@@ -9,6 +9,7 @@ import { getRequestContext } from "@/libs/requestContext";
 import { DatabaseChangePayload } from "./types";
 import { subscribers } from "../socketHandlers";
 import { validateByConditions } from "./objectHelper";
+import { getConnection } from "@/data-source";
 
 export type DatabaseEvent = "INSERT" | "UPDATE" | "DELETE";
 
@@ -232,7 +233,11 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 continue;
             }
 
-            const user = socket.data?.user as User | undefined;
+            const uid = socket.data?.uid;
+            const isGuest = socket.data?.isGuest || true;
+            const connection = await getConnection();
+            const user = (!isGuest ? (await connection.getRepository(User).findOneBy({ id: uid })) : undefined) || undefined;
+            
             const context: BroadcastContext<E> = {
                 room: dataId
                     ? "item"

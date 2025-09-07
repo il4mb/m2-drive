@@ -10,10 +10,10 @@ import {
     Typography,
 } from '@mui/material';
 import { Trash } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDriveTrash } from '@/hooks/useDriveTrash';
 import Container from '@/components/Container';
-import StickyHeader from '@/components/ui/navigation/StickyHeader';
+import StickyHeader from '@/components/navigation/StickyHeader';
 import { motion } from 'motion/react';
 import ContextMenu from '@/components/context-menu/ContextMenu';
 import FileView, { FileMenuState } from '@/components/drive/FileView';
@@ -22,12 +22,9 @@ import ActionDelete from '@/components/menu-actions/ActionDelete';
 import ActionRestore from '@/components/menu-actions/ActionRestore';
 import { File } from '@/entity/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
-import { enqueueSnackbar } from 'notistack';
-import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
 import { emptyTrash } from '@/server/functions/fileTrash';
-import { validateByConditions } from '@/server/database/objectHelper';
 
 
 type MenuState = FileMenuState & {
@@ -36,19 +33,19 @@ type MenuState = FileMenuState & {
 
 export default function Page() {
 
-    const { user } = useCurrentSession();
-    const { files, loading } = useDriveTrash(user?.id);
+    const session = useCurrentSession();
+    const { files, loading } = useDriveTrash(session?.user?.id);
     const [confirm, setConfirm] = useState('');
     const isConfirm = confirm == "KONFIRMASI";
 
-    const menuItem = contextMenuStack<MenuState>([
+    const menuItem = contextMenuStack<MenuState>({
         ActionRestore,
         ActionDelete,
-    ]);
+    });
 
     const handleConfirm = async () => {
-        if (!user?.id) return;
-        const result = await invokeFunction(emptyTrash, { userId: user.id });
+        if (!session?.user?.id) return;
+        const result = await invokeFunction(emptyTrash, { userId: session?.user.id });
         if (!result.success) {
             throw new Error(result.error || "Unknown Error");
         }
@@ -60,14 +57,9 @@ export default function Page() {
             <Stack flex={1} overflow={"hidden"}>
                 <Container maxWidth='lg' scrollable>
 
-                    <StickyHeader>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" position={'relative'}>
-                            <Stack alignItems="center" spacing={1} direction="row">
-                                <Trash size={20} />
-                                <Typography fontWeight={600} fontSize={18}>
-                                    Tempat Sampah
-                                </Typography>
-                            </Stack>
+                    <StickyHeader
+                        loading={loading}
+                        actions={
                             <ConfirmationDialog
                                 triggerElement={
                                     <Button variant="outlined" color="error">
@@ -105,16 +97,14 @@ export default function Page() {
                                 maxWidth='sm'
                                 type="error" />
 
-                            {loading && (
-                                <LinearProgress sx={{
-                                    position: 'absolute',
-                                    bottom: '-10px',
-                                    left: 0,
-                                    width: '100%',
-                                    height: 2
-                                }} />
-                            )}
+                        }>
+                        <Stack alignItems="center" spacing={1} direction="row">
+                            <Trash size={20} />
+                            <Typography fontWeight={600} fontSize={18}>
+                                Tempat Sampah
+                            </Typography>
                         </Stack>
+
                     </StickyHeader>
 
                     <Paper component={Stack} sx={{ p: 2, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)', position: 'relative' }}>
@@ -133,7 +123,7 @@ export default function Page() {
                                 transition={{ delay: 0.03 * i }}
                                 key={file.id}>
                                 <FileView
-                                    menu={menuItem}
+                                    menu={menuItem as any}
                                     size={26}
                                     file={file}
                                 />

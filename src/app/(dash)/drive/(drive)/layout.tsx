@@ -42,7 +42,6 @@ export default function layout({ children }: layoutProps) {
     const firstId = pId?.[0];
 
     useEffect(() => {
-        
         return contextMenu.addMenu("addFolder", ActionNewFolder);
     }, []);
 

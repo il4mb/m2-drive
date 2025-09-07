@@ -1,7 +1,8 @@
 "use client"
 
+import useRequest from '@/hooks/useRequest';
 import { Alert, AlertTitle, Button, SxProps } from '@mui/material';
-import useRequest from './hooks/useRequest';
+
 
 export interface RequestErrorProps {
     request: ReturnType<typeof useRequest<any, any, any>>;

@@ -25,7 +25,7 @@ export default createContextMenu<State>({
     icon: RotateCcw,
     label: ({ state }) => (
         <Tooltip title={`Pulihkan ${state.file.name}`}>
-            <Typography overflow={"hidden"} textOverflow={"ellipsis"}>
+            <Typography overflow={"hidden"} textOverflow={"ellipsis"} whiteSpace={"nowrap"}>
                 {`Pulihkan ${state.file.name}`}
             </Typography>
         </Tooltip>

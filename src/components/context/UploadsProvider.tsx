@@ -58,7 +58,7 @@ type UploadProviderProps = {
 
 export const UploadsProvider = ({ children }: UploadProviderProps) => {
     const queue = useMemo(() => new ClientTaskQueue(4), []);
-    const { user } = useCurrentSession();
+    const session = useCurrentSession();
     const pathname = usePathname();
     const db = useUploadsIdb();
     const dbFileBlob = useFileBlobIdb();
@@ -239,7 +239,7 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
     );
 
     const addUpload = async (file: File, fId: string | null) => {
-        if (!user) {
+        if (!session?.user?.id) {
             enqueueSnackbar("Invalid session", { variant: "error", action: CloseSnackbar });
             return;
         }
@@ -257,7 +257,7 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
 
         const upload: FileUpload = {
             id,
-            uId: user.id,
+            uId: session?.user?.id,
             status: "pending",
             fId,
             fileName: file.name,

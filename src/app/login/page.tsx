@@ -5,18 +5,15 @@ import useRequest from "@/hooks/useRequest";
 import Pattern from "@/components/icon/Pattern";
 import RequestError from "@/components/RequestError";
 import { isEmailValid } from "@/libs/validator";
-import { Button, Stack, TextField, Typography, Paper, Box, Alert, AlertTitle } from "@mui/material";
+import { Button, Stack, TextField, Typography, Paper, Box } from "@mui/material";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSessionManager } from "@/components/context/SessionManager";
 import { socket } from "@/socket";
 
-export interface PageProps {
-    children?: ReactNode;
-}
 
-export default function Page({ children }: PageProps) {
+export default function page() {
 
     const { userId } = useSessionManager();
     const searchParams = useSearchParams();
@@ -146,8 +143,6 @@ export default function Page({ children }: PageProps) {
                         Login
                     </Button>
                 </Stack>
-
-                {children && <Stack mt={2}>{children}</Stack>}
             </Paper>
 
             <Box sx={{

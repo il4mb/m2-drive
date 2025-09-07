@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useState } from 'react';
+import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useMemo, useState } from 'react';
 import { ModuleViewerManager } from './ModuleViewerManager';
 import FileViewersProvider from '@/components/file-viewers/FileViewersProvider';
 import { IconButton, Skeleton, Stack, Typography } from '@mui/material';
@@ -23,29 +23,24 @@ export interface FileViewerLayoutProps {
 export default function FileViewerLayout({ children, pathList, pageEndpoint, canGoBack: canGobackInitial }: FileViewerLayoutProps) {
 
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
+
     const [canGoBack, setCanGoBack] = useState(false);
     const lastId = pathList[pathList.length - 1];
     const firstId = pathList?.[0];
     const [file, setFile] = useState<File | null>(null);
 
-
-    useEffect(() => {
-        setMounted(true);
-        return () => {
-            setMounted(false);
-        }
-    }, []);
-
     useEffect(() => {
         setCanGoBack(canGobackInitial || pathList.length > 1);
     }, [pathList, canGobackInitial]);
 
+    const stateValue = useMemo(() => ({
+        lastId, firstId, listId: pathList, setFile
+    }), [])
 
     return (
-        <Context.Provider value={{ lastId, firstId, listId: pathList, setFile }}>
+        <Context.Provider value={stateValue}>
             <AnimatePresence mode={'wait'}>
-                <Stack flex={1} overflow={"hidden"} sx={{ maxWidth: 1600, mx: 'auto', width: '100%', px: 1 }}>
+                <Stack flex={1} overflow={"hidden"} sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
                     <ModuleViewerManager endpoint={pageEndpoint}>
                         <FileViewersProvider path={pathList}>
                             <Stack flex={1} overflow={"hidden"}>
@@ -92,7 +87,7 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, can
                                         </Stack>
                                     </Stack>
                                 </StickyHeader>
-                                {mounted && children}
+                                {children}
                             </Stack>
                         </FileViewersProvider>
                     </ModuleViewerManager>

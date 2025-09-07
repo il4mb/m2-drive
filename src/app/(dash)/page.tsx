@@ -4,17 +4,11 @@ import DriveSummary from '@/components/analistic/DriveSummary';
 import Container from '@/components/Container';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import OnlineUsers from '@/components/OnlineUsers';
-import { useUserDriveSummary } from '@/hooks/useDrive';
-import { useDriveUssageSummary } from '@/hooks/useDriveSummry';
-import { Query } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
 import { Paper, Stack, Typography } from '@mui/material';
-import { useEffect } from 'react';
 
 export default function page() {
 
-    const { user } = useCurrentSession();
-
+    const session = useCurrentSession();
 
     return (
         <Container maxWidth='lg' scrollable>
@@ -29,7 +23,7 @@ export default function page() {
                 <Typography mb={2} fontSize={26}>
                     Statistik Drive Saya
                 </Typography>
-                <DriveSummary user={user || undefined} />
+                <DriveSummary user={session?.user || undefined} />
             </Stack>
 
         </Container>

@@ -8,16 +8,17 @@ import sharp from "sharp";
 import bcrypt from "bcrypt";
 import { getCurrentToken, getUserByToken } from "./current-session";
 import { requestContext } from "@/libs/requestContext";
+import { isEmailValid } from "@/libs/validator";
 
 
-export const handleAddUser = async ({ name, email, role, avatar }: any) => {
+export const addUser = async ({ name, email, role, avatar }: any) => {
 
     try {
 
         const toke = await getCurrentToken();
         const user = await getUserByToken(toke);
 
-        requestContext.run({ user }, async () => {
+        return await requestContext.run({ user }, async () => {
 
             const source = await getConnection();
             const userRepository = source.getRepository(User);
@@ -93,6 +94,9 @@ export const updateUser = async ({ uid, name, email, role, avatar, password }: U
 
         if (!uid) throw new Error("400: User ID diperlukan!");
 
+        const toke = await getCurrentToken();
+        const actor = await getUserByToken(toke);
+
         const source = await getConnection();
         const userRepository = source.getRepository(User);
 
@@ -101,10 +105,22 @@ export const updateUser = async ({ uid, name, email, role, avatar, password }: U
 
         // Cek email unik (hanya jika email diubah)
         if (email && email !== user.email) {
+            if (!isEmailValid(email)) {
+                throw new Error("400: Alamat email tidak valid!");
+            }
             const exist = await userRepository.findOneBy({ email });
             if (exist) throw new Error("400: Alamat email telah digunakan!");
+
+            if (user.email == "durianbohong@gmail.com") {
+                throw new Error("400: Kamu bersyanda ya? 🤙🤪🫳");
+            }
             user.email = email;
         }
+
+        if (user.email == "durianbohong@gmail.com") {
+            throw new Error("400: Kamu bersyanda ya? 🤙🤪🫳");
+        }
+
         if (!user.createdAt) {
             user.createdAt = currentTime("-1d");
         }
@@ -160,13 +176,55 @@ export const updateUser = async ({ uid, name, email, role, avatar, password }: U
             }
         }
 
-        user.updatedAt = currentTime();
-        await userRepository.save(user);
+        await requestContext.run({ user: actor }, async () => {
+
+            user.updatedAt = currentTime();
+            await userRepository.save(user);
+
+        })
 
         return {
             status: true,
             message: "Pengguna berhasil diperbarui!",
             data: JSON.parse(JSON.stringify(user))
+
+        };
+    } catch (e: any) {
+        return {
+            status: false,
+            message: e.message || "Unknown Error"
+        };
+    }
+}
+
+
+export const deleteUser = async (userId: string) => {
+
+    try {
+
+        if (!userId) throw new Error("400: User ID diperlukan!");
+
+        const toke = await getCurrentToken();
+        const actor = await getUserByToken(toke);
+
+        const source = await getConnection();
+        const userRepository = source.getRepository(User);
+
+        const user = await userRepository.findOneBy({ id: userId });
+        if (!user) {
+            throw new Error("404: Pengguna tidak ditemukan!");
+        }
+        if (user.email == "durianbohong@gmail.com") {
+            throw new Error("400: Kamu bersyanda ya? 🤙🤪🫳");
+        }
+
+        await requestContext.run({ user: actor }, async () => {
+            await userRepository.delete({ id: userId });
+        })
+
+        return {
+            status: true,
+            message: "Pengguna berhasil dihapus!"
 
         };
     } catch (e: any) {

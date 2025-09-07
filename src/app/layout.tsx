@@ -2,6 +2,7 @@ import Theme from "@/theme/Theme";
 import "./globals.css";
 import { SessionManager } from "@/components/context/SessionManager";
 import { ActionsProvider } from "@/components/navigation/ActionsProvider";
+import { Suspense } from "react";
 
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
 
@@ -9,11 +10,13 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
         <html lang="en">
             <body>
                 <Theme>
-                    <SessionManager>
-                        <ActionsProvider>
-                            {children}
-                        </ActionsProvider>
-                    </SessionManager>
+                    <Suspense fallback={"Loading..."}>
+                        <SessionManager>
+                            <ActionsProvider>
+                                {children}
+                            </ActionsProvider>
+                        </SessionManager>
+                    </Suspense>
                 </Theme>
             </body>
         </html>

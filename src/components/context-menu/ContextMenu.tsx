@@ -104,6 +104,9 @@ export default function ContextMenu<T>({
     const submenuTimerRef = useRef<NodeJS.Timeout>(null);
     const portalRootEl = typeof window !== "undefined" ? getPortalRoot() : null;
 
+    // Memoize children to prevent unnecessary re-renders
+    const memoizedChildren = useMemo(() => children, [children]);
+
     // Calculate estimated menu dimensions
     const estimatedDimensions = useMemo(() => {
         const itemCount = menu?.length || 0;
@@ -141,6 +144,10 @@ export default function ContextMenu<T>({
     const addState = useCallback((data: any): Unsubscribe => {
         const id = generateKey();
         setStateMap(prev => {
+            // Only update if data is actually different
+            const currentData = prev.get(id);
+            if (currentData === data) return prev;
+
             const map = new Map(prev);
             map.set(id, data);
             return map;
@@ -158,6 +165,10 @@ export default function ContextMenu<T>({
         const itemsArray = Array.isArray(menuItems) ? menuItems : [menuItems];
 
         setMenuMap(prev => {
+            // Check if the menu items are the same
+            const currentItems = prev.get(id);
+            if (currentItems === itemsArray) return prev;
+
             const map = new Map(prev);
             map.set(id, itemsArray);
             return map;
@@ -188,7 +199,6 @@ export default function ContextMenu<T>({
         };
     }, []);
 
-
     const removeRender = useCallback((id: string) => {
         setAdditionalPortalRender(prev => {
             const map = new Map(prev);
@@ -198,8 +208,6 @@ export default function ContextMenu<T>({
             return map;
         });
     }, []);
-
-
 
     // Calculate adjusted position with boundary checking
     const calculateAdjustedPosition = useCallback((pos: { x: number; y: number }, dimensions: { width: number; height: number }) => {
@@ -223,45 +231,14 @@ export default function ContextMenu<T>({
         return { x, y };
     }, []);
 
-    // Handle keyboard navigation
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (!position || !enableKeyboardNavigation) return;
-
-        switch (e.key) {
-            case "Escape":
-                onClose();
-                break;
-            case "ArrowDown":
-                e.preventDefault();
-                setFocusedIndex(prev =>
-                    prev < menu.length - 1 ? prev + 1 : 0
-                );
-                break;
-            case "ArrowUp":
-                e.preventDefault();
-                setFocusedIndex(prev =>
-                    prev > 0 ? prev - 1 : menu.length - 1
-                );
-                break;
-            case "ArrowRight":
-                e.preventDefault();
-                // Open submenu if available
-                if (focusedIndex >= 0 && focusedIndex < menu.length) {
-                    const menuItem = menu[focusedIndex];
-                    // Check if menu item has submenu (you'll need to implement this logic)
-                }
-                break;
-            case "Enter":
-            case " ":
-                e.preventDefault();
-                if (focusedIndex >= 0 && focusedIndex < menu.length) {
-                    // Trigger menu item action
-                    const menuElement = menuRef.current?.children[header ? focusedIndex + 1 : focusedIndex] as HTMLElement;
-                    menuElement?.click();
-                }
-                break;
-        }
-    }, [position, enableKeyboardNavigation, menu, focusedIndex, header, onClose]);
+    // Memoize context value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
+        state,
+        addState,
+        addMenu,
+        addRender,
+        removeRender,
+    }), [state, addState, addMenu, addRender, removeRender]);
 
     // Sync initial state
     useEffect(() => {
@@ -283,19 +260,6 @@ export default function ContextMenu<T>({
         setAdjustedPosition(adjusted);
     }, [position, estimatedDimensions, calculateAdjustedPosition]);
 
-    // // Add event listeners
-    // useEffect(() => {
-    //     if (!position) return;
-
-    //     document.addEventListener("keydown", handleKeyDown);
-    //     document.addEventListener("click", onClose);
-
-    //     return () => {
-    //         document.removeEventListener("keydown", handleKeyDown);
-    //         document.removeEventListener("click", onClose);
-    //     };
-    // }, [position, handleKeyDown, onClose]);
-
     // Clear submenu timer on unmount
     useEffect(() => {
         return () => {
@@ -304,21 +268,6 @@ export default function ContextMenu<T>({
             }
         };
     }, []);
-
-    if (!children || !isValidElement(children)) return null;
-
-    const content = cloneElement(children, {
-        // @ts-ignore
-        onContextMenu,
-        style: {
-            // @ts-ignore
-            ...children.props.style,
-            ...(highlight && position && {
-                backgroundColor: alpha("#000", 0.1),
-                borderRadius: "4px"
-            })
-        }
-    });
 
     const renderMenu = (menuItems: MenuComponent[], menuPosition: { x: number; y: number }, isSubmenu = false) => (
         <Stack
@@ -377,8 +326,19 @@ export default function ContextMenu<T>({
     );
 
     return (
-        <Context.Provider value={{ state, addState, addMenu, addRender, removeRender }}>
-            {content}
+        <Context.Provider value={contextValue}>
+            <Stack
+                flex={1}
+                overflow={"hidden"}
+                onContextMenu={onContextMenu}
+                sx={{
+                    ...(highlight && position && {
+                        backgroundColor: alpha("#000", 0.1),
+                        borderRadius: "4px"
+                    })
+                }}>
+                {memoizedChildren}
+            </Stack>
             {portalRootEl && createPortal(
                 <AnimatePresence>
                     {adjustedPosition && (

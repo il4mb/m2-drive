@@ -9,7 +9,6 @@ import { saveRole, deleteRole, getAllRole } from "@/actions/manage-role";
 import RequestError from "@/components/RequestError";
 import Role from "@/entity/Role";
 import _ from "lodash";
-import { emitSocket } from "@/socket";
 
 function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
     const keyedA = _.keyBy(rolesA, "name");
@@ -47,16 +46,9 @@ export default function RoleManager() {
         validator({ name, label, abilities }) {
             return Boolean(name.length > 3 && label.length > 3 && abilities.length > 0)
         },
-        onSuccess({ data }) {
+        onSuccess() {
             closeEdit();
             requestGetRole.send();
-            emitSocket("update", {
-                collection: "role",
-                columns: {
-                    name: data?.name
-                },
-                data
-            });
         },
     }, []);
 
@@ -64,20 +56,13 @@ export default function RoleManager() {
     const requestDelete = useRequest({
         action: deleteRole,
         params: { name: selectedRole?.name || '' },
-        validator({ name }) {
+        validator() {
             return Boolean(selectedRole);
         },
         onSuccess({ data }) {
             setDeleteConfirmOpen(false);
             setSelectedRole(null);
             requestGetRole.send();
-            emitSocket("update", {
-                collection: "role",
-                columns: {
-                    name: selectedRole?.name
-                },
-                data
-            });
         },
     }, [selectedRole]);
 
@@ -117,11 +102,6 @@ export default function RoleManager() {
         setDeleteConfirmOpen(true);
     };
 
-    const confirmDelete = () => {
-        if (selectedRole) {
-            requestDelete.send();
-        }
-    };
 
     const handleSave = () => {
         requestSave.send();
@@ -208,7 +188,7 @@ export default function RoleManager() {
                                 </Typography>
                             </Stack>
                             <TransferList
-                                defineList={PERMISSION_LIST}
+                                defineList={PERMISSION_LIST as any}
                                 items={abilities}
                                 onChange={setAbilities}
                             />

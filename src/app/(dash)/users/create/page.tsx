@@ -1,6 +1,5 @@
 'use client'
 
-import { handleAddUser } from "@/actions/manage-users";
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/hooks/useRequest";
@@ -16,9 +15,10 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
+import StickyHeader from "@/components/navigation/StickyHeader";
+import { addUser } from "@/actions/user";
 
 export default function page() {
-
 
     const checkPermission = useCheckMyPermission();
     const canAddUser = checkPermission("can-add-user");
@@ -32,7 +32,7 @@ export default function page() {
     const [password, setPassword] = useState('');
 
     const request = useRequest({
-        action: handleAddUser,
+        action: addUser,
         params: { name, email, role, avatar },
         validator({ name, email, role }) {
             const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
@@ -63,21 +63,19 @@ export default function page() {
 
     return (
         <Container>
-            <Stack component={Paper} p={2} mb={2} position={"sticky"} top={0} zIndex={10} boxShadow={2} borderRadius={2}>
-                <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"space-between"}>
-                    <Stack direction={"row"} gap={1} alignItems={"center"}>
-                        <Tooltip title={"Kembali"} sx={{ mr: 1 }} arrow>
-                            <IconButton LinkComponent={Link} href="/users">
-                                <ChevronLeft size={18} />
-                            </IconButton>
-                        </Tooltip>
-                        <UserPlus size={28} />
-                        <Typography fontSize={22} fontWeight={600}>
-                            Tambah Pengguna
-                        </Typography>
-                    </Stack>
+            <StickyHeader>
+                <Stack direction={"row"} gap={1} alignItems={"center"}>
+                    <Tooltip title={"Kembali"} sx={{ mr: 1 }} arrow>
+                        <IconButton LinkComponent={Link} href="/users">
+                            <ChevronLeft size={18} />
+                        </IconButton>
+                    </Tooltip>
+                    <UserPlus size={28} />
+                    <Typography fontSize={22} fontWeight={600}>
+                        Tambah Pengguna
+                    </Typography>
                 </Stack>
-            </Stack>
+            </StickyHeader>
 
             <Stack component={Paper} borderRadius={2} boxShadow={2}>
 

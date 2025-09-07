@@ -1,4 +1,4 @@
-import { Label } from "recharts";
+
 import Role from "./entity/Role";
 
 export type TPermission = {

@@ -23,20 +23,25 @@ import {
 import { ChevronLeft, Save, UserIcon, UserPen } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import useUser from '@/hooks/useUser';
-import { useUserUpdate } from '@/hooks/useUserUpdate';
-import { updateUser } from '@/actions/user';
+import { deleteUser, updateUser } from '@/actions/user';
+import { enqueueSnackbar } from 'notistack';
+import CloseSnackbar from '@/components/ui/CloseSnackbar';
+import StickyHeader from '@/components/navigation/StickyHeader';
+import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
 
 export default function Page() {
+
+    const router = useRouter();
     const checkPermission = useCheckMyPermission();
     const canEditUser = checkPermission('can-edit-user');
 
     const roles = useRoles();
     const { uid } = useParams<{ uid: string }>();
     const { user, loading: getLoading } = useUser(uid);
-    const { loading: updateLoading } = useUserUpdate(); // jika hook ini memang ada
+    const [loading, setLoading] = useState(false);
 
     const [changePw, setChangePw] = useState(false);
     const [avatar, setAvatar] = useState<File | null>(null);
@@ -47,7 +52,7 @@ export default function Page() {
 
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const isBusy = getLoading || updateLoading;
+    const isBusy = getLoading || loading;
 
     // Validation flags
     const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
@@ -71,10 +76,11 @@ export default function Page() {
 
     // Submit handler
     const handleSubmit = useCallback(async () => {
-        if (!isValid) return;
+        if (!isValid || loading) return;
+        setLoading(true)
         try {
             setSubmitError(null);
-            await updateUser({
+            const result = await updateUser({
                 uid,
                 role,
                 name,
@@ -82,11 +88,28 @@ export default function Page() {
                 avatar,
                 ...(changePw && { password }),
             });
+            if (!result.status) throw new Error(result.message);
+            enqueueSnackbar("Berhasil memperbarui pengguna!", { variant: "success", action: CloseSnackbar })
         } catch (err: any) {
             console.error('Failed to update user:', err);
             setSubmitError(err?.message || 'Gagal menyimpan perubahan pengguna.');
+        } finally {
+            setLoading(false)
         }
     }, [avatar, changePw, email, isValid, name, password, role, uid]);
+
+    const handleDelete = async () => {
+        try {
+
+            const result = await deleteUser(uid);
+            if (!result.status) throw new Error(result.message || "Unknown Error");
+            enqueueSnackbar("Behasil menghapus pengguna!", { variant: "success", action: CloseSnackbar });
+            router.back();
+
+        } catch (error: any) {
+            enqueueSnackbar(error.message || "Unknown Error", { variant: "error", action: CloseSnackbar })
+        }
+    }
 
     // Fill form from user
     useEffect(() => {
@@ -100,29 +123,37 @@ export default function Page() {
     return (
         <Container>
             {/* Header */}
-            <Stack
-                component={Paper}
-                p={2}
-                mb={2}
-                position="sticky"
-                top={0}
-                zIndex={10}
-                boxShadow={2}
-                borderRadius={2}>
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" gap={1} alignItems="center">
-                        <Tooltip title="Kembali" sx={{ mr: 1 }} arrow>
-                            <IconButton LinkComponent={Link} href="/users">
-                                <ChevronLeft size={18} />
-                            </IconButton>
-                        </Tooltip>
-                        <UserPen size={28} />
-                        <Typography fontSize={22} fontWeight={600}>
-                            Sunting Pengguna
-                        </Typography>
-                    </Stack>
+            <StickyHeader
+                actions={
+                    <ConfirmationDialog
+                        type='error'
+                        onConfirm={handleDelete}
+                        title='Apakah kamu yakin?'
+                        message={
+                            <>
+                                <Typography>Kamu akan menghapus <strong>{user?.name || uid}</strong>!.</Typography>
+                                <Typography>Tindakan ini tidak dapat dibatalkan.</Typography>
+                            </>
+                        }
+                        triggerElement={
+                            <Button color='error'>
+                                Hapus Pengguna
+                            </Button>
+                        }
+                    />
+                }>
+                <Stack direction="row" gap={1} alignItems="center">
+                    <Tooltip title="Kembali" sx={{ mr: 1 }} arrow>
+                        <IconButton LinkComponent={Link} href="/users">
+                            <ChevronLeft size={18} />
+                        </IconButton>
+                    </Tooltip>
+                    <UserPen size={28} />
+                    <Typography fontSize={22} fontWeight={600}>
+                        Sunting Pengguna
+                    </Typography>
                 </Stack>
-            </Stack>
+            </StickyHeader>
 
             {/* Form */}
             <Stack component={Paper} borderRadius={2} boxShadow={2}>
@@ -162,7 +193,7 @@ export default function Page() {
                             error={!nameValid}
                             onChange={(e) => {
                                 const value = e.target.value.trim();
-                                if (value.length <= 64) setName(value);
+                                if (value.length <= 64) setName(e.target.value);
                             }}
                         />
                         <Typography variant='caption' color='text.secondary'>

@@ -32,10 +32,10 @@ export default function Page() {
     const [confirm, setConfirm] = useState('');
     const isConfirm = confirm == "KONFIRMASI";
 
-    const menuItem = contextMenuStack<MenuState>([
+    const menuItem = contextMenuStack<MenuState>({
         ActionRestore,
         ActionDelete,
-    ]);
+    });
 
     const handleRestore = async (file: File) => {
         if (!uId) return;
@@ -132,7 +132,7 @@ export default function Page() {
                                 transition={{ delay: 0.03 * i }}
                                 key={file.id}>
                                 <FileView
-                                    menu={menuItem}
+                                    menu={menuItem as any}
                                     menuState={{
                                         file,
                                         restore: handleRestore

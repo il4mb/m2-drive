@@ -42,12 +42,12 @@ export interface ParticipantsTrackingProps<T extends ElementType = typeof Stack>
 export default function ParticipantsProvider({ children, container, containerProps }: ParticipantsTrackingProps) {
     const Container = container || Stack;
     const theme = useTheme();
-    const { user } = useCurrentSession();
+    const session = useCurrentSession();
     const { data, updateMyData } = useRoom<any>();
     const containerRef = useRef<HTMLDivElement>(null);
     const scrollableElementsRef = useRef<Set<HTMLElement>>(new Set());
 
-    const myId = useMemo(() => user?.id, [user]);
+    const myId = useMemo(() => session?.user?.id, [session]);
     const [myPosition, setMyPosition] = useState<Position>({ x: 0, y: 0, scrollX: 0, scrollY: 0 });
     const [participants, setParticipants] = useState<ParticipantData[]>([]);
     const [myViewport, setMyViewport] = useState({ width: 0, height: 0 });
@@ -71,13 +71,13 @@ export default function ParticipantsProvider({ children, container, containerPro
             element.scrollHeight > element.clientHeight ||
             element.scrollWidth > element.clientWidth
         ) && (
-            style.overflow === 'auto' ||
-            style.overflow === 'scroll' ||
-            style.overflowY === 'auto' ||
-            style.overflowY === 'scroll' ||
-            style.overflowX === 'auto' ||
-            style.overflowX === 'scroll'
-        );
+                style.overflow === 'auto' ||
+                style.overflow === 'scroll' ||
+                style.overflowY === 'auto' ||
+                style.overflowY === 'scroll' ||
+                style.overflowX === 'auto' ||
+                style.overflowX === 'scroll'
+            );
 
         if (isScrollable && element !== containerRef.current) {
             scrollables.push(element);
@@ -224,7 +224,8 @@ export default function ParticipantsProvider({ children, container, containerPro
             setParticipants(prev => {
                 const updatedParticipants = users.map(user => {
                     const existing = prev.find(p => p.user?.id === user.id);
-                    const participantData = data[user.id] || {};
+                    // @ts-ignore
+                    const participantData = session?.user?.id ? (data[session.user.id] || {}) : {};
 
                     return {
                         user,
@@ -244,7 +245,7 @@ export default function ParticipantsProvider({ children, container, containerPro
 
     // Share my position and viewport
     useEffect(() => {
-        updateMyData({ 
+        updateMyData({
             position: myPosition,
             viewport: myViewport
         });
@@ -275,7 +276,7 @@ export default function ParticipantsProvider({ children, container, containerPro
         if (theirViewport.width === 0 || theirViewport.height === 0) {
             const viewportX = participant.position.x - totalScroll.scrollX;
             const viewportY = participant.position.y - totalScroll.scrollY;
-            
+
             const isVisible = (
                 viewportX >= 0 &&
                 viewportY >= 0 &&
@@ -347,7 +348,7 @@ export default function ParticipantsProvider({ children, container, containerPro
 
         // Find intersection point with viewport edge
         const length = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (length === 0) return null; // Prevent division by zero
 
         const normalizedDx = dx / length;
@@ -355,11 +356,11 @@ export default function ParticipantsProvider({ children, container, containerPro
 
         // Calculate intersection with container edges
         const padding = 30;
-        
+
         // Calculate the maximum distance to edge in both directions
         const maxX = normalizedDx > 0 ? containerRect.right - centerX : centerX - containerRect.left;
         const maxY = normalizedDy > 0 ? containerRect.bottom - centerY : centerY - containerRect.top;
-        
+
         // Use the smaller ratio to find the edge intersection
         const ratioX = maxX / Math.abs(normalizedDx);
         const ratioY = maxY / Math.abs(normalizedDy);
@@ -462,7 +463,7 @@ export default function ParticipantsProvider({ children, container, containerPro
                                     color={userColor}
                                     x={viewportInfo.viewportX}
                                     y={viewportInfo.viewportY}
-                                    // scale={viewportInfo.scale}
+                                // scale={viewportInfo.scale}
                                 />
                             );
                         } else {

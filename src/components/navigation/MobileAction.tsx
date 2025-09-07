@@ -1,7 +1,7 @@
 'use client'
 
 import { PopoverProps, useMediaQuery } from '@mui/material';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useActionsProvider } from './ActionsProvider';
 
 export interface MobileActionProps {
@@ -15,13 +15,12 @@ export interface MobileActionProps {
     }
 }
 
-export default function MobileAction({
-    id, icon, children, showAsPopover = false, position = 0, slotProps
-}: MobileActionProps) {
+export default function MobileAction(props: MobileActionProps) {
 
     const [isMounted, setIsMounted] = useState(false);
-    const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('md'));
     const provider = useActionsProvider();
+
+    const data = useMemo(() => ({ ...props, component: props.children }), [props]);
 
     useEffect(() => {
         setIsMounted(true);
@@ -29,15 +28,13 @@ export default function MobileAction({
 
     useEffect(() => {
         if (!provider) return;
-        provider.addAction(id, {
-            id, icon, component: children, showAsPopover, position, slotProps
-        });
+        provider.addAction(props.id, data as any);
 
         return () => {
             if (isMounted) {
-                provider.removeAction(id);
+                provider.removeAction(data.id);
             }
         };
-    }, [isMounted, isMobile, id, icon, children, showAsPopover, position, slotProps]);
+    }, [isMounted, data]);
     return null;
 }

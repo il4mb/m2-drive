@@ -12,7 +12,6 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Avatar,
     Box,
     useTheme,
     alpha,
@@ -27,9 +26,8 @@ import { getDriveRoot, UserDriveSummary } from "@/actions/dive-root";
 import { useEffect, useState } from "react";
 import RequestError from "@/components/RequestError";
 import Link from "next/link";
-import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
-import StickyHeader from "@/components/ui/navigation/StickyHeader";
+import StickyHeader from "@/components/navigation/StickyHeader";
 import { formatFileSize } from "@/libs/utils";
 
 export default function Page() {

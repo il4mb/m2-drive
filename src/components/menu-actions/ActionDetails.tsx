@@ -236,19 +236,20 @@ export default createContextMenu<{ file: File }>({
                                         Tag:
                                     </Typography>
                                     <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                        {meta.tags.map((tag, index) => (
-                                            <Chip
-                                                key={index}
-                                                label={tag}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{
-                                                    fontSize: '0.7rem',
-                                                    bgcolor: isDark ? 'grey.700' : 'grey.200',
-                                                    borderColor: isDark ? 'grey.600' : 'grey.300'
-                                                }}
-                                            />
-                                        ))}
+                                        { //@ts-ignore
+                                            (meta?.tags || []).map((tag, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={tag}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{
+                                                        fontSize: '0.7rem',
+                                                        bgcolor: isDark ? 'grey.700' : 'grey.200',
+                                                        borderColor: isDark ? 'grey.600' : 'grey.300'
+                                                    }}
+                                                />
+                                            ))}
                                     </Box>
                                 </Box>
                             )}

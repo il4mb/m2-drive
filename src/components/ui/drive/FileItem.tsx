@@ -21,13 +21,14 @@ export interface FileItemProps {
     file: File;
     layout?: "list" | "grid";
     index?: number;
-    menu?: React.FC<ContextMenuItemProps<FileContextMenu>>[];
+    menu?: Record<string, React.FC<ContextMenuItemProps<FileContextMenu>>>;
     onOpen?: (file: File) => void;
     onRefresh?: () => void;
 }
-export default function FileItem({ index = 0, file, menu = [], layout = "grid", onOpen, onRefresh }: FileItemProps) {
+export default function FileItem({ index = 0, file, menu = {}, layout = "grid", onOpen, onRefresh }: FileItemProps) {
 
-    const mimeType = file.meta?.mimeType;
+    // @ts-ignore
+    const mimeType = file.meta?.mimeType as string;
     const isImage = mimeType?.startsWith("image");
     const isFolder = file.type == "folder";
 
@@ -75,11 +76,13 @@ export default function FileItem({ index = 0, file, menu = [], layout = "grid", 
                 </Stack>
                 {layout == "list" && (
                     <Stack flex={1}>
-                        {file.meta?.lastOpen && (
-                            <Typography>
-                                {formatLocaleDate(file.meta.lastOpen, 'ID-id')}
-                            </Typography>
-                        )}
+                        { // @ts-ignore
+                            file.meta?.lastOpen && (
+                                <Typography>
+                                    {// @ts-ignore
+                                        formatLocaleDate(file.meta.lastOpen, 'ID-id')}
+                                </Typography>
+                            )}
                     </Stack>
                 )}
             </Stack>

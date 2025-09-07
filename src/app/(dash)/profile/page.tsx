@@ -10,10 +10,12 @@ import { motion } from 'framer-motion';
 import { Cookie } from 'lucide-react';
 
 export default function Page() {
-    const { user, createdAt, expiredAt, refreshToken } = useCurrentSession();
+    const session = useCurrentSession();
     const { permissions, role } = useMyAbilities();
 
-    if (!user) return null;
+    if (!session?.user) return null;
+
+    const { user, refreshToken, createdAt, expiredAt } = session;
 
     return (
         <Container scrollable>

@@ -45,6 +45,7 @@ export const broadcastRules: BroadcastRuleMap = {
 
         // For public user data (like usernames)
         if (event === 'INSERT' || event === 'UPDATE') {
+            // @ts-ignore
             return data.isPublic === true;
         }
 
@@ -58,16 +59,22 @@ export const broadcastRules: BroadcastRuleMap = {
         const { user, data } = context;
 
         // Public files
+        // @ts-ignore
+
         if (data.isPublic) {
             return true;
         }
 
         // File owner can see their files
+        // @ts-ignore
+
         if (user && data.ownerId === user.id) {
             return true;
         }
 
         // Users with shared access
+        // @ts-ignore
+
         if (user && data.sharedWith?.includes(user.id)) {
             return true;
         }

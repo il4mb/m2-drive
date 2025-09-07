@@ -8,10 +8,11 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, Calendar, CaseSensitive, Clock,
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useUsers } from "@/hooks/useUsers";
-import StickyHeader from "@/components/StickyHeader";
+import StickyHeader from "@/components/navigation/StickyHeader";
 import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AnchorMenu from "@/components/context-menu/AnchorMenu";
+import MobileAction from "@/components/navigation/MobileAction";
 
 export default function page() {
 
@@ -66,30 +67,35 @@ export default function page() {
     return (
         <Container maxWidth="lg" scrollable>
 
-            <StickyHeader loading={loading}>
-                <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"space-between"} position={"relative"}>
-                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                        <Users2 size={28} />
-                        <Typography fontSize={22} fontWeight={600}>
-                            Manage Pengguna
-                        </Typography>
-                    </Stack>
-                    <Stack direction={"row"} spacing={1}>
-                        <AnchorMenu items={menuItem}
-                            buttonProps={{ disabled: loading }}
-                        />
-                        <TextField
-                            size="small"
-                            label={"Cari..."}
-                            value={keyword}
-                            onChange={e => setKeyword(e.target.value)} />
+            <StickyHeader
+                loading={loading}
+                actions={
+                    <>
                         {canAddUser && (
                             <Button variant="contained" size="small" LinkComponent={Link} href="/users/create">
                                 Tambah Pengguna
                             </Button>
                         )}
-                    </Stack>
+                    </>
+                }>
+                <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                    <Users2 size={28} />
+                    <Typography fontSize={22} fontWeight={600}>
+                        Manage Pengguna
+                    </Typography>
                 </Stack>
+
+                <MobileAction id="action">
+                    <AnchorMenu items={menuItem}
+                        buttonProps={{ disabled: loading }}
+                    />
+                    <TextField
+                        size="small"
+                        label={"Cari..."}
+                        value={keyword}
+                        onChange={e => setKeyword(e.target.value)} />
+                </MobileAction>
+
             </StickyHeader>
 
             <Stack component={Paper} p={2} flex={1} borderRadius={2}>

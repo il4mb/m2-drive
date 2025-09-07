@@ -1,6 +1,7 @@
 import Theme from "@/theme/Theme";
 import "./globals.css";
 import { SessionManager } from "@/components/context/SessionManager";
+import { ActionsProvider } from "@/components/navigation/ActionsProvider";
 
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
 
@@ -9,7 +10,9 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
             <body>
                 <Theme>
                     <SessionManager>
-                        {children}
+                        <ActionsProvider>
+                            {children}
+                        </ActionsProvider>
                     </SessionManager>
                 </Theme>
             </body>

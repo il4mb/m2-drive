@@ -1,10 +1,9 @@
 import Role from "@/entity/Role";
 import { useEffect, useState } from "react";
-import useRequest from "./useRequest";
-import { getAllRole } from "@/actions/manage-role";
 import { SYSTEM_ROLES } from "@/permission";
 import _ from "lodash";
-import { useOnEmit } from "@/socket";
+import { onSnapshot } from "@/libs/websocket/snapshot";
+import { getMany } from "@/libs/websocket/query";
 
 
 function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
@@ -18,22 +17,10 @@ function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
 export default function useRoles() {
 
     const [roles, setRoles] = useState<Role[]>(SYSTEM_ROLES);
-    const request = useRequest({
-        action: getAllRole,
-        onSuccess(result) {
-            setRoles(mergeRolesDeep(SYSTEM_ROLES, result.data));
-        },
-    });
-
-    useOnEmit("update", {
-        collection: "role",
-        callback(data) {
-            request.send();
-        },
-    })
-
     useEffect(() => {
-        request.send();
+        return onSnapshot(getMany("role"), (roles) => {
+            setRoles(roles);
+        })
     }, []);
 
     return roles;

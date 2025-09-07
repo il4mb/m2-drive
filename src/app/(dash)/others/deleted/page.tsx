@@ -13,7 +13,7 @@ import { Trash } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDriveTrash } from '@/hooks/useDriveTrash';
 import Container from '@/components/Container';
-import StickyHeader from '@/components/StickyHeader';
+import StickyHeader from '@/components/ui/navigation/StickyHeader';
 import { motion } from 'motion/react';
 import ContextMenu from '@/components/context-menu/ContextMenu';
 import FileView, { FileMenuState } from '@/components/drive/FileView';

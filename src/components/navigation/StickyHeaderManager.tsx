@@ -1,3 +1,5 @@
+'use client'
+
 import {
     createContext,
     useContext,
@@ -6,8 +8,11 @@ import {
     ReactElement,
     Dispatch,
     SetStateAction,
-    useMemo
+    useMemo,
+    useEffect,
+    useCallback
 } from 'react';
+
 
 interface StickyHeaderState {
     header: ReactElement | null;
@@ -17,8 +22,12 @@ interface StickyHeaderState {
 const StickyHeaderContext = createContext<StickyHeaderState | undefined>(undefined);
 
 export const StickyHeaderManager = ({ children }: { children?: ReactNode }) => {
+
     const [header, setHeader] = useState<ReactElement | null>(null);
-    const contextValue = useMemo(() => ({ header, setHeader }), [header]);
+    const contextValue = useMemo<StickyHeaderState>(() => ({
+        header,
+        setHeader
+    }), [header]);
 
     return (
         <StickyHeaderContext.Provider value={contextValue}>

@@ -1,7 +1,7 @@
 'use client';
 
 import Container from '@/components/Container';
-import StickyHeader from '@/components/StickyHeader';
+import StickyHeader from '@/components/navigation/StickyHeader';
 import { useSharing } from '@/hooks/useFileSharing';
 import { LinearProgress, Paper, Stack, Typography, Box, Divider } from '@mui/material';
 import { Share2 } from 'lucide-react';

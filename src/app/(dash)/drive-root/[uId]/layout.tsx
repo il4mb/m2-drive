@@ -9,7 +9,7 @@ import { ChevronLeft, FolderOpenDot } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import StickyHeader from '@/components/StickyHeader';
+import StickyHeader from '@/components/ui/navigation/StickyHeader';
 import Link from 'next/link';
 import UserAvatar from '@/components/ui/UserAvatar';
 

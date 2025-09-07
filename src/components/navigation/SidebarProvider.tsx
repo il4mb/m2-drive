@@ -1,11 +1,11 @@
 'use client'
 
-import { IconButton, Paper, Stack, Typography, useMediaQuery, Popover, Box, PaperProps, PopoverProps } from '@mui/material';
-import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback } from 'react';
+import { IconButton, Paper, Stack, Typography, useMediaQuery, Popover, Box, PopoverProps } from '@mui/material';
+import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useMemo } from 'react';
 import SidebarDrawer from './SidebarDrawer';
 import { AnimatePresence, motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
-import { isEqual } from 'lodash';
+import { useActionsByBreakpoint } from './ActionsProvider';
 
 interface MobileAction {
     id: string;
@@ -21,9 +21,6 @@ interface MobileAction {
 interface State {
     open: boolean;
     setOpen: Dispatch<SetStateAction<boolean>>;
-    mobileActions: MobileAction[];
-    addMobileAction: (action: MobileAction) => void;
-    removeMobileAction: (id: string) => void;
     activeAction: string | null;
     setActiveAction: Dispatch<SetStateAction<string | null>>;
 }
@@ -35,27 +32,13 @@ type SidebarProviderProps = {
 }
 
 export const SidebarProvider = ({ children }: SidebarProviderProps) => {
+
+    const actions = useActionsByBreakpoint('xs', 'md');
     const [open, setOpen] = useState<boolean>(true);
-    const [mobileActions, setMobileActions] = useState<MobileAction[]>([]);
     const [activeAction, setActiveAction] = useState<string | null>(null);
     const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('md'));
     const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
-
-    const addMobileAction = useCallback((action: MobileAction) => {
-        setMobileActions(prev => {
-            const existingIndex = prev.findIndex(a => a.id === action.id);
-            if (existingIndex >= 0) {
-                const updated = [...prev];
-                updated[existingIndex] = action;
-                return updated;
-            }
-            return [...prev, action].sort((a, b) => (a.position || 0) - (b.position || 0));
-        });
-    }, []);
-
-    const removeMobileAction = useCallback((id: string) => {
-        setMobileActions(prev => prev.filter(action => action.id !== id));
-    }, []);
+    const mobileActions = useMemo(() => actions.map(([_, act]) => act).sort((a, b) => (a.position || 0) - (b.position || 0)), [actions])
 
     const handleActionClick = (event: React.MouseEvent<HTMLElement>, action: MobileAction) => {
         if (action.showAsPopover) {
@@ -72,15 +55,7 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
     };
 
     return (
-        <Context.Provider value={{
-            open,
-            setOpen,
-            mobileActions,
-            addMobileAction,
-            removeMobileAction,
-            activeAction,
-            setActiveAction
-        }}>
+        <Context.Provider value={{ open, setOpen, activeAction, setActiveAction }}>
             <Stack flex={1} overflow={'hidden'} component={motion.div}>
                 <Stack component={Paper} display={['flex', 'flex', 'none']} borderRadius={0} p={1} boxShadow={2} zIndex={1195}>
                     <AnimatePresence>
@@ -170,8 +145,4 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
     );
 };
 
-export const useSidebar = () => {
-    const context = useContext(Context);
-    if (!context) throw new Error('useSidebar must be used within a SidebarProvider');
-    return context;
-};
+export const useSidebar = () => useContext(Context);

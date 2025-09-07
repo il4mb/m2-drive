@@ -44,8 +44,6 @@ export default function FileView<T = any>({
     size = 18,
     selected = false,
     layout = "list",
-    menu,
-    appendMenu,
     menuState: additionalMenuState
 }: FileViewProps<T>) {
 
@@ -73,7 +71,6 @@ export default function FileView<T = any>({
         ActionOpenWith,
         ActionDetails,
         ActionShare,
-        ActionDivider,
         ActionCopy,
         ActionMove,
         ActionRename,
@@ -93,6 +90,7 @@ export default function FileView<T = any>({
                 sx={{
                     px: layout == "list" ? 2 : 0,
                     py: layout == "list" ? 1 : 0,
+                    position: 'relative',
                     cursor: 'pointer',
                     userSelect: 'none',
                     bgcolor: selected ? "action.hover" : '',
@@ -155,6 +153,25 @@ export default function FileView<T = any>({
                                     // @ts-ignore
                                     : formatFileSize(file.meta?.size || 0)}
                             </Typography>
+
+                            <Box sx={{ position: 'absolute', top: 0, right: 0, m: 1 }}>
+                                {viewers.length > 0 && (
+                                    <Stack direction={'row'} alignItems={"center"} ml={"auto"}>
+                                        {viewers.map((p, i) => (
+                                            <Tooltip
+                                                title={`${p.displayName || "Unknown"}${p.isGuest ? " (tamu)" : ""}`}
+                                                key={p.uid || i}
+                                                arrow>
+                                                <Avatar
+                                                    sx={{ width: 18, height: 18, ml: -1, fontSize: 12 }}
+                                                    src={p.avatar}>
+                                                    {p.isGuest ? "?" : `${p.displayName || "Unknown"}`.substring(1, -1)}
+                                                </Avatar>
+                                            </Tooltip>
+                                        ))}
+                                    </Stack>
+                                )}
+                            </Box>
                         </Stack>
                     ) : (
                         <>

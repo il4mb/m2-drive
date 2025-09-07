@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
 import { useMyHistory } from "@/hooks/useMyHistory";
-import StickyHeader from "@/components/StickyHeader";
+import StickyHeader from "@/components/navigation/StickyHeader";
 
 
 

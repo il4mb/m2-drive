@@ -1,17 +1,24 @@
 'use client'
 
+import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
+import { File } from '@/entity/File';
 import { getMany } from '@/libs/websocket/query';
 import FileContentViewer from '@/viewer/FileContentViewer';
 import { CustomFolderViewerComponent } from '@/viewer/modules/FolderViewer';
+import { useViewerManager } from '@/viewer/ModuleViewerManager';
 import { useParams } from 'next/navigation';
+import { useMemo } from 'react';
 
 
 export default function page() {
 
+    const { openWithSupportedViewer } = useViewerManager();
+    const session = useCurrentSession();
+    const query = useMemo(() => getMany("file").where("pId", "IS NULL").where("uId", "==", session?.user?.id), [session]);
     const { pId } = useParams<{ pId: string[] }>();
 
-    const handleOpen = () => {
-
+    const handleOpen = (file: File) => {
+        openWithSupportedViewer(file);
     }
 
     if (pId?.length > 0) {
@@ -23,7 +30,7 @@ export default function page() {
     return (
         <>
             <CustomFolderViewerComponent
-                query={getMany("file").where("pId", "IS NULL")}
+                query={query}
                 handleOpen={handleOpen} />
         </>
     )

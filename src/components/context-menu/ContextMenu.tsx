@@ -367,40 +367,10 @@ export default function ContextMenu<T>({
             )}
 
             {menuItems.map((MenuItem, index) => (
-                <Box
-                    key={index}
-                    sx={{
-                        borderRadius: 1,
-                        '&:hover': {
-                            bgcolor: 'action.hover'
-                        },
-                        '&:focus': {
-                            bgcolor: 'action.selected',
-                            outline: 'none'
-                        },
-                        pointerEvents: 'auto'
-                    }}>
+                <Box key={index} sx={{ pointerEvents: 'auto' }}>
                     <MenuItem
                         state={state}
-                        onClose={onClose}
-                    // isFocused={focusedIndex === index}
-                    // hasSubmenu={false} // You'll need to implement submenu detection
-                    // onSubmenuOpen={(rect) => {
-                    //     // Handle submenu opening
-                    //     const submenuPosition = {
-                    //         x: menuPosition.x + rect.width + submenuOffset,
-                    //         y: menuPosition.y + rect.top
-                    //     };
-                    //     setActiveSubmenu({
-                    //         id: `submenu-${index}`,
-                    //         position: calculateAdjustedPosition(submenuPosition, estimatedDimensions),
-                    //         parentRect: rect
-                    //     });
-                    // }}
-                    // onSubmenuClose={() => {
-                    //     setActiveSubmenu(null);
-                    // }}
-                    />
+                        onClose={onClose} />
                 </Box>
             ))}
         </Stack>

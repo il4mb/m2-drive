@@ -6,7 +6,7 @@ import { Upload, CloudUpload, Infinity } from "lucide-react";
 import { useUploads } from "@/components/context/UploadsProvider";
 import { getColor } from "@/theme/colors";
 import { useDrive } from "@/components/context/DriveProvider";
-import StickyHeader from "@/components/StickyHeader";
+import StickyHeader from "@/components/navigation/StickyHeader";
 import Container from "@/components/Container";
 import UploadManager from "@/components/ui/upload/UploadManager";
 
@@ -61,7 +61,16 @@ export default function UploadPage() {
             onDragLeave={handleDragLeave}
             position={"relative"}>
             <Container maxWidth={"lg"} scrollable>
-                <StickyHeader>
+                <StickyHeader actions={
+                    <Stack>
+                        <Button
+                            variant="contained"
+                            startIcon={<Upload size={18} />}
+                            onClick={() => fileInputRef.current?.click()}>
+                            Pilih File
+                        </Button>
+                    </Stack>
+                }>
                     <Stack
                         direction={"row"}
                         spacing={2}
@@ -76,14 +85,7 @@ export default function UploadPage() {
                             </Typography>
                         </Stack>
 
-                        <Stack>
-                            <Button
-                                variant="contained"
-                                startIcon={<Upload size={18} />}
-                                onClick={() => fileInputRef.current?.click()}>
-                                Pilih File
-                            </Button>
-                        </Stack>
+
                     </Stack>
                     <input
                         ref={fileInputRef}

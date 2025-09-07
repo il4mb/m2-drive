@@ -29,7 +29,7 @@ import RequestError from "@/components/RequestError";
 import Link from "next/link";
 import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
-import StickyHeader from "@/components/StickyHeader";
+import StickyHeader from "@/components/ui/navigation/StickyHeader";
 import { formatFileSize } from "@/libs/utils";
 
 export default function Page() {

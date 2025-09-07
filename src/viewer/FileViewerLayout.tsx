@@ -4,7 +4,7 @@ import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffe
 import { ModuleViewerManager } from './ModuleViewerManager';
 import FileViewersProvider from '@/components/file-viewers/FileViewersProvider';
 import { IconButton, Skeleton, Stack, Typography } from '@mui/material';
-import StickyHeader from '@/components/StickyHeader';
+import StickyHeader from '@/components/navigation/StickyHeader';
 import { ArrowLeft, FolderOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
@@ -18,8 +18,9 @@ export interface FileViewerLayoutProps {
     pathList: string[];
     currentPath?: string;
     pageEndpoint: string;
+    canGoBack?: boolean;
 }
-export default function FileViewerLayout({ children, pathList, pageEndpoint }: FileViewerLayoutProps) {
+export default function FileViewerLayout({ children, pathList, pageEndpoint, canGoBack: canGobackInitial }: FileViewerLayoutProps) {
 
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -37,8 +38,8 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint }: F
     }, []);
 
     useEffect(() => {
-        setCanGoBack(pathList.length > 1);
-    }, [pathList]);
+        setCanGoBack(canGobackInitial || pathList.length > 1);
+    }, [pathList, canGobackInitial]);
 
 
     return (

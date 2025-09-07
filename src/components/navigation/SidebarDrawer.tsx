@@ -4,15 +4,15 @@ import { Box, IconButton, List, Paper, Stack, Typography, useMediaQuery, Theme }
 import { useState, useEffect } from 'react';
 import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea } from 'lucide-react';
 import { IMenu } from '@/types';
-import MenuItem from '../MenuItem';
-import MenuGroup from '../MenuGroup';
-import ThemeToggle from '../ThemeToggle';
+import MenuItem from './MenuItem';
+import MenuGroup from './MenuGroup';
+import ThemeToggle from './ThemeToggle';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useCurrentSession } from '../../context/CurrentSessionProvider';
-import { useMyAbilities } from '../../context/CurrentUserAbilitiesProvider';
-import UserAvatar from '../UserAvatar';
+import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
+import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvider';
+import UserAvatar from '../ui/UserAvatar';
 import { useSidebar } from './SidebarProvider';
 
 const MENU: IMenu[] = [
@@ -91,8 +91,8 @@ const MENU: IMenu[] = [
 export default function SidebarDrawer() {
 
     const pathname = usePathname();
-    const { open, setOpen } = useSidebar();
-    const { user } = useCurrentSession();
+    const sidebar = useSidebar();
+    const session = useCurrentSession();
     const { role } = useMyAbilities();
 
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
@@ -105,7 +105,7 @@ export default function SidebarDrawer() {
     // Close sidebar when route changes on mobile
     useEffect(() => {
         if (isMobile) {
-            setOpen(false);
+            sidebar?.setOpen(false);
         }
     }, [pathname, isMobile]);
 
@@ -121,7 +121,7 @@ export default function SidebarDrawer() {
     // Mobile sidebar component
     const mobileSidebar = (
         <AnimatePresence>
-            {open && (
+            {sidebar?.open && (
                 <>
                     <Box
                         component={motion.div}
@@ -139,7 +139,7 @@ export default function SidebarDrawer() {
                             backdropFilter: 'blur(2px)',
                             zIndex: 1199,
                         }}
-                        onClick={() => setOpen(false)}
+                        onClick={() => sidebar?.setOpen(false)}
                     />
                     <Paper
                         component={motion.div}
@@ -164,7 +164,7 @@ export default function SidebarDrawer() {
                                 <Typography variant="h6" component="div">
                                     M2 Drive
                                 </Typography>
-                                <IconButton onClick={() => setOpen(false)}>
+                                <IconButton onClick={() => sidebar?.setOpen(false)}>
                                     <ChevronLeft />
                                 </IconButton>
                             </Stack>
@@ -199,11 +199,11 @@ export default function SidebarDrawer() {
                                         textDecoration: 'none',
                                         color: 'inherit'
                                     }}
-                                    onClick={() => setOpen(false)}>
-                                    <UserAvatar userId={user?.id} />
+                                    onClick={() => sidebar?.setOpen(false)}>
+                                    <UserAvatar userId={session?.user?.id} />
                                     <Box>
                                         <Typography component="div" fontWeight={600} fontSize={18}>
-                                            {user?.name}
+                                            {session?.user?.name}
                                         </Typography>
                                         <Typography component="div" color="text.secondary">
                                             {role?.label}
@@ -223,10 +223,10 @@ export default function SidebarDrawer() {
     const desktopSidebar = (
         <Stack
             component={motion.div}
-            animate={{ width: open ? 300 : 73 }}
+            animate={{ width: sidebar?.open ? 300 : 73 }}
             transition={{ duration: 0.2 }}
             sx={{
-                width: open ? 300 : 73,
+                width: sidebar?.open ? 300 : 73,
                 height: '100%',
                 overflow: 'hidden',
                 flexShrink: 0,
@@ -240,44 +240,44 @@ export default function SidebarDrawer() {
                 }}
                 elevation={1}>
 
-                <Stack flex={1} px={open ? 3 : 2} py={2}>
+                <Stack flex={1} px={sidebar?.open ? 3 : 2} py={2}>
                     <Stack flex={1}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                            {open && (
+                            {sidebar?.open && (
                                 <Typography variant="h6" component="div">
                                     M2 Drive
                                 </Typography>
                             )}
-                            <IconButton onClick={() => setOpen(prev => !prev)} sx={{ border: 'none', ml: 0.5 }}>
-                                <Box component={ChevronLeft} sx={{ scale: open ? '1 1' : '-1.2 1.2', transition: 'all .2s ease' }} />
+                            <IconButton onClick={() => sidebar?.setOpen(prev => !prev)} sx={{ border: 'none', ml: 0.5 }}>
+                                <Box component={ChevronLeft} sx={{ scale: sidebar?.open ? '1 1' : '-1.2 1.2', transition: 'all .2s ease' }} />
                             </IconButton>
                         </Stack>
-                        <List sx={{ p: 0, m: 0, ml: open ? 0 : -1 }}>
+                        <List sx={{ p: 0, m: 0, ml: sidebar?.open ? 0 : -1 }}>
                             {MENU.map((child, i) => (
                                 child.type == "link"
                                     ? <MenuItem
                                         key={i}
                                         menu={child}
-                                        shouldExpand={open}
+                                        shouldExpand={sidebar?.open}
                                         active={currentActivePath == child.href}
                                     />
                                     : <MenuGroup
                                         key={i}
                                         menu={child}
-                                        shouldExpand={open}
+                                        shouldExpand={sidebar?.open}
                                     />
                             ))}
                         </List>
                     </Stack>
 
                     <Stack mt="auto" py={2}
-                        direction={open ? "row" : "column"}
+                        direction={sidebar?.open ? "row" : "column"}
                         spacing={2}
-                        alignItems={open ? "center" : "flex-start"}
-                        justifyContent={open ? "space-between" : "center"}>
+                        alignItems={sidebar?.open ? "center" : "flex-start"}
+                        justifyContent={sidebar?.open ? "space-between" : "center"}>
                         <Stack
-                            direction={open ? "row" : "column"}
-                            spacing={open ? 2 : 1}
+                            direction={sidebar?.open ? "row" : "column"}
+                            spacing={sidebar?.open ? 2 : 1}
                             alignItems="center"
                             component={Link}
                             href="/profile"
@@ -285,11 +285,11 @@ export default function SidebarDrawer() {
                                 textDecoration: 'none',
                                 color: 'inherit'
                             }}>
-                            <UserAvatar size={40} userId={user?.id} />
-                            {open && (
+                            <UserAvatar size={40} userId={session?.user?.id} />
+                            {sidebar?.open && (
                                 <Box>
                                     <Typography component="div" fontWeight={600} fontSize={18}>
-                                        {user?.name}
+                                        {session?.user?.name}
                                     </Typography>
                                     <Typography component="div" color="text.secondary">
                                         {role?.label}
@@ -318,14 +318,14 @@ export default function SidebarDrawer() {
 
 // Add this component to your layout to include a mobile menu button
 export function SidebarToggleButton() {
-    const { open, setOpen } = useSidebar();
+    const sidebar = useSidebar();
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
 
     if (!isMobile) return null;
 
     return (
         <IconButton
-            onClick={() => setOpen(!open)}
+            onClick={() => sidebar?.setOpen(!sidebar?.open)}
             sx={{ mr: 1 }}
             aria-label="Toggle menu">
             <Menu />

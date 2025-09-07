@@ -2,8 +2,8 @@
 
 import Container from '@/components/Container';
 import { useViewerManager, ViewerModule, useViewerForFile } from '@/viewer/ModuleViewerManager';
-import MobileAction from '@/components/MobileAction';
-import StickyHeader from '@/components/StickyHeader';
+import MobileAction from '@/components/navigation/MobileAction';
+import StickyHeader from '@/components/navigation/StickyHeader';
 import { File } from '@/entity/File';
 import usePresignUrl from '@/hooks/usePresignUrl';
 import { formatFileSize } from '@/libs/utils';

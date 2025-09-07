@@ -208,10 +208,10 @@ export default function FileContentViewer() {
         const ViewerComponent = viewerModule.component;
 
         return (
-            <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+            <Box component={Stack} sx={{ flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                 {/* Viewer header with controls */}
                 <Paper
-                    elevation={1}
+                    elevation={2}
                     sx={{
                         p: 1,
                         display: 'flex',
@@ -219,7 +219,8 @@ export default function FileContentViewer() {
                         justifyContent: 'space-between',
                         borderRadius: 0,
                         borderBottom: 1,
-                        borderColor: 'divider'
+                        borderColor: 'divider',
+                        boxShadow: 0
                     }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         {viewerModule.icon && (
@@ -280,7 +281,7 @@ export default function FileContentViewer() {
                 </Menu>
 
                 {/* Viewer content */}
-                <Box sx={{ height: 'calc(100% - 48px)', overflow: 'hidden' }}>
+                <Box component={Stack} sx={{ flex: 1, height: 'calc(100% - 48px)', overflow: 'hidden' }}>
                     <ViewerComponent file={file!} />
                 </Box>
             </Box>
@@ -289,18 +290,8 @@ export default function FileContentViewer() {
 
 
     return (
-        <Paper
-            sx={{
-                flex: 1,
-                overflow: 'hidden',
-                borderRadius: 2,
-                boxShadow: 2,
-                bgcolor: 'background.paper',
-                position: 'relative'
-            }}>
+        <Paper component={Stack} sx={{ flex: 1, overflow: 'hidden', mb: 1 }}>
             {renderContent()}
-
-            {/* Global error alert */}
             {error && !loading && (
                 <Alert
                     severity="error"

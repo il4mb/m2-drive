@@ -1,25 +1,25 @@
-import { LinearProgress, Paper, SxProps } from '@mui/material';
+import { LinearProgress, Paper, Stack, SxProps } from '@mui/material';
 import { motion } from 'motion/react';
 import React, { ReactNode, useEffect, useMemo } from 'react';
 import { useStickyHeaderManager } from './StickyHeaderManager';
+import ActionView from './ActionView';
 
 export interface StickyHeaderProps {
     children?: ReactNode;
     sx?: SxProps;
     loading?: boolean;
+    actions?: ReactNode;
 }
 
-export default function StickyHeader({ children, sx, loading = false }: StickyHeaderProps) {
-    const manager = useStickyHeaderManager?.();
+export default function StickyHeader({ children, sx, loading = false, actions }: StickyHeaderProps) {
+
+    const manager = useStickyHeaderManager();
 
     // Memoize the header element to prevent infinite re-renders
     const headerElement = useMemo(() => {
         return (
             <Paper
                 component={motion.div}
-                // initial={{ y: -20, opacity: 0 }}
-                // animate={{ y: 0, opacity: 1 }}
-                // exit={{ y: -20, opacity: 0 }}
                 layoutId='sticky-header'
                 layout
                 sx={(theme) => ({
@@ -33,7 +33,13 @@ export default function StickyHeader({ children, sx, loading = false }: StickyHe
                     bgcolor: theme.palette.background.paper,
                     ...(sx as any)
                 })}>
-                {children}
+                <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
+                    {children}
+                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                        <ActionView />
+                        {actions}
+                    </Stack>
+                </Stack>
                 {loading && (
                     <LinearProgress
                         sx={{ height: 3, width: '100%', position: 'absolute', bottom: -6, left: 0 }}
@@ -41,18 +47,19 @@ export default function StickyHeader({ children, sx, loading = false }: StickyHe
                 )}
             </Paper>
         );
-    }, [children, sx, loading]); // Remove manager from dependencies
+    }, [children, sx, loading]);
 
     // If inside a manager, register and return null
     useEffect(() => {
-        if (manager) {
+        if (manager && manager.header !== headerElement) {
             manager.setHeader(headerElement);
         }
-
         return () => {
-            if (manager) manager.setHeader(null);
+            if (manager && manager.header === headerElement) {
+                manager.setHeader(null);
+            }
         };
-    }, [manager, headerElement]);
+    }, [headerElement]);
 
     // If inside manager, don't render here
     if (manager) return null;

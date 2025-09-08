@@ -107,7 +107,7 @@ export default function DriveSizeManager() {
                                 onChange={(e) => setRole(e.target.value)}
                                 sx={{ minWidth: 150 }}>
                                 {roles.map((r) => (
-                                    <MenuItem key={r.name} value={r.name}>
+                                    <MenuItem key={r.id} value={r.id}>
                                         {r.label}
                                     </MenuItem>
                                 ))}
@@ -171,7 +171,7 @@ export default function DriveSizeManager() {
                     <Typography color="text.secondary">Tidak ada aturan</Typography>
                 )}
                 {options.map((opt, i) => {
-                    const roleInfo = roles.find((r) => r.name === opt.roleName);
+                    const roleInfo = roles.find((r) => r.id === opt.roleName);
                     const label = roleInfo?.label || opt.roleName;
                     const isUnlimited = opt.size === Infinity;
 

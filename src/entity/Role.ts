@@ -4,7 +4,7 @@ import { Column, Entity, PrimaryColumn } from "typeorm";
 export default class Role {
 
     @PrimaryColumn()
-    name!: string;
+    id!: string;
 
     @Column()
     label!: string;

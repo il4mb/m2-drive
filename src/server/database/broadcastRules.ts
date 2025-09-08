@@ -57,35 +57,12 @@ export const broadcastRules: BroadcastRuleMap = {
      */
     file: (context): boolean => {
         const { user, data } = context;
-
-        // Public files
-        // @ts-ignore
-
-        if (data.isPublic) {
-            return true;
-        }
-
-        // File owner can see their files
-        // @ts-ignore
-
-        if (user && data.ownerId === user.id) {
-            return true;
-        }
-
-        // Users with shared access
-        // @ts-ignore
-
-        if (user && data.sharedWith?.includes(user.id)) {
-            return true;
-        }
-
-        // Admins can see all files
-        if (user?.meta.role === 'admin') {
-            return true;
-        }
-
-        return false;
+        return true;
     },
+
+    task: () => {
+        return true;
+    }
 };
 
 // Helper functions for common rule patterns

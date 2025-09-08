@@ -1,22 +1,11 @@
 'use client'
 
-import { IconButton, Paper, Stack, Typography, useMediaQuery, Popover, Box, PopoverProps } from '@mui/material';
-import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useMemo } from 'react';
+import { IconButton, Paper, Stack, Typography, useMediaQuery, Popover, Box } from '@mui/material';
+import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useMemo, createElement, Fragment } from 'react';
 import SidebarDrawer from './SidebarDrawer';
 import { AnimatePresence, motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
-import { useActionsByBreakpoint } from './ActionsProvider';
-
-interface MobileAction {
-    id: string;
-    icon: ReactNode;
-    component: ReactNode;
-    showAsPopover?: boolean;
-    position?: number;
-    slotProps?: {
-        popover?: PopoverProps
-    }
-}
+import { Action, useActionsProvider } from './ActionsProvider';
 
 interface State {
     open: boolean;
@@ -33,14 +22,15 @@ type SidebarProviderProps = {
 
 export const SidebarProvider = ({ children }: SidebarProviderProps) => {
 
-    const actions = useActionsByBreakpoint('xs', 'md');
+
+    const actionsProvider = useActionsProvider();
     const [open, setOpen] = useState<boolean>(true);
     const [activeAction, setActiveAction] = useState<string | null>(null);
     const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('md'));
     const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
-    const mobileActions = useMemo(() => actions.map(([_, act]) => act).sort((a, b) => (a.position || 0) - (b.position || 0)), [actions])
+    const actions = useMemo(() => isMobile ? actionsProvider.actions : [], [actionsProvider.actions, isMobile]);
 
-    const handleActionClick = (event: React.MouseEvent<HTMLElement>, action: MobileAction) => {
+    const handleActionClick = (event: React.MouseEvent<HTMLElement>, action: Action) => {
         if (action.showAsPopover) {
             setPopoverAnchor(event.currentTarget);
             setActiveAction(action.id);
@@ -53,6 +43,7 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
         setPopoverAnchor(null);
         setActiveAction(null);
     };
+
 
     return (
         <Context.Provider value={{ open, setOpen, activeAction, setActiveAction }}>
@@ -75,30 +66,32 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
                             </Stack>
 
                             {/* Mobile Actions */}
-                            {isMobile && mobileActions.length > 0 && (
+                            {isMobile && actions.length > 0 && (
                                 <Stack direction="row" alignItems="center" gap={1}>
-                                    {mobileActions.map((action) => (
-                                        action.icon
-                                            ? (
-                                                <IconButton
-                                                    key={action.id}
-                                                    onClick={(e) => handleActionClick(e, action)}
-                                                    color={activeAction === action.id ? "primary" : "default"}>
-                                                    {action.icon}
-                                                </IconButton>
-                                            )
-                                            : action.component
+                                    {actions.map(([id, action]) => (
+                                        <Fragment key={id}>
+                                            {action.icon
+                                                ? (
+                                                    <IconButton
+                                                        key={action.id}
+                                                        onClick={(e) => handleActionClick(e, action)}
+                                                        color={activeAction === action.id ? "primary" : "default"}>
+                                                        {action.icon}
+                                                    </IconButton>
+                                                )
+                                                : typeof action.component == "function" ? createElement(action.component) : action.component}
+                                        </Fragment>
                                     ))}
                                 </Stack>
                             )}
                         </Stack>
-                        {isMobile && mobileActions.map(action => (!action.showAsPopover && activeAction === action.id && (
+                        {isMobile && actions.map(([id, action]) => (!action.showAsPopover && activeAction === action.id && (
                             <Box component={motion.div}
                                 initial={{ y: -20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: -20, opacity: 0 }}
-                                p={1} key={action.id}>
-                                {action.component}
+                                p={1} key={id}>
+                                {typeof action.component == "function" ? createElement(action.component) : action.component}
                             </Box>
                         )))}
                     </AnimatePresence>
@@ -118,10 +111,10 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
                 </Stack>
 
                 {/* Popover for popover-style actions */}
-                {isMobile && mobileActions.map(action => (
+                {isMobile && actions.map(([id, action]) => (
                     action.showAsPopover && (
                         <Popover
-                            key={action.id}
+                            key={id}
                             open={activeAction === action.id && Boolean(popoverAnchor)}
                             anchorEl={popoverAnchor}
                             onClose={handleClosePopover}
@@ -135,7 +128,7 @@ export const SidebarProvider = ({ children }: SidebarProviderProps) => {
                             }}
                             {...action.slotProps?.popover}>
                             <Box sx={{ p: 2, minWidth: 200 }}>
-                                {action.component}
+                                {typeof action.component == "function" ? createElement(action.component) : action.component}
                             </Box>
                         </Popover>
                     )

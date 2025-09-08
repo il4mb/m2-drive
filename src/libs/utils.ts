@@ -53,6 +53,8 @@ export const DATE_FORMAT_INTL: Intl.DateTimeFormatOptions = {
 	hour12: false,
 }
 
+
+export const epochTime = (time: number) => (time + DATE_EPOCH) * 1000;
 export const formatLocaleDate = (time: number, locale: string = 'en-US') => {
 	const timestamp = (time + DATE_EPOCH) * 1000;
 	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(timestamp));

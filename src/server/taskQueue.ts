@@ -10,7 +10,6 @@ import { File } from "@/entity/File";
 import { currentTime } from "@/libs/utils";
 import { createLogger } from "@/libs/logger";
 import { imageSize } from "image-size";
-import { performance } from "perf_hooks";
 import { EventEmitter } from "events";
 
 // Create a logger for task queue
@@ -19,65 +18,11 @@ const logger = createLogger("task-queue");
 // Event emitter for monitoring
 export const taskQueueEvents = new EventEmitter();
 
-// Metrics collection
-const taskMetrics = {
-    completed: 0,
-    failed: 0,
-    totalTime: 0,
-    byType: {} as Record<string, { count: number; totalTime: number }>
-};
-
-export interface TaskMetrics {
-    completed: number;
-    failed: number;
-    averageTime: number;
-    byType: Record<string, { count: number; averageTime: number }>;
-}
-
-export const getTaskMetrics = (): TaskMetrics => {
-    const avgTime = taskMetrics.completed > 0 ? taskMetrics.totalTime / taskMetrics.completed : 0;
-
-    const byType: Record<string, { count: number; averageTime: number }> = {};
-    for (const [type, data] of Object.entries(taskMetrics.byType)) {
-        byType[type] = {
-            count: data.count,
-            averageTime: data.count > 0 ? data.totalTime / data.count : 0
-        };
-    }
-
-    return {
-        completed: taskMetrics.completed,
-        failed: taskMetrics.failed,
-        averageTime: avgTime,
-        byType
-    };
-};
-
-// Utility function to update metrics
-const updateMetrics = (type: string, success: boolean, time: number) => {
-    if (success) {
-        taskMetrics.completed++;
-        taskMetrics.totalTime += time;
-
-        if (!taskMetrics.byType[type]) {
-            taskMetrics.byType[type] = { count: 0, totalTime: 0 };
-        }
-        taskMetrics.byType[type].count++;
-        taskMetrics.byType[type].totalTime += time;
-    } else {
-        taskMetrics.failed++;
-    }
-};
-
 async function runFfmpeg(args: string[], input: NodeJS.ReadableStream, output: PassThrough) {
     return new Promise<void>((resolve, reject) => {
         const ffmpeg = spawn("ffmpeg", ["-y", ...args]);
 
         ffmpeg.on("error", reject);
-
-        ffmpeg.stderr.on("data", (data) => {
-            console.log("ffmpeg:", data.toString());
-        });
 
         ffmpeg.on("close", (code) => {
             if (code === 0) {
@@ -119,9 +64,6 @@ const withRetry = async <T>(
 
 export const handlers: TaskHandlerMap<TaskPayloads> = {
     "delete-file": async ({ objectKey }) => {
-        const startTime = performance.now();
-        let success = false;
-
         try {
             logger.info(`Deleting file from S3: ${objectKey}`);
 
@@ -131,7 +73,6 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                 );
             });
 
-            success = true;
             logger.info(`Successfully deleted file: ${objectKey}`);
             taskQueueEvents.emit('taskCompleted', 'delete-file', { objectKey });
 
@@ -139,16 +80,10 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
             logger.error(`Failed to delete file ${objectKey}:`, error);
             taskQueueEvents.emit('taskFailed', 'delete-file', { objectKey, error });
             throw error;
-        } finally {
-            const duration = performance.now() - startTime;
-            updateMetrics('delete-file', success, duration);
         }
     },
 
     "generate-thumbnail": async ({ fileId, objectKey }) => {
-        const startTime = performance.now();
-        let success = false;
-
         try {
             await requestContext.run({ user: "system" }, async () => {
                 logger.info(`Generating thumbnail for file: ${fileId}`);
@@ -164,13 +99,11 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                     throw new Error(`Unsupported file type for thumbnail: ${mime}`);
                 }
 
-                let thumbnailKey: string | null = null
-
-
-                // In your generate-thumbnail handler, replace the S3 upload parts with proper content length handling
+                let thumbnailKey: string | null = null;
 
                 if (mime.startsWith("image/")) {
                     thumbnailKey = `thumbnails/${fileId}.jpg`;
+
                     // Get image from S3 with retry
                     const { Body } = await withRetry(async () => {
                         return s3Client.send(
@@ -180,10 +113,9 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
 
                     if (!Body) throw new Error("Image not found in S3");
 
-                    // Check image size
+                    // For images, we need to download the entire file first to check dimensions
                     const chunks: Buffer[] = [];
                     for await (const chunk of Body as NodeJS.ReadableStream) {
-                        // @ts-ignore
                         chunks.push(chunk);
                     }
                     const buffer = Buffer.concat(chunks);
@@ -192,25 +124,24 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                     const { width = 0, height = 0 } = dimensions;
 
                     if (width > 200 || height > 200) {
-                        // Resize to 200x200 max
-                        const pass = new PassThrough();
+                        // Resize to 200x200 max - create a new stream from the buffer
+                        const inputStream = new PassThrough();
+                        inputStream.end(buffer);
+
+                        const outputStream = new PassThrough();
 
                         await runFfmpeg([
                             "-i", "pipe:0",
                             "-vf", "scale='min(200,iw)':'min(200,ih)':force_original_aspect_ratio=decrease",
                             "-f", "image2",
                             "pipe:1",
-                        ], Body as NodeJS.ReadableStream, pass);
+                        ], inputStream, outputStream);
 
-                        // Collect the output to get the content length
+                        // Collect the output
                         const outputChunks: Buffer[] = [];
-                        pass.on('data', (chunk) => outputChunks.push(chunk));
-
-                        await new Promise<void>((resolve, reject) => {
-                            pass.on('end', resolve);
-                            pass.on('error', reject);
-                        });
-
+                        for await (const chunk of outputStream) {
+                            outputChunks.push(chunk);
+                        }
                         const outputBuffer = Buffer.concat(outputChunks);
 
                         await withRetry(async () => {
@@ -226,7 +157,8 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                             );
                         });
                     } else {
-                        thumbnailKey = file.meta?.Key || ''
+                        // Use original image if it's already small enough
+                        thumbnailKey = objectKey;
                     }
                 }
 
@@ -239,7 +171,8 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
 
                     if (!Body) throw new Error("Video not found in S3");
 
-                    const pass = new PassThrough();
+                    // For videos, we can stream directly
+                    const outputStream = new PassThrough();
 
                     await runFfmpeg([
                         "-i", "pipe:0",
@@ -248,10 +181,10 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                         "-vf", "scale='min(300,iw)':'min(300,ih)':force_original_aspect_ratio=decrease",
                         "-f", "image2",
                         "pipe:1"
-                    ], Body as NodeJS.ReadableStream, pass);
+                    ], Body as NodeJS.ReadableStream, outputStream);
 
                     const chunks: Buffer[] = [];
-                    for await (const chunk of pass) {
+                    for await (const chunk of outputStream) {
                         chunks.push(chunk);
                     }
                     const outputBuffer = Buffer.concat(chunks);
@@ -268,7 +201,6 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                     );
                 }
 
-
                 if (thumbnailKey) {
                     // Update DB with retry
                     await withRetry(async () => {
@@ -279,7 +211,6 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                     });
                 }
 
-                success = true;
                 logger.info(`✅ Thumbnail ready for ${fileId}`);
                 taskQueueEvents.emit('taskCompleted', 'generate-thumbnail', { fileId, objectKey });
             });
@@ -288,9 +219,6 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
             logger.error(`❌ Failed to generate thumbnail for ${fileId}:`, error);
             taskQueueEvents.emit('taskFailed', 'generate-thumbnail', { fileId, objectKey, error });
             throw error;
-        } finally {
-            const duration = performance.now() - startTime;
-            updateMetrics('generate-thumbnail', success, duration);
         }
     },
 };
@@ -310,11 +238,7 @@ export const taskQueue = new TaskQueue({ concurrency: 3 });
 
 type HandlerName = keyof typeof handlers;
 
-export const addTaskQueue = <T extends HandlerName>(
-    handler: T,
-    payload: TaskPayloads[T],
-    priority: number = 0
-) => {
+export const addTaskQueue = <T extends HandlerName>(handler: T, payload: TaskPayloads[T], priority: number = 0) => {
     taskQueue.add(handler, payload, priority);
     logger.debug(`Task added to queue: ${String(handler)}`, payload);
     taskQueueEvents.emit('taskAdded', handler, payload);
@@ -357,4 +281,3 @@ export async function stopTaskQueue() {
     started = false;
     logger.info("✅ Task queue stopped");
 }
-

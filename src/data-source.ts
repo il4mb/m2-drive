@@ -8,7 +8,7 @@ import User from "./entity/User";
 import Role from "./entity/Role";
 import { RoleSubscriber } from "./entity/subscribers/RoleSubscriber";
 import { UserSubscriber } from "./entity/subscribers/UserSubscriber";
-import { TaskQueueItem } from "./entity/TaskQueueItem";
+import { Task } from "./entity/Task";
 import { FileSubscriber } from "./entity/subscribers/FileSubscriber";
 import { DatabaseSubscriber } from "./server/database/databaseSubscriber";
 
@@ -26,7 +26,7 @@ const source = new DataSource({
         Contributor,
         Token,
         Role,
-        TaskQueueItem
+        Task
     ],
     subscribers: [
         UserSubscriber,

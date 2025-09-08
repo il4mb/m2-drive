@@ -1,8 +1,9 @@
-// server/database/types.ts
+import { EntityName } from ".";
+
 export type DatabaseEvent = "INSERT" | "UPDATE" | "DELETE";
 
 export interface DatabaseChangePayload {
-    event: DatabaseEvent;
+    eventName: DatabaseEvent;
     collection: string;
     data: any;
     timestamp: Date;
@@ -22,7 +23,7 @@ export type BroadcastRule = (context: BroadcastContext) => boolean;
 
 
 
-import { EntityName } from ".";
+
 export type QueryOperator =
     | '=='           // Equal
     | '!='           // Not equal

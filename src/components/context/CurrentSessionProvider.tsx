@@ -9,13 +9,17 @@ import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
 import useUser from '@/hooks/useUser';
 import { enqueueSnackbar } from 'notistack';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSessionManager } from './SessionManager';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
+import { getOne } from '@/libs/websocket/query';
 
 interface CurrentSessionProviderState {
     tokenId?: string;
     createdAt?: number;
     expiredAt?: number;
     user?: User | null;
-    refreshToken: () => void;
+    userId?: string;
+    refreshToken?: () => void;
 }
 
 const CurrentSessionProviderContext = createContext<CurrentSessionProviderState | undefined>(undefined);
@@ -26,35 +30,38 @@ type CurrentSessionProviderProps = {
 }
 export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps) => {
 
-    const pathname = usePathname();
+    const { userId } = useSessionManager();
     const [token, setToken] = useState<Token>();
-    const [userId, setUserId] = useState<string | null>(null);
-    const { user } = useUser(userId);
+    const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
-    const request = useRequest({
-        action: getCurrentSession,
-        onSuccess(result) {
-            setToken(result.data?.token);
-            setUserId(result.data?.userId || null);
-        },
-        onError(error) {
-            enqueueSnackbar(error.message, { variant: "error" })
-            router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-        },
-    }, [router]);
+    useEffect(() => {
+        if (!userId) {
+            setUser(null);
+            return;
+        }
+        const unsubscribe = onSnapshot(
+            getOne("user").where("id", "==", userId),
+            setUser
+        )
+        return () => {
+            unsubscribe
+        }
+    }, [userId]);
 
-    const refreshToken = () => request.send();
+
+    const refreshToken = () => {
+
+    }
 
     const stateValue = useMemo(() => ({
         ...token,
         user,
+        userId,
         refreshToken
-    }), [token, user, refreshToken]);
+    }), [token, user, userId, refreshToken]);
 
-    useEffect(() => {
-        refreshToken();
-    }, []);
+
 
     return (
         <CurrentSessionProviderContext.Provider value={stateValue}>
@@ -65,4 +72,4 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
     );
 };
 
-export const useCurrentSession = () => useContext(CurrentSessionProviderContext);
+export const useCurrentSession = () => useContext(CurrentSessionProviderContext) || {};

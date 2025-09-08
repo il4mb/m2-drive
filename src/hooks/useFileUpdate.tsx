@@ -1,5 +1,5 @@
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { updateFile, UpdateFilePart } from "@/server/functions/fileUpdate";
+import { UpdateFilePart } from "@/server/functions/fileUpdate";
 import { useState } from "react";
 
 
@@ -12,7 +12,7 @@ export const useFileUpdate = (fileId: string) => {
         setLoading(true);
         setError(null);
         return new Promise((resolve) => {
-            invokeFunction(updateFile, {
+            invokeFunction("updateFile", {
                 id: fileId,
                 data
             }).then(e => {

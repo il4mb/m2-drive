@@ -1,5 +1,4 @@
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { removeFile } from "@/server/functions/fileTrash";
 import { useState } from "react"
 
 export const useRemoveFile = (userId?: string) => {
@@ -14,7 +13,7 @@ export const useRemoveFile = (userId?: string) => {
         setLoading(true);
         setError(null);
 
-        invokeFunction(removeFile, { fileId, permanen }).then(e => {
+        invokeFunction("removeFile", { fileId, permanen }).then(e => {
             if (!e.success) {
                 setError(e.error || 'Unknown Error')
             }

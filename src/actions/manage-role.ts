@@ -34,19 +34,19 @@ export const saveRole = withAction<SaveRoleProps, Role>(async (data) => {
     const source = await getConnection();
     const repo = source.getRepository(Role);
 
-    let role = await repo.findOneBy({ name: parsed.name });
+    let role = await repo.findOneBy({ id: parsed.name });
 
     if (!role) {
         // CREATE new role
         if (await repo.existsBy({ label: parsed.label })) {
             throw new Error(`400: Role dengan label "${parsed.label}" sudah ada!`);
         }
-        if (SYSTEM_ROLES.some(e => e.name == parsed.name)) {
+        if (SYSTEM_ROLES.some(e => e.id == parsed.name)) {
             throw new Error(`400: Role dengan name "${parsed.name}" sama dengan role sistem!`);
         }
 
         role = repo.create({
-            name: parsed.name,
+            id: parsed.name,
             label: parsed.label,
             abilities: parsed.abilities,
             createdAt: currentTime()
@@ -84,7 +84,7 @@ export const deleteRole = withAction<{ name: string }, null>(async ({ name }) =>
     const source = await getConnection();
     const repo = source.getRepository(Role);
 
-    const role = await repo.findOneBy({ name });
+    const role = await repo.findOneBy({ id: name });
     if (!role) {
         throw new Error(`404: Role dengan name "${name}" tidak ditemukan.`);
     }

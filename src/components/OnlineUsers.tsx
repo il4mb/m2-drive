@@ -1,10 +1,10 @@
 import User from '@/entity/User';
 import { getMany, Json } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
 import { Stack, Typography, Avatar, Tooltip } from '@mui/material';
 import { useEffect, useState } from 'react';
 import UserAvatar from './ui/UserAvatar';
 import RelativeTime from './RelativeTime';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 
 export default function OnlineUsers() {
     const [users, setUsers] = useState<User[]>([]);

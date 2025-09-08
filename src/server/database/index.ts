@@ -4,7 +4,7 @@ import Contributor from "@/entity/Contributor";
 import { Options } from "@/entity/Options";
 import Role from "@/entity/Role";
 import Token from "@/entity/Token";
-import { TaskQueueItem } from "@/entity/TaskQueueItem";
+import { Task } from "@/entity/Task";
 
 
 export const entityMap = {
@@ -14,7 +14,7 @@ export const entityMap = {
     options: Options,
     role: Role,
     token: Token,
-    "task-queue": TaskQueueItem,
+    "task": Task,
 } as const;
 
 export type EntityMap = typeof entityMap;

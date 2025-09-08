@@ -11,7 +11,6 @@ import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextM
 import ActionOpen from '../menu-actions/ActionOpen';
 import ActionShare from '../menu-actions/ActionShare';
 import { useContributors } from '@/hooks/useContributors';
-import ActionDivider from '../menu-actions/ActionDivider';
 import ActionCopy from '../menu-actions/ActionCopy';
 import ActionMove from '../menu-actions/ActionMove';
 import ActionRename from '../menu-actions/ActionRename';
@@ -97,7 +96,7 @@ export default function FileView<T = any>({
                     bgcolor: selected ? "action.hover" : '',
                     boxShadow: layout == "grid" ? 2 : 0,
                     borderRadius: layout == "grid" ? 2 : 0,
-                    overflow: 'hidden',
+                    // overflow: 'hidden',
                     "&:hover": {
                         bgcolor: "action.hover"
                     },

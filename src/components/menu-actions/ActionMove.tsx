@@ -7,7 +7,6 @@ import FolderPicker from "@/components/drive/FolderPicker";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { useState } from "react";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { moveFile } from "@/server/functions/fileCopyMove";
 import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useFileTags } from "@/hooks/useFileTag";
@@ -39,7 +38,7 @@ export default createContextMenu<State>({
             setLoading(true);
 
 
-            const result = await invokeFunction(moveFile, {
+            const result = await invokeFunction("moveFile", {
                 sourceId: state.file.id,
                 targetId: target?.id || null
             })

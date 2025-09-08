@@ -22,7 +22,7 @@ export default function StickyHeader({ children, sx, loading = false, actions }:
                 component={motion.div}
                 layoutId='sticky-header'
                 layout
-                sx={(theme) => ({
+                sx={{
                     p: 2,
                     mb: 2,
                     position: ['static', 'static', 'sticky'],
@@ -30,13 +30,12 @@ export default function StickyHeader({ children, sx, loading = false, actions }:
                     zIndex: 10,
                     boxShadow: 4,
                     borderRadius: 2,
-                    bgcolor: theme.palette.background.paper,
                     ...(sx as any)
-                })}>
+                }}>
                 <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
                     {children}
                     <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                        <ActionView />
+                        <ActionView minWidth='md' />
                         {actions}
                     </Stack>
                 </Stack>
@@ -47,7 +46,7 @@ export default function StickyHeader({ children, sx, loading = false, actions }:
                 )}
             </Paper>
         );
-    }, [children, sx, loading]);
+    }, [children, sx, loading, actions]);
 
     // If inside a manager, register and return null
     useEffect(() => {

@@ -1,8 +1,9 @@
 'use client'
 
 import { PopoverProps, useMediaQuery } from '@mui/material';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useActionsProvider } from './ActionsProvider';
+import { isEqual } from 'lodash';
 
 export interface MobileActionProps {
     id: string;
@@ -16,25 +17,37 @@ export interface MobileActionProps {
 }
 
 export default function MobileAction(props: MobileActionProps) {
-
-    const [isMounted, setIsMounted] = useState(false);
     const provider = useActionsProvider();
+    const prevDataRef = useRef<any>(null);
 
-    const data = useMemo(() => ({ ...props, component: props.children }), [props]);
+    const data = useMemo(() => ({ ...props, component: props.children }), [
+        props.id,
+        props.icon,
+        props.children,
+        props.showAsPopover,
+        props.position,
+        props.slotProps,
+    ]);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
+    // Add action once on mount
     useEffect(() => {
         if (!provider) return;
         provider.addAction(props.id, data as any);
+        prevDataRef.current = data;
 
         return () => {
-            if (isMounted) {
-                provider.removeAction(data.id);
-            }
+            provider.removeAction(props.id);
         };
-    }, [isMounted, data]);
+    }, [provider, props.id]);
+
+    // Update only if data changed
+    useEffect(() => {
+        if (!provider) return;
+        if (!isEqual(prevDataRef.current, data)) {
+            provider.updateAction(props.id, data);
+            prevDataRef.current = data;
+        }
+    }, [provider, props.id, data]);
+
     return null;
 }

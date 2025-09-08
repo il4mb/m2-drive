@@ -1,9 +1,10 @@
 import { getConnection } from "@/data-source";
-import { TaskQueueItem, TaskStatus } from "@/entity/TaskQueueItem";
+import { Task, TaskStatus } from "@/entity/Task";
 import { EventEmitter } from "events";
 import { createLogger } from "@/libs/logger";
 import { performance } from "perf_hooks";
 import { currentTime } from "./utils";
+import { requestContext } from "./requestContext";
 
 const logger = createLogger("task-queue");
 
@@ -53,18 +54,18 @@ export class TaskQueue extends EventEmitter {
 
     async add<T>(type: string, payload: T, priority: number = 0) {
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
 
         const task = repo.create({
             type,
             payload,
             status: "pending" as TaskStatus,
             priority,
-            createdAt: currentTime(),
+            createdAt: currentTime(), // Store as epoch number
             retryCount: 0
         });
 
-        await repo.save(task);
+        await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
         this.emit('taskAdded', task);
         logger.debug(`Task added: ${type}`, { taskId: task.id });
@@ -72,7 +73,7 @@ export class TaskQueue extends EventEmitter {
         return task;
     }
 
-    private async processTask<T>(task: TaskQueueItem<T>, handler: (payload: T) => Promise<void>) {
+    private async processTask<T>(task: Task<T>, handler: (payload: T) => Promise<void>) {
         const startTime = performance.now();
         const taskId = task.id;
 
@@ -84,14 +85,14 @@ export class TaskQueue extends EventEmitter {
         this.currentlyProcessing.add(taskId);
 
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
 
         try {
             // Update task status to processing
             task.status = "processing" as TaskStatus;
-            task.startedAt = currentTime();
-            task.updatedAt = currentTime();
-            await repo.save(task);
+            task.startedAt = currentTime(); // Store as epoch number
+            task.updatedAt = currentTime(); // Store as epoch number
+            await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
             this.emit('taskStart', task);
             logger.info(`Processing task: ${task.type}`, { taskId });
@@ -101,9 +102,9 @@ export class TaskQueue extends EventEmitter {
 
             // Update task status to completed
             task.status = "completed" as TaskStatus;
-            task.completedAt = currentTime();
-            task.updatedAt = currentTime();
-            await repo.save(task);
+            task.completedAt = currentTime(); // Store as epoch number
+            task.updatedAt = currentTime(); // Store as epoch number
+            await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
             const processingTime = performance.now() - startTime;
             this.updateMetrics(true, processingTime);
@@ -123,8 +124,8 @@ export class TaskQueue extends EventEmitter {
                 task.status = "pending" as TaskStatus;
                 task.retryCount++;
                 task.error = errorMessage;
-                task.updatedAt = currentTime();
-                await repo.save(task);
+                task.updatedAt = currentTime(); // Store as epoch number
+                await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
                 this.emit('taskRetry', task, error, task.retryCount);
                 logger.warn(`Task will be retried: ${task.type}`, {
@@ -136,9 +137,9 @@ export class TaskQueue extends EventEmitter {
                 // Mark as failed after max retries
                 task.status = "failed" as TaskStatus;
                 task.error = errorMessage;
-                task.completedAt = currentTime();
-                task.updatedAt = currentTime();
-                await repo.save(task);
+                task.completedAt = currentTime(); // Store as epoch number
+                task.updatedAt = currentTime(); // Store as epoch number
+                await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
                 this.updateMetrics(false, processingTime);
                 this.emit('taskFailed', task, error);
@@ -166,7 +167,7 @@ export class TaskQueue extends EventEmitter {
 
     async getPendingTasks(limit: number = 10) {
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
 
         return await repo.find({
             where: { status: "pending" as TaskStatus },
@@ -257,14 +258,14 @@ export class TaskQueue extends EventEmitter {
 
     async cleanupOldTasks(days: number = 30) {
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
 
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - days);
+        // Calculate cutoff date in epoch format
+        const cutoffEpoch = currentTime() - (days * 24 * 60 * 60); // days to seconds
 
         const result = await repo.createQueryBuilder()
             .delete()
-            .where("completedAt < :cutoffDate", { cutoffDate })
+            .where("completedAt < :cutoffEpoch", { cutoffEpoch })
             .andWhere("status IN (:...statuses)", {
                 statuses: ["completed", "failed"] as TaskStatus[]
             })
@@ -276,13 +277,13 @@ export class TaskQueue extends EventEmitter {
 
     async getTaskById(id: string) {
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
         return await repo.findOneBy({ id });
     }
 
     async retryTask(id: string) {
         const source = await getConnection();
-        const repo = source.getRepository(TaskQueueItem);
+        const repo = source.getRepository(Task);
 
         const task = await repo.findOneBy({ id });
         if (!task) {
@@ -296,9 +297,9 @@ export class TaskQueue extends EventEmitter {
         task.status = "pending" as TaskStatus;
         task.retryCount = 0;
         task.error = null;
-        task.updatedAt = currentTime();
+        task.updatedAt = currentTime(); // Store as epoch number
 
-        await repo.save(task);
+        await requestContext.run({ user: "system" }, async () => await repo.save(task))
         this.emit('taskManualRetry', task);
 
         return task;

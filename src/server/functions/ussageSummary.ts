@@ -21,7 +21,7 @@ type UssageSummaryProps = {
     all?: boolean;
 }
 
-export const getUserUssageSummary = createFunction<UssageSummaryProps, UserDriveSummary>(async ({ userId }) => {
+export const getUserUssageSummary = createFunction(async ({ userId }: UssageSummaryProps) => {
 
     const { user } = getRequestContext();
 
@@ -72,6 +72,6 @@ export const getUserUssageSummary = createFunction<UssageSummaryProps, UserDrive
     return {
         ...summary,
         mimeBreakdown: mimeTypeCount
-    }
+    } as UserDriveSummary
 
 })

@@ -17,7 +17,6 @@ import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { emptyTrash, restoreFile } from '@/server/functions/fileTrash';
 import Container from '@/components/Container';
 
 
@@ -39,7 +38,7 @@ export default function Page() {
 
     const handleRestore = async (file: File) => {
         if (!uId) return;
-        const response = await invokeFunction(restoreFile, { fileId: file.id });
+        const response = await invokeFunction("restoreFile", { fileId: file.id });
         if (!response.success) {
             enqueueSnackbar(response.error || "Unknown Error", { variant: 'error', action: CloseSnackbar })
         }
@@ -47,7 +46,7 @@ export default function Page() {
 
     const handleConfirm = async () => {
         if (!uId) return;
-        const result = await invokeFunction(emptyTrash, { userId: uId });
+        const result = await invokeFunction("emptyTrash", { userId: uId });
         if (!result.success) {
             throw new Error(result.error || "Unknown Error");
         }

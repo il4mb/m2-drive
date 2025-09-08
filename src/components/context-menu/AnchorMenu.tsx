@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, ReactElement } from 'react';
+import React, { useState, ReactElement, useMemo } from 'react';
 import {
     Menu as MuiMenu,
     MenuItem,
@@ -20,7 +20,7 @@ import { ColorName, getColor } from '@/theme/colors';
 interface MenuItemBase {
     label: string;
     sx?: SxProps<Theme>;
-    activeColor?: ColorName;
+    activeColor?: ColorName & "inherit";
 }
 
 interface MenuItemDivider {
@@ -36,18 +36,21 @@ interface MenuItemAction extends MenuItemBase {
 export type AnchorMenuItem = MenuItemAction | MenuItemDivider;
 
 interface MenuProps {
-    items?: AnchorMenuItem[];
+    items?: (AnchorMenuItem | false)[];
     children?: ReactElement;
     buttonProps?: Partial<IconButtonProps>;
     menuProps?: Partial<MuiMenuProps>;
 }
 
 const AnchorMenu: React.FC<MenuProps> = ({
-    items = [],
+    items: menuItems = [],
     children,
     buttonProps = {},
     menuProps = {}
 }) => {
+    const items = useMemo<AnchorMenuItem[]>(() => menuItems.filter(Boolean) as any, [menuItems]);
+    const active = items.find(i => (i as MenuItemAction)?.active) as MenuItemAction | undefined;
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -74,7 +77,13 @@ const AnchorMenu: React.FC<MenuProps> = ({
                     ...buttonProps
                 })
             ) : (
-                <IconButton onClick={handleClick} {...buttonProps as IconButtonProps}>
+                <IconButton
+                    onClick={handleClick} {...buttonProps as IconButtonProps}
+                    sx={{
+                        ...(active && {
+                            background: active.activeColor == "inherit" ? "inherit" : alpha(getColor(active.activeColor || 'primary')[400], 0.2)
+                        })
+                    }}>
                     <Funnel size={16} />
                 </IconButton>
             )}

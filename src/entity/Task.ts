@@ -3,7 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 export type TaskStatus = "pending" | "processing" | "completed" | "failed";
 
 @Entity("task_queue")
-export class TaskQueueItem<T = any> {
+export class Task<T = any> {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;

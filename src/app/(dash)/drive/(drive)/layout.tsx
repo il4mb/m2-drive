@@ -15,6 +15,7 @@ import MobileAction from "@/components/navigation/MobileAction";
 import Link from "next/link";
 import { useContextMenu } from "@/components/context-menu/ContextMenu";
 import ActionNewFolder from "@/components/menu-actions/ActionNewFolder";
+import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 
 export type DriveLayoutState = {
     userId: string;
@@ -36,14 +37,21 @@ export interface layoutProps {
 }
 export default function layout({ children }: layoutProps) {
 
+    const { userId } = useCurrentSession();
     const contextMenu = useContextMenu();
     const theme = useTheme();
     const { pId } = useParams<{ pId: string[] }>();
     const firstId = pId?.[0];
 
     useEffect(() => {
-        return contextMenu.addMenu("addFolder", ActionNewFolder);
-    }, []);
+        console.log(userId)
+        const removeMenu = contextMenu.addMenu("addFolder", ActionNewFolder);
+        const removeState = contextMenu.addState({ userId })
+        return () => {
+            removeState();
+            removeMenu();
+        };
+    }, [userId]);
 
     if (pId?.length > 0) {
         return (
@@ -57,40 +65,38 @@ export default function layout({ children }: layoutProps) {
     }
 
     return (
-        <AnimatePresence mode={"wait"}>
-            <ModuleViewerManager endpoint="/drive/{ID}">
-                <Stack flex={1} overflow={"hidden"}>
-                    <Container maxWidth={'lg'} scrollable>
-                        <StickyHeaderManager>
-                            <StickyHeader actions={(
-                                <Button
-                                    LinkComponent={Link}
-                                    href="/drive/upload"
-                                    variant="contained"
-                                    size="large"
-                                    startIcon={<UploadCloud size={18} />}>
-                                    Upload
-                                </Button>
-                            )}>
-                                <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
-                                    <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <HardDrive size={28} color={theme.palette.primary.main} />
-                                            <Typography component={"div"} fontSize={22} fontWeight={700}>
-                                                My Drive
-                                            </Typography>
-                                        </Stack>
+        <ModuleViewerManager endpoint="/drive/{ID}">
+            <Stack flex={1} overflow={"hidden"}>
+                <Container maxWidth={'lg'} scrollable>
+                    <StickyHeaderManager>
+                        <StickyHeader actions={(
+                            <Button
+                                LinkComponent={Link}
+                                href="/drive/upload"
+                                variant="contained"
+                                size="large"
+                                startIcon={<UploadCloud size={18} />}>
+                                Upload
+                            </Button>
+                        )}>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent={"space-between"}>
+                                <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <HardDrive size={28} color={theme.palette.primary.main} />
+                                        <Typography component={"div"} fontSize={22} fontWeight={700}>
+                                            My Drive
+                                        </Typography>
                                     </Stack>
                                 </Stack>
-                            </StickyHeader>
+                            </Stack>
+                        </StickyHeader>
 
-                            <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
-                                {children}
-                            </Paper>
-                        </StickyHeaderManager>
-                    </Container>
-                </Stack>
-            </ModuleViewerManager>
-        </AnimatePresence>
+                        <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
+                            {children}
+                        </Paper>
+                    </StickyHeaderManager>
+                </Container>
+            </Stack>
+        </ModuleViewerManager>
     );
 }

@@ -1,5 +1,5 @@
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { updateUser, UserUpdatePart } from "@/server/functions/users"
+import { UserUpdatePart } from "@/server/functions/users"
 import { useState } from "react"
 
 export const useUserUpdate = (userId: string) => {
@@ -11,7 +11,7 @@ export const useUserUpdate = (userId: string) => {
         if (loading) return;
         setLoading(true);
         setError(null);
-        const result = await invokeFunction(updateUser, { userId, data });
+        const result = await invokeFunction("updateUser", { userId, data });
         if (!result.success) {
             setError(result.error || "Unknown Error");
         }

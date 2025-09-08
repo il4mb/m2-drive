@@ -96,6 +96,23 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
         return this;
     }
 
+    static createFrom<T extends EntityName, Q extends QueryType, E>(source: Query<T, Q, E>): Query<T, Q, E> {
+        
+        const clone = new Query<T, Q, E>(source.collection, source.type);
+
+        // Copy over private state
+        clone.conditions = [...source.conditions];
+        clone.limitValue = source.limitValue;
+        clone.orderByField = source.orderByField;
+        clone.orderDirection = source.orderDirection;
+        clone.joinTable = [...source.joinTable];
+        clone.isDebug = source.isDebug;
+        clone.group = [...source.group];
+
+        return clone;
+    }
+
+
     toJSON(): QueryConfig {
         return {
             collection: this.collection,

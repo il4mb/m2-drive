@@ -1,7 +1,6 @@
 'use client';
 import { File } from '@/entity/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
-import { filePreflight } from '@/server/functions/filePreflight';
 import { useState, useEffect } from 'react';
 
 // File preflight hook with improved error handling
@@ -13,7 +12,7 @@ export const useFilePreflight = (fileId: string, subsId?: string[]) => {
     const [file, setFile] = useState<File>();
 
     const sendPreflight = () => {
-        invokeFunction<any, File>(filePreflight, { fileId, subsId })
+        invokeFunction("filePreflight", { fileId, subsId })
             .then(response => {
                 console.log(response)
                 setSuccess(response.success);

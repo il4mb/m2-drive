@@ -14,21 +14,21 @@ type CreateFolderProps = {
     pId: string | null
 }
 
-export const createFolder = createFunction<CreateFolderProps>(async ({ userId, name, pId }) => {
+export const createFolder = createFunction(async ({ userId, name, pId }: CreateFolderProps) => {
 
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("401: Unauthenticated");
 
     if (!userId) {
-        throw new Error("400: userId tidak boleh kosong!");
+        throw new Error("Failed Create Folder: userId tidak boleh kosong!");
     }
 
     if (actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
-        throw new Error("403: Not allowed to performs this action");
+        throw new Error("Failed Create Folder: Not allowed to performs this action");
     }
 
     if (name.length < 1 || name.length > 34) {
-        throw new Error("400: Nama folder tidak boleh lebih kecil dari 1 dan lebih dari 34 karakter!");
+        throw new Error("Failed Create Folder: Nama folder tidak boleh lebih kecil dari 1 dan lebih dari 34 karakter!");
     }
 
 
@@ -41,17 +41,17 @@ export const createFolder = createFunction<CreateFolderProps>(async ({ userId, n
     });
 
     if (nameExist) {
-        throw new Error("400: Folder dengan nama yang sama sudah ada!");
+        throw new Error("Failed Create Folder: Folder dengan nama yang sama sudah ada!");
     }
 
     if (pId) {
         const folder = await fileRepository.findOneBy({ id: pId });
         if (!folder) {
-            throw new Error("404: Folder tujuan tidak ditemukan!");
+            throw new Error("Failed Create Folder: Folder tujuan tidak ditemukan!");
         }
         const tags = folder.meta?.tags || [];
         if (tags.some(tag => ['no-append', 'no-edit'].includes(tag))) {
-            throw new Error("403: Menambah folder tidak diperbolehkan!");
+            throw new Error("Failed Create Folder: Menambah folder tidak diperbolehkan!");
         }
     }
 
@@ -80,14 +80,15 @@ type UpdateFileProps = {
     data: UpdateFilePart;
 };
 
-export const updateFile = async ({ id, data }: UpdateFileProps) => {
+export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) => {
+    
     const { user: actor } = getRequestContext();
-    if (!actor) throw new Error("401: Unauthenticated");
+    if (!actor) throw new Error("Failed Update File: Unauthenticated");
 
     const source = await getConnection();
     const fileRepository = source.getRepository(File);
     const file = await fileRepository.findOneBy({ id });
-    if (!file) throw new Error("404: File not found");
+    if (!file) throw new Error("Failed Update File: File not found");
 
     const isSystem = actor == "system";
     const isAdmin = !isSystem && actor?.meta.role === "admin";
@@ -95,7 +96,7 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
 
     // Check permissions
     if (!isSystem && !isAdmin && !isOwner) {
-        throw new Error("403: Not allowed to perform this action");
+        throw new Error("Failed Update File: Not allowed to perform this action");
     }
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
@@ -132,7 +133,7 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
         const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
 
         if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
-            throw new Error("403: Admin can only update tags for files they don't own");
+            throw new Error("Failed Update File: Admin can only update tags for files they don't own");
         }
     }
 
@@ -140,7 +141,7 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
     if (!isAdmin || isOwner) {
         for (const key of Object.keys(data)) {
             if (key !== "meta" && !allowedFields.includes(key as keyof File)) {
-                throw new Error(`400: Unknown property "${key}" in update`);
+                throw new Error(`Failed Update File: Unknown property "${key}" in update`);
             }
         }
     }
@@ -160,7 +161,7 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
         if (isAdmin && !isOwner) {
             const metaKeys = Object.keys(data.meta);
             if (metaKeys.length !== 1 || !metaKeys.includes("tags")) {
-                throw new Error("403: Admin can only update tags for files they don't own");
+                throw new Error("Failed Update File: Admin can only update tags for files they don't own");
             }
         }
 
@@ -169,7 +170,7 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
             for (const key of Object.keys(data.meta)) {
                 if (!allowedMetaFields.includes(key as keyof File["meta"])) {
                     throw new Error(
-                        `400: Unknown meta property "${key}" in update`
+                        `Failed Update File: Unknown meta property "${key}" in update`
                     );
                 }
             }
@@ -201,10 +202,10 @@ export const updateFile = async ({ id, data }: UpdateFileProps) => {
 
     // Check for "no-edit" tag restriction (applies to everyone except maybe super admins)
     if (tags.some(tag => tag === "no-edit") && !isOnlyUpdatingTags) {
-        throw new Error("403: Mengedit file/folder tidak diperbolehkan!");
+        throw new Error("Failed Update File: Mengedit file/folder tidak diperbolehkan!");
     }
 
     file.updatedAt = currentTime();
     await fileRepository.save(file);
     return file;
-}
+})

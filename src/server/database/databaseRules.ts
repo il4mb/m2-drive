@@ -4,6 +4,7 @@ import User from "@/entity/User";
 import { DatabaseEvent } from "./databaseSubscriber";
 import { DataSource } from "typeorm";
 import { File } from "@/entity/File";
+import { checkPermission } from "../checkPermission";
 
 export interface DatabaseRuleContext<E = any> {
     user?: User | "system";
@@ -97,5 +98,10 @@ export const databaseRules: DatabaseRuleMap = {
 
     token: () => {
         return true;
+    },
+    task: async (context) => {
+        const { user } = context;
+        if (user == "system") return true;
+        return await checkPermission(user, "can-manage-task-queue");
     }
 };

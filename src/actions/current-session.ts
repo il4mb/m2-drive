@@ -78,7 +78,7 @@ export const getCurrentUserAbilities = withAction<{}, { role: Role, permissions:
             message: "Berhasil ambil informasi",
             data: {
                 role: {
-                    name: "admin",
+                    id: "admin",
                     label: "Admin",
                     abilities: PERMISSION_LIST.map(e => e.value),
                     createdAt: 0
@@ -88,7 +88,7 @@ export const getCurrentUserAbilities = withAction<{}, { role: Role, permissions:
         }
     }
 
-    const role = await roleRepository.findOneBy({ name: meta.role });
+    const role = await roleRepository.findOneBy({ id: meta.role });
     if (!role) throw new Error("404: Role tidak ditemukan!");
 
     const abilities: string[] = role.abilities;

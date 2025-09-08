@@ -2,7 +2,7 @@
 
 import { Box, IconButton, List, Paper, Stack, Typography, useMediaQuery, Theme } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea } from 'lucide-react';
+import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea, Cpu } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from './MenuItem';
 import MenuGroup from './MenuGroup';
@@ -72,6 +72,13 @@ const MENU: IMenu[] = [
         icon: <FolderRoot />,
         href: "/drive-root",
         permission: 'can-manage-drive-root'
+    },
+    {
+        type: "link",
+        label: "Task Queue",
+        icon: <Cpu />,
+        href: "/task-queue",
+        permission: "can-manage-task-queue"
     },
     {
         type: "link",

@@ -104,9 +104,6 @@ export default function ContextMenu<T>({
     const submenuTimerRef = useRef<NodeJS.Timeout>(null);
     const portalRootEl = typeof window !== "undefined" ? getPortalRoot() : null;
 
-    // Memoize children to prevent unnecessary re-renders
-    const memoizedChildren = useMemo(() => children, [children]);
-
     // Calculate estimated menu dimensions
     const estimatedDimensions = useMemo(() => {
         const itemCount = menu?.length || 0;
@@ -124,7 +121,6 @@ export default function ContextMenu<T>({
 
     const onContextMenu = useCallback((e: React.MouseEvent) => {
         if (disabled) return;
-
         e.preventDefault();
         e.stopPropagation();
         if (!menu?.length) return;
@@ -132,7 +128,7 @@ export default function ContextMenu<T>({
         setPosition({ x: e.clientX, y: e.clientY });
         setFocusedIndex(-1);
         setActiveSubmenu(null);
-    }, [disabled, menu?.length]);
+    }, [disabled, menu]);
 
     const onClose = useCallback(() => {
         setPosition(null);
@@ -163,7 +159,6 @@ export default function ContextMenu<T>({
 
     const addMenu = useCallback((id: string, menuItems: MenuComponent | MenuComponent[]): Unsubscribe => {
         const itemsArray = Array.isArray(menuItems) ? menuItems : [menuItems];
-
         setMenuMap(prev => {
             // Check if the menu items are the same
             const currentItems = prev.get(id);
@@ -325,20 +320,22 @@ export default function ContextMenu<T>({
         </Stack>
     );
 
+
+    // Memoize children to prevent unnecessary re-renders
+    const memoizedChildren = useMemo(() => cloneElement(children as any, {
+        onContextMenu,
+        style: {
+            ...(highlight && position && {
+                backgroundColor: alpha("#000", 0.1),
+                borderRadius: "4px"
+            })
+        }
+    }), [children, menu, state]);
+
     return (
         <Context.Provider value={contextValue}>
-            <Stack
-                flex={1}
-                overflow={"hidden"}
-                onContextMenu={onContextMenu}
-                sx={{
-                    ...(highlight && position && {
-                        backgroundColor: alpha("#000", 0.1),
-                        borderRadius: "4px"
-                    })
-                }}>
-                {memoizedChildren}
-            </Stack>
+            {memoizedChildren}
+            
             {portalRootEl && createPortal(
                 <AnimatePresence>
                     {adjustedPosition && (

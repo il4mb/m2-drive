@@ -57,7 +57,7 @@ export default function Page() {
     // Validation flags
     const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
     const emailValid = isEmailValid(email) && email.length >= 6 && email.length <= 64;
-    const roleValid = !!role && roles.some((r) => r.name === role);
+    const roleValid = !!role && roles.some((r) => r.id === role);
     const passwordValid = !changePw || (password.length >= 8 && password.length <= 64);
 
     const isChanged = useMemo(
@@ -230,7 +230,7 @@ export default function Page() {
                         onChange={(e) => setRole(e.target.value)}
                         select>
                         {roles.map((r) => (
-                            <MenuItem key={r.name} value={r.name}>
+                            <MenuItem key={r.id} value={r.id}>
                                 {r.label}
                             </MenuItem>
                         ))}

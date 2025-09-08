@@ -107,7 +107,7 @@ export default function UploadSizeManager() {
                                 onChange={(e) => setRole(e.target.value)}
                                 sx={{ minWidth: 150 }}>
                                 {roles.map((r) => (
-                                    <MenuItem key={r.name} value={r.name}>
+                                    <MenuItem key={r.id} value={r.id}>
                                         {r.label}
                                     </MenuItem>
                                 ))}
@@ -173,7 +173,7 @@ export default function UploadSizeManager() {
                 )}
                 
                 {options.map((opt, i) => {
-                    const roleInfo = roles.find((r) => r.name === opt.roleName);
+                    const roleInfo = roles.find((r) => r.id === opt.roleName);
                     const label = roleInfo?.label || opt.roleName;
                     const isUnlimited = opt.size === Infinity;
 

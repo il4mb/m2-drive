@@ -1,5 +1,5 @@
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { getUserUssageSummary, UserDriveSummary } from "@/server/functions/ussageSummary";
+import {  UserDriveSummary } from "@/server/functions/ussageSummary";
 import { useEffect, useState } from "react"
 
 export const useDriveUssageSummary = (userId?: string) => {
@@ -12,7 +12,7 @@ export const useDriveUssageSummary = (userId?: string) => {
         if (!userId) return;
         setLoading(true);
         setError(null);
-        invokeFunction(getUserUssageSummary, { userId })
+        invokeFunction("getUserUssageSummary", { userId })
             .then(result => {
                 setLoading(false);
                 if (!result.success) {

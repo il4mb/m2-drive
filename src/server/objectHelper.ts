@@ -1,4 +1,4 @@
-import { QueryCondition } from "./types";
+import { QueryCondition } from "./database/types";
 
 /** Special value tokens for null checks */
 const SPECIAL_VALUES = {
@@ -6,17 +6,16 @@ const SPECIAL_VALUES = {
     "@NotNull": "@NotNull",
 } as const;
 
-type SpecialValue = keyof typeof SPECIAL_VALUES;
+export type SpecialValue = keyof typeof SPECIAL_VALUES;
 
-function isSpecialValue(v: unknown): v is SpecialValue {
+export function isSpecialValue(v: unknown): v is SpecialValue {
     return typeof v === "string" && (v === "@IsNull" || v === "@NotNull");
 }
 
 /** Handle field name resolution (remove $ prefix if present) */
-function resolveFieldName(field: string): string {
+export function resolveFieldName(field: string): string {
     return field.startsWith('$') ? field.substring(1) : field;
 }
-
 
 /** Handle JSON path resolution for object fields */
 function resolveFieldValue<T extends Record<string, any>>(obj: T, field: string): any {
@@ -278,6 +277,11 @@ export function validateByConditions<T extends Record<string, any>>(
     conditions: QueryCondition[] = []
 ): boolean {
     if (!conditions.length) return true;
+
+    if (Array.isArray(obj)) {
+        // Stop at the first passing item
+        return obj.some(item => validateByConditionsRecursive(item, conditions, "AND"));
+    }
 
     // Wrap the entire condition set in a virtual bracket group
     return validateByConditionsRecursive(obj, conditions, "AND");

@@ -8,7 +8,7 @@ import { databaseRules } from "./databaseRules";
 import { getRequestContext } from "@/libs/requestContext";
 import { DatabaseChangePayload } from "./types";
 import { subscribers } from "../socketHandlers";
-import { validateByConditions } from "./objectHelper";
+import { validateByConditions } from "../objectHelper";
 import { getConnection } from "@/data-source";
 
 export type DatabaseEvent = "INSERT" | "UPDATE" | "DELETE";
@@ -129,18 +129,15 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         const { data, previousData } = this.extractEventData(event);
         const rule = databaseRules[collection] || databaseRules.default;
 
-        // console.log(rule);
-        const allowed = await rule({
-            connection: event.connection,
-            user,
-            collection,
-            event: type,
-            data,
-            previousData
-        });
+        try {
+            // console.log(rule);
+            const allowed = await rule({ connection: event.connection, user, collection, event: type, data, previousData });
 
-        if (!allowed) {
-            throw new Error(`Permission denied for ${type} on ${collection}`);
+            if (!allowed) {
+                throw new Error(`Permission denied for ${type} on ${collection}`);
+            }
+        } catch (error: any) {
+            throw new Error(`Permission denied: ${error.message}`);
         }
     }
 
@@ -150,6 +147,9 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
     private async handleEvent(eventType: DatabaseEvent, event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>) {
         try {
 
+
+            if (eventType == "INSERT") console.log("EVENT", eventType);
+
             const collection = this.getEntityName(event.metadata);
             if (!collection) {
                 console.debug(`Skipping event for unrecognized entity: ${event.metadata.name}`);
@@ -158,27 +158,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
 
             let { data, previousData, changes } = this.extractEventData(event);
 
-            if (eventType === "INSERT") {
-                const relationFields = event.metadata.relations.map(rel => rel.propertyName);
-
-                if (relationFields.length > 0) {
-                    try {
-                        const repo = event.manager.getRepository(event.metadata.target as any);
-                        const entityWithRelations = await repo.findOne({
-                            where: { id: data.id },
-                            relations: relationFields
-                        });
-
-                        if (entityWithRelations) {
-                            data = { ...data, ...entityWithRelations };
-                            console.debug(`Merged relations for ${collection}:`, relationFields);
-                        }
-                    } catch (err) {
-                        console.warn(`Failed to load relations for ${collection}:`, err);
-                    }
-                }
-
-            } else if (eventType == "DELETE") {
+            if (eventType == "DELETE") {
                 const deletedId =
                     (event as RemoveEvent<any>).entity?.id ??
                     (event as RemoveEvent<any>).databaseEntity?.id;
@@ -190,8 +170,9 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 }
             }
 
-            const payload: DatabaseChangePayload = {
-                event: eventType,
+            const payload: DatabaseChangePayload & { event: UpdateEvent<any> | InsertEvent<any> | RemoveEvent<any> } = {
+                event,
+                eventName: eventType,
                 collection,
                 data: data || {},
                 timestamp: new Date(),
@@ -199,45 +180,67 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 previousData: previousData || {}
             };
 
-            this.broadcastDatabaseChange(collection, payload, data?.id);
+            this.broadcastDatabaseChange(payload, data?.id);
 
         } catch (error) {
             console.error(`Error handling ${eventType} event:`, error);
         }
     }
 
-    async broadcastDatabaseChange<N extends EntityName, E = InstanceType<EntityMap[N]>>
-        (
-            collection: N,
-            payload: DatabaseChangePayload,
-            dataId?: string | number
-        ) {
+    async broadcastDatabaseChange<N extends EntityName, E = InstanceType<EntityMap[N]>>(
+        payload: DatabaseChangePayload & { event: UpdateEvent<any> | InsertEvent<any> | RemoveEvent<any> },
+        dataId?: string | number
+    ) {
 
-        const rule: BroadcastRule<E> = (broadcastRules as any)[collection] || broadcastRules.default;
-        for (const [id, { socket, collection, conditions, debug }] of subscribers) {
 
+        for (const [id, { socket, collection, relations, conditions, debug }] of subscribers) {
             if (collection != payload.collection) {
                 if (debug) {
-                    console.log("SKIPED", collection, payload.collection);
+                    console.log("SKIPED", payload.eventName, collection, payload.collection);
                 }
                 continue;
             }
-            const isValid = validateByConditions(payload.data || {}, conditions);
-            const isValid2 = validateByConditions(payload.previousData || {}, conditions);
-            if (payload.event == "UPDATE" && (!isValid && !isValid2)) {
-                if (debug) {
-                    console.log("DATA", payload.data);
-                    console.log("PREV DATA", payload.previousData);
-                    console.log("IS VALID", isValid, isValid2);
+            const uid = socket.data?.uid;
+            const isGuest = socket.data?.isGuest || true;
+
+            let data = payload.data;
+            const previousData = payload.previousData;
+            if (["INSERT", "UPDATE"].includes(payload.eventName) && relations?.length > 0) {
+                const relationFields = payload.event.metadata.relations.map(rel => rel.propertyName);
+                if (relationFields.length <= 0 || relationFields.some(e => !relationFields.includes(e))) {
+                    console.log("RELATION NOT VALID OR NOT EXIST");
+                    continue;
                 }
+
+                try {
+
+                    const repo = payload.event.manager.getRepository(payload.event.metadata.target as any);
+                    const entityWithRelations = await repo.findOne({
+                        where: { id: dataId },
+                        relations
+                    });
+
+                    if (entityWithRelations) {
+                        data = { ...data, ...entityWithRelations };
+                    }
+                } catch (err) {
+                    console.warn(`Failed to load relations for ${collection}:`, err);
+                }
+
+            }
+
+
+            const isValid = validateByConditions(data || {}, conditions);
+            const isValid2 = validateByConditions(previousData || {}, conditions);
+
+            if (!isValid && !isValid2) {
+                console.log("SKIP EVENT", payload.collection, payload.eventName, "to", uid);
                 continue;
             }
 
-            const uid = socket.data?.uid;
-            const isGuest = socket.data?.isGuest || true;
-            const connection = await getConnection();
-            const user = (!isGuest ? (await connection.getRepository(User).findOneBy({ id: uid })) : undefined) || undefined;
-            
+
+            const user = (!isGuest ? (await payload.event.manager.getRepository(User).findOneBy({ id: uid })) : undefined) || undefined;
+
             const context: BroadcastContext<E> = {
                 room: dataId
                     ? "item"
@@ -246,20 +249,24 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                         : "database",
                 user,
                 collection,
-                event: payload.event,
+                event: payload.eventName,
                 data: payload.data,
                 previousData: payload.previousData,
             };
 
             try {
-                const allowed = await rule(context);
-                if (!allowed) {
-                    if (debug) {
-                        console.log("SKIPPED", "RULE NOT ALLOWED");
-                    }
-                    continue;
-                }
-                socket.emit(`change-${id}`, payload);
+                // const allowed = await rule(context);
+                // if (!allowed) {
+                //     if (debug) {
+                //         console.log("SKIPPED", "RULE NOT ALLOWED");
+                //     }
+                //     continue;
+                // }
+
+                // remove typeorm Event entity to prevent unexpected error
+                const { event, ...safe } = payload;
+                socket.emit(`change-${id}`, { ...safe, data });
+
             } catch (error) {
                 console.error(
                     `Error applying broadcast rule for socket ${socket.id}:`,
@@ -267,22 +274,6 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 );
             }
         }
-    }
-
-
-
-    /**
-     * Manual broadcast method for custom events
-     */
-    manualBroadcast(collection: EntityName, event: DatabaseEvent, data: any, id?: string | number) {
-        const payload: DatabaseChangePayload = {
-            event,
-            collection,
-            data,
-            timestamp: new Date()
-        };
-
-        this.broadcastDatabaseChange(collection, payload, id);
     }
 
     /**

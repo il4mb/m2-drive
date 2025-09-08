@@ -37,7 +37,7 @@ export default function page() {
         validator({ name, email, role }) {
             const nameValid = name.trim().length >= 3 && name.trim().length <= 64;
             const emailValid = isEmailValid(email) && email.length >= 6 && email.length <= 64;
-            const roleValid = !!role && roles.some(r => r.name === role);
+            const roleValid = !!role && roles.some(r => r.id === role);
 
             let passwordValid = true;
             if (enterPw) {
@@ -138,7 +138,7 @@ export default function page() {
                         value={role}
                         onChange={e => setRole(e.target.value)} select>
                         {roles.map((role, i) => (
-                            <MenuItem key={i} value={role.name}>
+                            <MenuItem key={i} value={role.id}>
                                 {role.label}
                             </MenuItem>
                         ))}

@@ -21,16 +21,19 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField,
     Alert,
     LinearProgress,
     Tabs,
     Tab,
     Switch,
-    FormControlLabel
+    FormControlLabel,
+    Stack
 } from '@mui/material';
 import { io, Socket } from 'socket.io-client';
 import { Ban, BarChart, Blocks, Info, RefreshCcw, Tv, Users2, X } from 'lucide-react';
+import StickyHeader from '@/components/navigation/StickyHeader';
+import MobileAction from '@/components/navigation/MobileAction';
+import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 
 interface ConnectionMetrics {
     totalConnections: number;
@@ -71,6 +74,9 @@ interface ActiveUser {
 }
 
 export default function SocketMetricsDashboard() {
+
+    const { addAction, updateActionProps } = useActionsProvider();
+
     const [socket, setSocket] = useState<Socket | null>(null);
     const [metrics, setMetrics] = useState<ConnectionMetrics | null>(null);
     const [rooms, setRooms] = useState<RoomInfo[]>([]);
@@ -199,6 +205,45 @@ export default function SocketMetricsDashboard() {
         }
     };
 
+
+    useEffect(() => {
+        const removers = [
+            addAction('toggle', {
+                component: ({ autoRefresh }) => (
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={autoRefresh}
+                                onChange={(e) => setAutoRefresh(e.target.checked)}
+                                color="primary"
+                            />
+                        }
+                        label="Auto Refresh"
+                    />
+                ),
+                icon: undefined
+            }),
+            addAction('refresh', {
+                component: () => (
+                    <Button
+                        variant="contained"
+                        startIcon={<RefreshCcw />}
+                        onClick={fetchMetrics}
+                        sx={{ ml: 2 }}>
+                        Refresh
+                    </Button>
+                ),
+                icon: undefined
+            })
+        ];
+
+        return () => { removers.map(r => r()) }
+    }, []);
+
+    useEffect(() => {
+        updateActionProps("toggle", { autoRefresh })
+    }, [autoRefresh])
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -214,31 +259,13 @@ export default function SocketMetricsDashboard() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1">
-                    Socket.io Metrics Dashboard
-                </Typography>
-                <Box>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={autoRefresh}
-                                onChange={(e) => setAutoRefresh(e.target.checked)}
-                                color="primary"
-                            />
-                        }
-                        label="Auto Refresh"
-                    />
-                    <Button
-                        variant="contained"
-                        startIcon={<RefreshCcw />}
-                        onClick={fetchMetrics}
-                        sx={{ ml: 2 }}
-                    >
-                        Refresh
-                    </Button>
-                </Box>
-            </Box>
+            <StickyHeader>
+                <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                    <Typography variant="h4" component="h1">
+                        Socket.io Metrics
+                    </Typography>
+                </Stack>
+            </StickyHeader>
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

@@ -23,7 +23,7 @@ function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
 
 export default function RoleManager() {
 
-    const SYSTEM_ROLES_NAME = SYSTEM_ROLES.map(e => e.name);
+    const SYSTEM_ROLES_NAME = SYSTEM_ROLES.map(e => e.id);
     const [name, setName] = useState('');
     const [label, setLabel] = useState('');
     const [open, setOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function RoleManager() {
 
     const requestDelete = useRequest({
         action: deleteRole,
-        params: { name: selectedRole?.name || '' },
+        params: { name: selectedRole?.id || '' },
         validator() {
             return Boolean(selectedRole);
         },
@@ -85,10 +85,10 @@ export default function RoleManager() {
     };
 
     const handleEdit = (role: Role) => {
-        if (SYSTEM_ROLES_NAME.includes(role.name) && !(role as any).editable) return;
+        if (SYSTEM_ROLES_NAME.includes(role.id) && !(role as any).editable) return;
 
         setSelectedRole(role);
-        setName(role.name);
+        setName(role.id);
         setLabel(role.label);
         setAbilities(role.abilities);
         setEditMode(true);
@@ -96,7 +96,7 @@ export default function RoleManager() {
     };
 
     const handleDelete = (role: Role) => {
-        if (SYSTEM_ROLES_NAME.includes(role.name)) return;
+        if (SYSTEM_ROLES_NAME.includes(role.id)) return;
 
         setSelectedRole(role);
         setDeleteConfirmOpen(true);
@@ -239,7 +239,7 @@ export default function RoleManager() {
                             <Stack ml={1} flex={1}>
                                 <Typography fontSize={22} fontWeight={600}>
                                     {e.label}
-                                    {SYSTEM_ROLES_NAME.includes(e.name) && (
+                                    {SYSTEM_ROLES_NAME.includes(e.id) && (
                                         <Chip color="primary" label={"System"} sx={{ ml: 1 }} size="small" />
                                     )}
                                 </Typography>
@@ -267,7 +267,7 @@ export default function RoleManager() {
                             alignSelf={"flex-end"}
                             ml={['auto', 'auto', 2]}
                             mt={[2, 2, 0]}>
-                            {!SYSTEM_ROLES_NAME.includes(e.name) ? (
+                            {!SYSTEM_ROLES_NAME.includes(e.id) ? (
                                 <>
                                     <Button
                                         size="small"

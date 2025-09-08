@@ -12,6 +12,7 @@ import { File } from '@/entity/File';
 import { FileIcon } from '@untitledui/file-icons';
 import { formatFileSize } from '@/libs/utils';
 import WhoViewer from '@/components/file-viewers/WhoViewer';
+import { useContextMenu } from '@/components/context-menu/ContextMenu';
 
 export interface FileViewerLayoutProps {
     children?: ReactNode;
@@ -22,6 +23,7 @@ export interface FileViewerLayoutProps {
 }
 export default function FileViewerLayout({ children, pathList, pageEndpoint, canGoBack: canGobackInitial }: FileViewerLayoutProps) {
 
+    const contextMenu = useContextMenu();
     const router = useRouter();
 
     const [canGoBack, setCanGoBack] = useState(false);
@@ -33,9 +35,16 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, can
         setCanGoBack(canGobackInitial || pathList.length > 1);
     }, [pathList, canGobackInitial]);
 
+
+    useEffect(() => {
+        return contextMenu?.addState({ folder: file })
+    }, [contextMenu, file]);
+
     const stateValue = useMemo(() => ({
         lastId, firstId, listId: pathList, setFile
-    }), [])
+    }), [pathList, pageEndpoint]);
+
+
 
     return (
         <Context.Provider value={stateValue}>

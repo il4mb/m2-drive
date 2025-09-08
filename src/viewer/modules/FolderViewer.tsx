@@ -5,10 +5,10 @@ import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entity/File";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { getMany, Query } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { motion } from "motion/react"
 import FileView from "@/components/drive/FileView";
-import { alpha, IconButton, Stack, TextField } from "@mui/material";
+import { alpha, Box, IconButton, LinearProgress, Stack, TextField } from "@mui/material";
 import { useContextMenu } from "@/components/context-menu/ContextMenu";
 import { createContextMenu } from "@/components/context-menu/ContextMenuItem";
 import useLocalStorage from "@/hooks/useLocalstorage";
@@ -21,13 +21,16 @@ interface CustomFolderViewerComponentProps {
     handleOpen: (file: File) => void;
 }
 
-export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderViewerComponentProps) => {
+export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }: CustomFolderViewerComponentProps) => {
+    
+    const [keyword, setKeyword] = useState('');
     const [layout, setLayout] = useLocalStorage<string>("drive-layout", "list");
     const [order, setOrder] = useLocalStorage<string>("drive-order", "DESC");
     const [sort, setSort] = useLocalStorage<string>("drive-sort", "type");
     const contextMenu = useContextMenu();
     const [files, setFiles] = useState<File[]>([]);
-    const { addAction } = useActionsProvider()!;
+    const [isLoading, setIsLoading] = useState(false);
+    const { addAction, updateActionProps } = useActionsProvider()!;
 
     // Memoize context menu state to prevent unnecessary re-renders
     const contextMenuState = useMemo(() => ({
@@ -46,7 +49,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderV
         []);
 
     // Memoize context menu items
-    const menu = useMemo(() => [
+    const menu = useMemo(() => ([
         createContextMenu({
             icon: ({ state, size }) =>
                 state.layout === "list" ? (
@@ -110,7 +113,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderV
                 return false;
             },
         })
-    ], [activeStyle]);
+    ]), [activeStyle]);
 
     // Add context menu state and menu items
     useEffect(() => {
@@ -125,10 +128,25 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderV
 
     // Handle query subscription with proper cleanup
     useEffect(() => {
+        if (isLoading) return;
+        setIsLoading(true);
+        const query = Query.createFrom(initialQuery);
         query.orderBy(sort, (["DESC", "ASC"].includes(order) ? order : undefined) as any);
-        const unsubscribe = onSnapshot(query, setFiles);
+        if (keyword.length > 0) {
+            query.where("name", "STARTS WITH", keyword);
+        }
+
+        // query.debug()
+
+        const unsubscribe = onSnapshot(query, (newFiles) => {
+            setTimeout(() => {
+                setFiles(newFiles);
+                setIsLoading(false);
+            }, 250);
+        });
+
         return unsubscribe;
-    }, [query, order, sort]);
+    }, [initialQuery, order, sort, keyword]);
 
     const handleToggleLayout = useCallback(() => {
         setLayout(prev => prev === "grid" ? "list" : "grid");
@@ -141,33 +159,61 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderV
         layout: layout as "grid" | "list",
     }), [handleOpen, layout]);
 
-
-
+    useEffect(() => {
+        const removers = [
+            addAction("search", {
+                position: 1,
+                component: ({ value, onChange }) => (<TextField label="Search..." size="small" value={value} onChange={e => onChange(e.target.value)} />),
+                componentProps: {
+                    value: keyword,
+                    onChange: setKeyword
+                },
+                icon: undefined
+            }),
+            addAction("layout", {
+                position: 2,
+                component: ({ layout }) => (
+                    <IconButton onClick={handleToggleLayout}>
+                        {layout === "grid" ? <LayoutGrid size={18} /> : <StretchHorizontal size={18} />}
+                    </IconButton>
+                ),
+                icon: undefined
+            })
+        ]
+        return () => {
+            removers.map(e => e());
+        }
+    }, [initialQuery]);
 
     useEffect(() => {
-        return addAction("layout", {
-            position: 2,
-            component: (
-                <IconButton onClick={handleToggleLayout}>
-                    {layout === "grid" ? <LayoutGrid size={18} /> : <StretchHorizontal size={18} />}
-                </IconButton>
-            ),
-            icon: undefined
-        })
-    }, [layout]);
-
-    useEffect(() => {
-        return addAction("search", {
-            position: 1,
-            component: (
-                <TextField size="small" label={"Search..."}/>
-            ),
-            icon: undefined
-        })
-    }, [])
+        updateActionProps("search", { value: keyword });
+        updateActionProps("layout", { layout });
+    }, [updateActionProps, keyword, layout]);
 
     return (
         <>
+            {/* Loading Indicator */}
+            {isLoading && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 10,
+                    }}>
+                    <LinearProgress
+                        sx={{
+                            height: 2,
+                            backgroundColor: 'transparent',
+                            '& .MuiLinearProgress-bar': {
+                                backgroundColor: getColor("primary")[400],
+                            }
+                        }}
+                    />
+                </Box>
+            )}
+
             <Stack
                 key={layout}
                 direction={layout === "grid" ? "row" : "column"}
@@ -175,7 +221,12 @@ export const CustomFolderViewerComponent = ({ handleOpen, query }: CustomFolderV
                 alignItems={"flex-start"}
                 justifyContent={"flex-start"}
                 flexWrap={"wrap"}
-                p={2}>
+                p={2}
+                sx={{
+                    position: 'relative',
+                    opacity: isLoading ? 0.7 : 1,
+                    transition: 'opacity 0.2s ease-in-out'
+                }}>
                 {files?.map((file, index) => (
                     <motion.div
                         key={`${layout}-${file.id}`}

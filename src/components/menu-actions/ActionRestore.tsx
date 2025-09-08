@@ -6,7 +6,6 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entity/File";
 import { enqueueSnackbar } from "notistack";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import { restoreFile } from "@/server/functions/fileTrash";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 
@@ -31,7 +30,7 @@ export default createContextMenu<State>({
         </Tooltip>
     ),
     async action(state) {
-        const response = await invokeFunction(restoreFile, { fileId: state.file.id });
+        const response = await invokeFunction("restoreFile", { fileId: state.file.id });
         if (!response.success) {
             enqueueSnackbar(response.error || "Unknown Error", { variant: 'error', action: CloseSnackbar })
         }

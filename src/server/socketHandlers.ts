@@ -4,10 +4,10 @@ import { getTokenById, getUserByToken } from './auth';
 import { requestContext } from '@/libs/requestContext';
 import { QueryConfig } from './database/types';
 import { executeQuery } from './database/queryExecutor';
-import { loadAllFunctions } from './funcHelper';
 import { currentTime, generateKey } from '@/libs/utils';
 import Token from '@/entity/Token';
 import { generateIndonesianAnimalName } from './animal-names';
+import functions from "./functions";
 
 
 // Define types for better type safety
@@ -40,6 +40,7 @@ export interface Room<T = Record<string, any>> {
 interface Subscription {
     socket: CustomSocket;
     collection: QueryConfig['collection'];
+    relations: string[];
     conditions?: QueryConfig['conditions'];
     debug?: boolean;
     createdAt: number;
@@ -149,7 +150,7 @@ function normalizePaths(path: string | string[] | string[][]): string[][] {
     return [[path]];
 }
 
-type Result = {
+export type SocketResult = {
     success: boolean;
     error?: string;
     code?: string;
@@ -167,7 +168,9 @@ type CustomSocket = Omit<Socket, 'data'> & {
 
 
 export function setupSocketHandlers(io: Server): void {
-    const functions = loadAllFunctions();
+
+
+    console.log("LOADED FUNCTIONS", functions)
 
     io.use(async (socket: CustomSocket, next) => {
 
@@ -299,7 +302,7 @@ export function setupSocketHandlers(io: Server): void {
         });
 
 
-        socket.on('subscribe', (data: QueryConfig, callback: (data: Result) => void) => {
+        socket.on('subscribe', (data: QueryConfig, callback: (data: SocketResult) => void) => {
             const isGuest = socket.data.isGuest;
             const rateLimit = checkRateLimit(socket.id, isGuest);
 
@@ -329,11 +332,12 @@ export function setupSocketHandlers(io: Server): void {
                     socket,
                     collection: data.collection,
                     conditions: data.conditions,
+                    relations: data.relations || [],
                     debug: data.debug,
                     createdAt: currentTime()
                 });
 
-                callback({ success: true, data: { subscriptionId: id } });
+                callback({ success: true, data: { id } });
             } catch (error) {
                 console.error('Subscription error:', error);
                 callback({
@@ -377,20 +381,24 @@ export function setupSocketHandlers(io: Server): void {
             }
 
             try {
+
                 const user = isGuest ? undefined : await getUserByToken(socket.data.token!);
 
                 await requestContext.run({ user }, async () => {
+                    
                     try {
+
+                        const fnName = data.function as keyof typeof functions;
+                        const fn = functions[fnName] as any;
+
+                        if (!fn) {
+                            throw new Error(`Function "${data.function}" not found`);
+                        }
                         if (typeof data?.function !== 'string') {
                             throw new Error('Invalid function name');
                         }
 
-                        if (!functions[data.function]) {
-                            throw new Error(`Function "${data.function}" not found`);
-                        }
-
-                        const func = functions[data.function];
-                        const result = await func(data.args || {});
+                        const result = await fn(data.args || {});
 
                         callback({ success: true, data: result });
                     } catch (error) {
@@ -402,11 +410,11 @@ export function setupSocketHandlers(io: Server): void {
                         });
                     }
                 });
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error getting user for function invocation:', error);
                 callback({
                     success: false,
-                    error: 'Authentication error',
+                    error: error.message || 'Authentication error',
                     code: 'AUTH_ERROR',
                 });
             }

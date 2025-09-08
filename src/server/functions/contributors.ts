@@ -5,8 +5,8 @@ import Contributor from "@/entity/Contributor";
 import { currentTime } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 
-export const getFileContributors = createFunction<{ fileId: string }, Contributor[]>(async ({ fileId }) => {
-  
+export const getFileContributors = createFunction(async ({ fileId }: { fileId: string }) => {
+
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
     const contributors = await contributorRepository.find({
@@ -14,7 +14,7 @@ export const getFileContributors = createFunction<{ fileId: string }, Contributo
         relations: { user: true },
     });
 
-   return contributors;
+    return contributors;
 });
 
 
@@ -24,20 +24,29 @@ type AddContributors = {
     userId: string,
     role: "viewer" | "editor"
 }
-export const addFileContributor = createFunction<AddContributors>(async ({ fileId, userId, role }) => {
-
+export const addFileContributor = createFunction(async ({ fileId, userId, role }: AddContributors) => {
     if (!fileId || !userId) throw new Error("400: Request tidak valid!");
+
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
+
+    const existing = await contributorRepository.findOneBy({ fileId, userId });
+    if (existing) {
+        throw new Error("Contributor already exists for this file.");
+    }
+
     const contributor = contributorRepository.create({
         fileId,
         userId,
         role,
         createdAt: currentTime()
     });
+
     await contributorRepository.save(contributor);
 
-})
+    return contributor;
+});
+
 
 
 
@@ -46,7 +55,7 @@ type UpdateContributors = {
     contributorId: string,
     role: "viewer" | "editor"
 }
-export const updateFileContributor = createFunction<UpdateContributors>(async ({ contributorId: id, role }) => {
+export const updateFileContributor = createFunction(async ({ contributorId: id, role }: UpdateContributors) => {
 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
@@ -62,7 +71,7 @@ export const updateFileContributor = createFunction<UpdateContributors>(async ({
 })
 
 
-export const removeFileContributor = createFunction<{ id: string }>(async ({ id }) => {
+export const removeFileContributor = createFunction(async ({ id }: { id: string }) => {
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 

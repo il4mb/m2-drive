@@ -3,7 +3,6 @@
 import {
     Alert,
     Button,
-    LinearProgress,
     Paper,
     Stack,
     TextField,
@@ -24,7 +23,6 @@ import { File } from '@/entity/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
-import { emptyTrash } from '@/server/functions/fileTrash';
 
 
 type MenuState = FileMenuState & {
@@ -45,7 +43,7 @@ export default function Page() {
 
     const handleConfirm = async () => {
         if (!session?.user?.id) return;
-        const result = await invokeFunction(emptyTrash, { userId: session?.user.id });
+        const result = await invokeFunction("emptyTrash", { userId: session?.user.id });
         if (!result.success) {
             throw new Error(result.error || "Unknown Error");
         }

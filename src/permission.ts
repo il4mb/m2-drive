@@ -33,7 +33,8 @@ export const PERMISSION_LIST = [
     { label: "Mengatur Role & Permission", value: "can-manage-roles" },
     { label: "Mengubah Pengaturan Sistem", value: "can-change-system-settings" },
     { label: "Mengelola Drive Root", value: "can-manage-drive-root" },
-    { Label: 'Mengelola Socket Connection', value: 'can-manage-socket-connection' }
+    { Label: 'Mengelola Socket Connection', value: 'can-manage-socket-connection' },
+    { label: "Mengelola Task Queue", value: "can-manage-task-queue" }
 ] as const;
 
 // ✅ This now becomes a tuple of string literals
@@ -45,13 +46,13 @@ export type PERMISSION_NAMES = typeof PERMISSION_LIST[number]["value"];
 export const SYSTEM_ROLES: (Role & { editable?: boolean })[] = [
     {
         label: "Admin",
-        name: "admin",
+        id: "admin",
         abilities: PERMISSION_VALUES,
         createdAt: 0
     },
     {
         label: "User",
-        name: "user",
+        id: "user",
         abilities: [],
         createdAt: 0,
         editable: true

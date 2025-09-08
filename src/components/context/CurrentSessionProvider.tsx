@@ -30,14 +30,21 @@ type CurrentSessionProviderProps = {
 }
 export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps) => {
 
+    const [mounted, setMounted] = useState(false);
     const { userId } = useSessionManager();
     const [token, setToken] = useState<Token>();
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
     useEffect(() => {
+        setMounted(true);
+    }, [])
+
+    useEffect(() => {
+        if (!mounted) return;
         if (!userId) {
             setUser(null);
+            router.push("/login");
             return;
         }
         const unsubscribe = onSnapshot(
@@ -47,7 +54,7 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
         return () => {
             unsubscribe
         }
-    }, [userId]);
+    }, [userId, mounted]);
 
 
     const refreshToken = () => {
@@ -61,10 +68,8 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
         refreshToken
     }), [token, user, userId, refreshToken]);
 
-
-
     return (
-        <CurrentSessionProviderContext.Provider value={stateValue}>
+        <CurrentSessionProviderContext.Provider value={stateValue as any}>
             <CurrentUserAbilitiesProvider user={user || undefined}>
                 {children}
             </CurrentUserAbilitiesProvider>

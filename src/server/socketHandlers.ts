@@ -8,6 +8,8 @@ import { currentTime, generateKey } from '@/libs/utils';
 import Token from '@/entity/Token';
 import { generateIndonesianAnimalName } from './animal-names';
 import functions from "./functions";
+import { getConnection } from '@/data-source';
+import User from '@/entity/User';
 
 
 // Define types for better type safety
@@ -167,8 +169,36 @@ type CustomSocket = Omit<Socket, 'data'> & {
 }
 
 
-export function setupSocketHandlers(io: Server): void {
+export async function setupSocketHandlers(io: Server) {
 
+    const connection = await getConnection();
+    const userRepository = connection.getRepository(User);
+
+    const markAsActive = async (uid: string) => {
+        await requestContext.run({ user: "system" }, async () => {
+            const user = await userRepository.findOneBy({ id: uid });
+            if (user) {
+                const meta = user.meta;
+                meta.isActive = true;
+                meta.activeAt = currentTime();
+                user.meta = meta;
+                await userRepository.save(user);
+            }
+        })
+    }
+
+    const markAsInactive = async (uid: string) => {
+        await requestContext.run({ user: "system" }, async () => {
+            const user = await userRepository.findOneBy({ id: uid });
+            if (user) {
+                const meta = user.meta;
+                meta.isActive = false;
+                delete meta.activeAt;
+                user.meta = meta;
+                await userRepository.save(user);
+            }
+        })
+    }
 
     console.log("LOADED FUNCTIONS", functions)
 
@@ -211,6 +241,12 @@ export function setupSocketHandlers(io: Server): void {
     });
 
     io.on('connection', (socket: CustomSocket) => {
+
+
+        if (socket.data.isGuest == false && socket.data.uid) {
+            markAsActive(socket.data.uid);
+        }
+
 
         socket.on("viewer-join", (path: string | string[] | string[][]) => {
             if (!viewers.has(socket.id)) {
@@ -385,7 +421,7 @@ export function setupSocketHandlers(io: Server): void {
                 const user = isGuest ? undefined : await getUserByToken(socket.data.token!);
 
                 await requestContext.run({ user }, async () => {
-                    
+
                     try {
 
                         const fnName = data.function as keyof typeof functions;
@@ -721,6 +757,10 @@ export function setupSocketHandlers(io: Server): void {
 
 
         socket.on('disconnect', (reason) => {
+
+            if (socket.data.isGuest == false && socket.data.uid) {
+                markAsInactive(socket.data.uid);
+            }
             console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Guest: ${socket.data.isGuest}`);
 
             // Clean up intervals

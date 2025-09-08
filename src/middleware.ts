@@ -9,6 +9,7 @@ export function middleware(req: NextRequest) {
     // Skip check for /auth and public assets
     if (
         pathname.startsWith('/login') ||
+        pathname.startsWith('/about') ||
         pathname.startsWith('/opener') ||
         pathname.startsWith('/file') ||
         pathname.startsWith('/_next') ||

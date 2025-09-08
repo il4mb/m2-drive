@@ -116,6 +116,7 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                     // For images, we need to download the entire file first to check dimensions
                     const chunks: Buffer[] = [];
                     for await (const chunk of Body as NodeJS.ReadableStream) {
+                        // @ts-ignore
                         chunks.push(chunk);
                     }
                     const buffer = Buffer.concat(chunks);

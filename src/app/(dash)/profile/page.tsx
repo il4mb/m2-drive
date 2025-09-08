@@ -65,7 +65,7 @@ export default function Page() {
                         <Divider sx={{ mb: 2 }} />
 
                         {/* Session Info */}
-                        <Stack spacing={0.5} mb={3}>
+                        {/* <Stack spacing={0.5} mb={3}>
                             <Stack direction={"row"} gap={1} alignItems={"center"}>
                                 <Cookie size={18} />
                                 <Typography fontSize={16} fontWeight={600}>Informasi Sesi</Typography>
@@ -89,7 +89,7 @@ export default function Page() {
                             </Stack>
                         </Stack>
 
-                        <Divider sx={{ mb: 2 }} />
+                        <Divider sx={{ mb: 2 }} /> */}
 
                         {/* Role & Permissions */}
                         <Stack spacing={0.5}>

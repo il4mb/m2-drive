@@ -11,10 +11,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSessionManager } from "@/components/context/SessionManager";
 import { socket } from "@/socket";
+import Link from "next/link";
 
 
 export default function page() {
 
+    const [mounted, setMounted] = useState(false);
     const { userId } = useSessionManager();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -71,7 +73,11 @@ export default function page() {
         if (userId) handleRedirect();
     }, [userId]);
 
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
+    if(!mounted) return null;
 
     return (
         <Stack
@@ -90,14 +96,14 @@ export default function page() {
                     maxWidth: 400,
                     width: "100%",
                     zIndex: 10
-                }} >
+                }}>
                 <Typography variant="h5" fontWeight="bold" textAlign="center" mb={3}>
                     Masuk ke Akun
                 </Typography>
 
                 <AnimatePresence>
-                    <RequestError request={request} sx={{ mb: 2 }} closable />
-                    <RequestError request={requestStartSession} sx={{ mb: 2 }} closable />
+                    <RequestError key={"error1"} request={request} sx={{ mb: 2 }} closable />
+                    <RequestError key={"error2"} request={requestStartSession} sx={{ mb: 2 }} closable />
                 </AnimatePresence>
 
                 <Stack spacing={2}>
@@ -121,7 +127,7 @@ export default function page() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
-                        <Typography component={'small'} fontSize={12}>Lupa Kata Sandi?</Typography>
+                        {/* <Typography component={'small'} fontSize={12}>Lupa Kata Sandi?</Typography> */}
                     </Stack>
 
                     {loading && (
@@ -134,6 +140,7 @@ export default function page() {
                     )}
 
                     <Button
+                        aria-multiselectable
                         variant="contained"
                         fullWidth
                         sx={{ mt: 1, borderRadius: 2 }}
@@ -142,6 +149,8 @@ export default function page() {
                         loading={request.pending || requestStartSession.pending || loading}>
                         Login
                     </Button>
+
+                    <Typography component={Link} href={"/about"}>Tentang M2</Typography>
                 </Stack>
             </Paper>
 

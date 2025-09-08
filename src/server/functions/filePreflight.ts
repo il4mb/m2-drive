@@ -9,10 +9,10 @@ import { Repository } from "typeorm";
 
 type FilePreflight = {
     fileId: string;
-    subsId?: string[]; // ordered chain from parent to leaf
+    subsId?: string[];
 };
 
-export const filePreflight = createFunction<FilePreflight>(async ({ fileId, subsId }) => {
+export const filePreflight = createFunction(async ({ fileId, subsId }: FilePreflight) => {
     const { user: actor } = getRequestContext();
 
     const connection = await getConnection();

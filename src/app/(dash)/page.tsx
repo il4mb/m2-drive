@@ -12,14 +12,14 @@ export default function page() {
 
     return (
         <Container maxWidth='lg' scrollable>
-            <Stack component={Paper} p={4} borderRadius={2}>
+            <Stack component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2 }}>
                 <Typography fontSize={26} fontWeight={600} mb={3}>
                     Selamat Datang di <strong>M2</strong> Drive
                 </Typography>
                 <OnlineUsers />
             </Stack>
 
-            <Stack component={Paper} p={4} borderRadius={2} mt={4}>
+            <Stack component={Paper} p={4} mt={4} sx={{ boxShadow: 2, borderRadius: 2 }}>
                 <Typography mb={2} fontSize={26}>
                     Statistik Drive Saya
                 </Typography>

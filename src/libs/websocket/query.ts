@@ -33,7 +33,7 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
         return this;
     }
 
-    orWhere<K extends keyof E = keyof E>(field: K | string, operator: QueryOperator, value: any): this {
+    orWhere<K extends keyof E = keyof E>(field: K | string, operator: QueryOperator, value?: any): this {
         this.conditions.push({
             field: field as any,
             operator,

@@ -124,7 +124,9 @@ export default function UploadPage() {
                                 </Stack>
                             </Stack>
                         )}
-                        <UploadManager uploads={uploads} />
+                        {uploads.length > 0 && (
+                            <UploadManager uploads={uploads} />
+                        )}
                     </Stack>
                 </Paper>
 

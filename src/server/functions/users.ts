@@ -5,8 +5,9 @@ import User from "@/entity/User";
 import { createFunction } from "../funcHelper";
 import { getRequestContext } from "@/libs/requestContext";
 import { currentTime } from "@/libs/utils";
+import { checkPermission } from "../checkPermission";
 
-export const getUser = createFunction<{ uId: string }, User>(async ({ uId }) => {
+export const getUser = createFunction(async ({ uId }: { uId: string }) => {
 
     const source = await getConnection();
     const usersRepository = source.getRepository(User);
@@ -16,7 +17,7 @@ export const getUser = createFunction<{ uId: string }, User>(async ({ uId }) => 
 })
 
 
-export const findUsers = createFunction<{ keyword: string }, User[]>(async ({ keyword }) => {
+export const findUsers = createFunction(async ({ keyword }: { keyword: string }) => {
 
     const source = await getConnection();
     const usersRepository = source.getRepository(User);
@@ -37,14 +38,15 @@ export type UpdateUserProps = {
     userId: string;
     data: UserUpdatePart
 }
-export const updateUser = createFunction<UpdateUserProps>(
-    async ({ userId, data }) => {
+export const updateUser = createFunction(
+    async ({ userId, data }: UpdateUserProps) => {
 
         const { user: actor } = getRequestContext();
         const source = await getConnection();
         const usersRepository = source.getRepository(User);
         if (actor != "system" && actor?.meta.role != "admin" && userId != actor?.id) {
-            throw new Error("403: No Permission to update this user!");
+            // Permission check
+            await checkPermission(actor, "can-edit-user");
         }
 
         const user = await usersRepository.findOneBy({ id: userId });

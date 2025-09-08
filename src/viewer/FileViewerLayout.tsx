@@ -19,9 +19,10 @@ export interface FileViewerLayoutProps {
     pathList: string[];
     currentPath?: string;
     pageEndpoint: string;
+    endpointResolve?: (file: File, endpoint: string) => string;
     canGoBack?: boolean;
 }
-export default function FileViewerLayout({ children, pathList, pageEndpoint, canGoBack: canGobackInitial }: FileViewerLayoutProps) {
+export default function FileViewerLayout({ children, pathList, pageEndpoint, endpointResolve, canGoBack: canGobackInitial }: FileViewerLayoutProps) {
 
     const contextMenu = useContextMenu();
     const router = useRouter();
@@ -37,8 +38,8 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, can
 
 
     useEffect(() => {
-        return contextMenu?.addState({ folder: file })
-    }, [contextMenu, file]);
+        return contextMenu?.addState({ folder: file });
+    }, [file]);
 
     const stateValue = useMemo(() => ({
         lastId, firstId, listId: pathList, setFile
@@ -50,7 +51,7 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, can
         <Context.Provider value={stateValue}>
             <AnimatePresence mode={'wait'}>
                 <Stack flex={1} overflow={"hidden"} sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
-                    <ModuleViewerManager endpoint={pageEndpoint}>
+                    <ModuleViewerManager endpoint={pageEndpoint} endpointResolve={endpointResolve}>
                         <FileViewersProvider path={pathList}>
                             <Stack flex={1} overflow={"hidden"}>
                                 <StickyHeader sx={{ top: 8 }}>

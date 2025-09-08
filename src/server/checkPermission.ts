@@ -39,3 +39,16 @@ export const checkPermission = async (userId: User | string | undefined | null, 
 
     return true;
 };
+
+
+export const checkPermissionSilent = async (userId: User | string | undefined | null, permission: PERMISSION_NAMES | PERMISSION_NAMES[]) => {
+    try {
+
+        return await checkPermission(userId, permission);
+
+    } catch (error: any) {
+
+        return false;
+        
+    }
+}

@@ -3,6 +3,8 @@ import { bulkCopyMove, copyFile, moveFile } from "./fileCopyMove";
 import { filePreflight } from "./filePreflight";
 import { emptyTrash, removeFile, restoreFile } from "./fileTrash";
 import { createFolder, updateFile } from "./fileUpdate";
+import { deleteOption, saveOption } from "./options";
+import { deleteRole, saveRole } from "./roles";
 import { bulkDeleteTask, deleteTask, updateTask } from "./task";
 import { updateUser } from "./users";
 import { getUserUssageSummary } from "./ussageSummary";
@@ -25,7 +27,11 @@ const functions = {
     updateUser,
     updateTask,
     deleteTask,
-    bulkDeleteTask
+    bulkDeleteTask,
+    saveRole,
+    deleteRole,
+    saveOption,
+    deleteOption
 } as const;
 
 export type FunctionName = keyof typeof functions;

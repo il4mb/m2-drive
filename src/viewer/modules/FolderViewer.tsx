@@ -1,19 +1,20 @@
 'use client'
 
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, Clock, FileDigit, Folder, LayoutGrid, StretchHorizontal } from "lucide-react"
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, Clock, FileDigit, Folder, LayoutGrid, StretchHorizontal, TriangleAlert } from "lucide-react"
 import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entity/File";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { getMany, Query } from "@/libs/websocket/query";
+import { getMany, IsNull, Json, Query } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { motion } from "motion/react"
 import FileView from "@/components/drive/FileView";
-import { alpha, Box, IconButton, LinearProgress, Stack, TextField } from "@mui/material";
+import { alpha, Box, CircularProgress, IconButton, LinearProgress, Stack, TextField, Typography } from "@mui/material";
 import { useContextMenu } from "@/components/context-menu/ContextMenu";
 import { createContextMenu } from "@/components/context-menu/ContextMenuItem";
 import useLocalStorage from "@/hooks/useLocalstorage";
 import { getColor } from "@/theme/colors";
 import { useActionsProvider } from "@/components/navigation/ActionsProvider";
+import ActionNewFolder from "@/components/menu-actions/ActionNewFolder";
 
 interface CustomFolderViewerComponentProps {
     files?: File[];
@@ -22,7 +23,7 @@ interface CustomFolderViewerComponentProps {
 }
 
 export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }: CustomFolderViewerComponentProps) => {
-    
+
     const [keyword, setKeyword] = useState('');
     const [layout, setLayout] = useLocalStorage<string>("drive-layout", "list");
     const [order, setOrder] = useLocalStorage<string>("drive-order", "DESC");
@@ -50,6 +51,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
 
     // Memoize context menu items
     const menu = useMemo(() => ([
+        ActionNewFolder,
         createContextMenu({
             icon: ({ state, size }) =>
                 state.layout === "list" ? (
@@ -130,13 +132,16 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
     useEffect(() => {
         if (isLoading) return;
         setIsLoading(true);
-        const query = Query.createFrom(initialQuery);
+        const query = Query.createFrom(initialQuery)
+
+        query.bracketWhere((q) => {
+            q.where(Json('meta', 'trashed'), 'IS NULL')
+                .orWhere(Json('meta', 'trashed'), '==', false)
+        })
         query.orderBy(sort, (["DESC", "ASC"].includes(order) ? order : undefined) as any);
         if (keyword.length > 0) {
             query.where("name", "STARTS WITH", keyword);
         }
-
-        // query.debug()
 
         const unsubscribe = onSnapshot(query, (newFiles) => {
             setTimeout(() => {
@@ -214,36 +219,49 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
                 </Box>
             )}
 
-            <Stack
-                key={layout}
-                direction={layout === "grid" ? "row" : "column"}
-                gap={layout === "grid" ? 3 : 0}
-                alignItems={"flex-start"}
-                justifyContent={"flex-start"}
-                flexWrap={"wrap"}
-                p={2}
-                sx={{
-                    position: 'relative',
-                    opacity: isLoading ? 0.7 : 1,
-                    transition: 'opacity 0.2s ease-in-out'
-                }}>
-                {files?.map((file, index) => (
-                    <motion.div
-                        key={`${layout}-${file.id}`}
-                        initial={{ y: 10, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.02 * index }}
-                        style={{
-                            maxWidth: layout === "grid" ? '200px' : '100%',
-                            width: '100%'
-                        }}>
-                        <FileView
-                            {...fileViewProps}
-                            file={file}
-                        />
-                    </motion.div>
-                ))}
-            </Stack>
+            {isLoading ? (
+                <Stack flex={1} justifyContent={"center"} alignItems={"center"} color="text.secondary">
+                    <CircularProgress />
+                    <Typography color="text.secondary">Loading...</Typography>
+                </Stack >
+            ) : files?.length == 0 ? (
+                <Stack flex={1} justifyContent={"center"} alignItems={"center"} color="text.secondary">
+                    <TriangleAlert size={33} />
+                    <Typography fontSize={18} fontWeight={600} color="text.secondary">Folder ini kosong!</Typography>
+                </Stack>
+            ) : (
+                <Stack
+                    key={layout}
+                    direction={layout === "grid" ? "row" : "column"}
+                    gap={layout === "grid" ? 3 : 0}
+                    alignItems={"flex-start"}
+                    justifyContent={"flex-start"}
+                    flexWrap={"wrap"}
+                    p={2}
+                    sx={{
+                        position: 'relative',
+                        opacity: isLoading ? 0.7 : 1,
+                        transition: 'opacity 0.2s ease-in-out'
+                    }}>
+                    {files?.map((file, index) => (
+                        <motion.div
+                            key={`${layout}-${file.id}`}
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.02 * index }}
+                            style={{
+                                maxWidth: layout === "grid" ? '200px' : '100%',
+                                width: '100%'
+                            }}>
+                            <FileView
+                                {...fileViewProps}
+                                file={file}
+                            />
+                        </motion.div>
+                    ))}
+
+                </Stack>
+            )}
         </>
     );
 };

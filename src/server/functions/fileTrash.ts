@@ -8,18 +8,23 @@ import { Brackets } from "typeorm";
 import Contributor from "@/entity/Contributor";
 import { getRequestContext } from "@/libs/requestContext";
 import { addTaskQueue } from "@/server/taskQueue";
+import { checkPermission, checkPermissionSilent } from "../checkPermission";
 
 
 type RemoveRestoreProps = {
     fileId: string;
 };
-export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boolean }>(
-    async ({ fileId, permanen = false }) => {
+export const removeFile = createFunction(
+    async ({ fileId, permanen = false }: RemoveRestoreProps & { permanen?: boolean }) => {
         if (!fileId) {
             throw new Error("400: Request tidak valid!");
         }
 
         const { user: actor } = getRequestContext();
+        const isRoot = await checkPermission(actor, 'can-manage-drive-root');
+        if (!isRoot) {
+            checkPermission(actor, 'can-delete-file');
+        }
         const source = await getConnection();
         const repository = source.getRepository(File);
         const contributorRepository = source.getRepository(Contributor);
@@ -34,7 +39,7 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
             throw new Error("403: Menghapus tidak diperbolehkan!");
         }
 
-        if (actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
+        if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
             throw new Error("403: Not allowed to delete this " + file.type);
         }
 
@@ -80,7 +85,7 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
                         .where('f.meta->>\'Key\' = :key', { key })
                         .getCount()
 
-                        console.log(ussageCount)
+                    console.log(ussageCount)
 
                     if (ussageCount <= 1) {
                         // @ts-ignore
@@ -112,13 +117,15 @@ export const removeFile = createFunction<RemoveRestoreProps & { permanen?: boole
 );
 
 
-export const restoreFile = createFunction<RemoveRestoreProps>(async ({ fileId }) => {
+export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps) => {
     // Validate input
     if (!fileId?.trim()) {
         throw new Error("400: Request tidak valid!");
     }
 
+
     const { user: actor } = getRequestContext();
+    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
     const source = await getConnection();
     const repository = source.getRepository(File);
 
@@ -129,7 +136,7 @@ export const restoreFile = createFunction<RemoveRestoreProps>(async ({ fileId })
         throw new Error("404: File tidak ditemukan!");
     }
 
-    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
+    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
         throw new Error("403: Not allowed to restore this " + file.type);
     }
 
@@ -160,17 +167,18 @@ type EmptyTrashProps = {
     userId: string;
 };
 
-export const emptyTrash = createFunction<EmptyTrashProps>(async ({ userId }) => {
+export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => {
 
     if (!userId?.trim()) {
         throw new Error("400: Request tidak valid!");
     }
 
     const { user: actor } = getRequestContext();
+    const isRoot = await checkPermission(actor, "can-manage-drive-root");
     const source = await getConnection();
     const repository = source.getRepository(File);
 
-    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
+    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
         throw new Error("403: Not allowed to performs this action");
     }
 
@@ -189,8 +197,8 @@ export const emptyTrash = createFunction<EmptyTrashProps>(async ({ userId }) => 
 
     // If they have S3 keys, queue them for deletion
     for (const f of trashedFiles) {
-        if (actor != "system" && actor?.meta.role != "admin" && actor?.id != f.uId) {
-            throw new Error("403: Not allowed to delete this " + f.type);
+        if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != f.uId) {
+            throw new Error("403: Not allowed to performs this action");
         }
 
         // @ts-ignore

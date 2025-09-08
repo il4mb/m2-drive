@@ -14,7 +14,6 @@ export const useFilePreflight = (fileId: string, subsId?: string[]) => {
     const sendPreflight = () => {
         invokeFunction("filePreflight", { fileId, subsId })
             .then(response => {
-                console.log(response)
                 setSuccess(response.success);
                 setError(response.error || null);
                 setFile(response.data);

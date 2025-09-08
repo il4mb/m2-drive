@@ -3,18 +3,19 @@
 import Container from '@/components/Container';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvider';
+import LogoutButton from '@/components/ui/LogoutButton';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { currentTime, formatLocaleDate, toRelativeTimeFrom } from '@/libs/utils';
-import { Button, Paper, Stack, Typography, Divider } from '@mui/material';
+import { Button, Paper, Stack, Typography, Divider, Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Cookie } from 'lucide-react';
 
 export default function Page() {
+
     const session = useCurrentSession();
     const { permissions, role } = useMyAbilities();
 
     if (!session?.user) return null;
-
     const { user, refreshToken, createdAt, expiredAt } = session;
 
     return (
@@ -55,6 +56,10 @@ export default function Page() {
                                 sx={{ position: "absolute", top: -20, right: -10, }}>
                                 {role?.label}
                             </Typography>
+
+                            <Box sx={{ position: "absolute", bottom: 0, left: 0, }}>
+                                <LogoutButton />
+                            </Box>
                         </Stack>
 
                         <Divider sx={{ mb: 2 }} />

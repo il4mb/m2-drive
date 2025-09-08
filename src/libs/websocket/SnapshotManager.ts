@@ -145,10 +145,22 @@ export class SnapshotManager {
             }
         };
 
+
+        const runExecuteQuery = () => {
+            this.socket?.emit('execute-query', queryConfig, handleQueryResponse);
+        }
+
         const handleDatabaseChange = (payload: DatabaseChangePayload) => {
+
             if (payload.collection !== queryConfig.collection) return;
 
             const dataKeys = Object.keys(payload.data);
+
+            if (dataKeys.length == 0 && payload.eventName == "DELETE") {
+                // manual refresh when delete with no response data
+                return runExecuteQuery();
+            }
+
             const hasAllRelationKeys = queryConfig.relations?.every(table => dataKeys.includes(table)) ?? true;
             if (["INSERT", "UPDATE"].includes(payload.eventName) && queryConfig.relations?.length > 0 && !hasAllRelationKeys) {
                 return;
@@ -216,7 +228,7 @@ export class SnapshotManager {
 
             this.subscriptions.set(queryKey, subscription);
 
-            this.socket?.emit('execute-query', queryConfig, handleQueryResponse);
+            runExecuteQuery()
             this.socket?.on(`change-${subscribeId}`, handleDatabaseChange);
         });
 
@@ -228,7 +240,8 @@ export class SnapshotManager {
     private removeCallback(queryKey: string, callback: Function) {
         const subscription = this.subscriptions.get(queryKey);
         if (!subscription) {
-            console.log("STILL HAS CLIENT");
+            // console.log("THERES NO CLIENT");
+            // console.log(this.getStats())
             return;
         }
 
@@ -238,8 +251,10 @@ export class SnapshotManager {
             // No more callbacks, cleanup
             subscription.unsubscribe();
             this.subscriptions.delete(queryKey);
-            console.log("NO MORE CLIENT");
+            // console.log("NO MORE CLIENT");
         }
+
+        // console.log(this.getStats())
     }
 
     private handleSingleChange(

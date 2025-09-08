@@ -44,12 +44,11 @@ export default function layout({ children }: layoutProps) {
     const firstId = pId?.[0];
 
     useEffect(() => {
-        console.log(userId)
-        const removeMenu = contextMenu.addMenu("addFolder", ActionNewFolder);
+        // const removeMenu = contextMenu.addMenu("addFolder", ActionNewFolder);
         const removeState = contextMenu.addState({ userId })
         return () => {
             removeState();
-            removeMenu();
+            // removeMenu();
         };
     }, [userId]);
 
@@ -58,6 +57,7 @@ export default function layout({ children }: layoutProps) {
             <FileViewerLayout
                 pathList={pId}
                 pageEndpoint={`/drive/${firstId}/{ID}`}
+                endpointResolve={(file) => `/drive/${firstId}/${[...pId.splice(1), file.id].join("/")}`}
                 canGoBack>
                 {children}
             </FileViewerLayout>

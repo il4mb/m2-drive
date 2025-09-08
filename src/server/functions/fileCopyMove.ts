@@ -6,6 +6,7 @@ import { currentTime, generateKey } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 import { IsNull, Repository } from "typeorm";
 import { getRequestContext } from "@/libs/requestContext";
+import { checkPermission, checkPermissionSilent } from "../checkPermission";
 
 
 type CopyMoveProps = {
@@ -15,8 +16,8 @@ type CopyMoveProps = {
     conflictResolution?: "rename" | "overwrite" | "skip";
 }
 
-export const copyFile = createFunction<CopyMoveProps>(
-    async ({ userId, sourceId, targetId, conflictResolution = "rename" }) => {
+export const copyFile = createFunction(
+    async ({ userId, sourceId, targetId, conflictResolution = "rename" }: CopyMoveProps) => {
         if (!sourceId) {
             throw new Error("400: Invalid request - sourceId is required");
         }
@@ -26,6 +27,10 @@ export const copyFile = createFunction<CopyMoveProps>(
         }
 
         const { user: actor } = getRequestContext();
+        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
+        if (!canManage) {
+            await checkPermission(actor, "can-edit-file");
+        }
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);
 
@@ -38,7 +43,7 @@ export const copyFile = createFunction<CopyMoveProps>(
                 throw new Error("404: Target folder not found");
             }
             // Check if user has permission to copy to target folder
-            if (actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
+            if (!canManage && actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
                 throw new Error("403: No permission to copy to this folder");
             }
         }
@@ -192,8 +197,8 @@ export const copyFile = createFunction<CopyMoveProps>(
     }
 );
 
-export const moveFile = createFunction<CopyMoveProps>(
-    async ({ userId, sourceId, targetId, conflictResolution = "rename" }) => {
+export const moveFile = createFunction(
+    async ({ userId, sourceId, targetId, conflictResolution = "rename" }: CopyMoveProps) => {
 
         if (sourceId === targetId) {
             throw new Error("400: Cannot move to the same folder");
@@ -204,6 +209,10 @@ export const moveFile = createFunction<CopyMoveProps>(
         }
 
         const { user: actor } = getRequestContext();
+        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
+        if (!canManage) {
+            await checkPermission(actor, "can-edit-file");
+        }
         const connection = await getConnection();
         const repository = connection.getRepository(File);
 
@@ -221,7 +230,7 @@ export const moveFile = createFunction<CopyMoveProps>(
         }
 
         // Check permission - user can only move their own files unless no userId is provided
-        if (actor != "system" && actor?.meta.role != "admin" && userId && file.uId !== userId) {
+        if (!canManage && actor != "system" && actor?.meta.role != "admin" && userId && file.uId !== userId) {
             throw new Error("403: No permission to move this file");
         }
 
@@ -241,7 +250,7 @@ export const moveFile = createFunction<CopyMoveProps>(
             }
 
             // Check if user has permission to move to target folder
-            if (actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
+            if (!canManage && actor != "system" && actor?.meta.role != "admin" && userId && targetFolder.uId !== userId) {
                 throw new Error("403: No permission to move to this folder");
             }
         }
@@ -403,8 +412,15 @@ type BulkCopyMoveProps = {
     operation: "copy" | "move";
     conflictResolution?: "rename" | "overwrite" | "skip";
 }
-export const bulkCopyMove = createFunction<BulkCopyMoveProps>(
-    async ({ userId, sourceIds, targetId, operation, conflictResolution = "rename" }) => {
+export const bulkCopyMove = createFunction(
+    async ({ userId, sourceIds, targetId, operation, conflictResolution = "rename" }: BulkCopyMoveProps) => {
+
+
+        const { user: actor } = getRequestContext();
+        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
+        if (!canManage) {
+            await checkPermission(actor, "can-edit-file");
+        }
         const results = [];
         const errors = [];
 

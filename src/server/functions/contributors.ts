@@ -4,6 +4,8 @@ import { getConnection } from "@/data-source"
 import Contributor from "@/entity/Contributor";
 import { currentTime } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
+import { getRequestContext } from "@/libs/requestContext";
+import { checkPermission, checkPermissionSilent } from "../checkPermission";
 
 export const getFileContributors = createFunction(async ({ fileId }: { fileId: string }) => {
 
@@ -25,7 +27,12 @@ type AddContributors = {
     role: "viewer" | "editor"
 }
 export const addFileContributor = createFunction(async ({ fileId, userId, role }: AddContributors) => {
+
+
     if (!fileId || !userId) throw new Error("400: Request tidak valid!");
+
+    const { user: actor } = getRequestContext();
+    await checkPermission(actor, "can-manage-sharing");
 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
@@ -57,6 +64,9 @@ type UpdateContributors = {
 }
 export const updateFileContributor = createFunction(async ({ contributorId: id, role }: UpdateContributors) => {
 
+    const { user: actor } = getRequestContext();
+    await checkPermission(actor, "can-manage-sharing");
+
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 
@@ -72,6 +82,10 @@ export const updateFileContributor = createFunction(async ({ contributorId: id, 
 
 
 export const removeFileContributor = createFunction(async ({ id }: { id: string }) => {
+
+    const { user: actor } = getRequestContext();
+    await checkPermission(actor, "can-manage-sharing");
+
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 

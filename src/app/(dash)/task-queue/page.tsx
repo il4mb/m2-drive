@@ -398,7 +398,7 @@ export default function TaskQueuePage() {
 
     // Effects
     useEffect(() => {
-        const query = getMany("task").debug();
+        const query = getMany("task");
         if (sortBy) {
             query.orderBy(sortBy, order);
         }

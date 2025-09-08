@@ -37,6 +37,7 @@ interface ViewerManagerProps {
     children: ReactNode;
     defaultModules?: ViewerModule[];
     endpoint: string;
+    endpointResolve?: (file: File, endpoint: string) => string;
 }
 
 // Create default modules
@@ -79,7 +80,7 @@ const defaultViewerModules: ViewerModule[] = [
 
 const ViewerManagerContext = createContext<ViewerManagerState | undefined>(undefined);
 
-export const ModuleViewerManager = ({ children, defaultModules = defaultViewerModules, endpoint }: ViewerManagerProps) => {
+export const ModuleViewerManager = ({ children, defaultModules = defaultViewerModules, endpoint, endpointResolve }: ViewerManagerProps) => {
 
     const [modules, setModules] = useState<ViewerModule[]>(defaultModules);
     const router = useRouter();
@@ -143,8 +144,16 @@ export const ModuleViewerManager = ({ children, defaultModules = defaultViewerMo
                 });
         }
 
-        router.push(`${endpoint.replace("{ID}", file.id)}?with=${viewer.id}`)
+        if (endpointResolve) {
+            const resolvedEndpoint = endpointResolve(file, endpoint);
+            const [path, queryString] = resolvedEndpoint.split("?");
+            const searchParams = new URLSearchParams(queryString || "");
+            searchParams.set("with", viewer.id);
 
+            return router.push(`${path}?${searchParams.toString()}`);
+        }
+
+        router.push(`${endpoint.replace("{ID}", file.id)}?with=${viewer.id}`)
     }
 
 

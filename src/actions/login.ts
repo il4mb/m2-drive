@@ -13,7 +13,7 @@ type LoginProps = {
 };
 
 export async function handleLoginAsync({ email, password }: LoginProps) {
-    
+
     try {
 
         const source = await getConnection();
@@ -85,5 +85,20 @@ export async function handleStartSession({ tokenId }: { tokenId: string }) {
             status: false,
             message: e.message || "Unknown Error"
         };
+    }
+}
+
+
+
+export async function handleLogoutAsync() {
+
+    const tokenId = (await cookies()).get("token-id")?.value;
+    if (tokenId) {
+        const source = await getConnection();
+        const tokenRepository = source.getRepository(Token);
+        await tokenRepository.delete({ id: tokenId })
+
+        const cookiesJar = await cookies();
+        cookiesJar.delete("token-id");
     }
 }

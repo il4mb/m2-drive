@@ -93,7 +93,7 @@ export const databaseRules: DatabaseRuleMap = {
         if (file && (file.uId == user?.id || user?.meta.role === "admin")) {
             return true;
         }
-        return false;
+        return true;
     },
 
     token: () => {

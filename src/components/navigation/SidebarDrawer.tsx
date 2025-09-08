@@ -14,6 +14,7 @@ import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvider';
 import UserAvatar from '../ui/UserAvatar';
 import { useSidebar } from './SidebarProvider';
+import LogoutButton from '../ui/LogoutButton';
 
 const MENU: IMenu[] = [
     {
@@ -195,7 +196,7 @@ export default function SidebarDrawer() {
                                 </List>
                             </Stack>
 
-                            <Stack mt="auto" py={2} spacing={2}>
+                            <Stack direction={"row"} justifyContent={"space-between"} mt="auto" py={2} spacing={2} mb={2}>
                                 <Stack
                                     direction="row"
                                     spacing={2}
@@ -219,6 +220,7 @@ export default function SidebarDrawer() {
                                 </Stack>
                                 <ThemeToggle />
                             </Stack>
+                            <LogoutButton />
                         </Stack>
                     </Paper>
                 </>
@@ -230,20 +232,21 @@ export default function SidebarDrawer() {
     const desktopSidebar = (
         <Stack
             component={motion.div}
-            animate={{ width: sidebar?.open ? 300 : 73 }}
+            animate={{ width: sidebar?.open ? 300 : 90 }}
             transition={{ duration: 0.2 }}
             sx={{
-                width: sidebar?.open ? 300 : 73,
+                width: sidebar?.open ? 310 : 90,
                 height: '100%',
                 overflow: 'hidden',
                 flexShrink: 0,
+                pr: 2
             }}>
             <Paper
                 sx={{
                     height: '100%',
                     display: 'flex',
                     borderRadius: 0,
-                    boxShadow: 2
+                    boxShadow: 2,
                 }}
                 elevation={1}>
 
@@ -281,7 +284,8 @@ export default function SidebarDrawer() {
                         direction={sidebar?.open ? "row" : "column"}
                         spacing={2}
                         alignItems={sidebar?.open ? "center" : "flex-start"}
-                        justifyContent={sidebar?.open ? "space-between" : "center"}>
+                        justifyContent={sidebar?.open ? "space-between" : "center"}
+                        mb={2}>
                         <Stack
                             direction={sidebar?.open ? "row" : "column"}
                             spacing={sidebar?.open ? 2 : 1}
@@ -306,6 +310,9 @@ export default function SidebarDrawer() {
                         </Stack>
                         <ThemeToggle />
                     </Stack>
+                    {sidebar?.open && (
+                        <LogoutButton />
+                    )}
                 </Stack>
             </Paper>
         </Stack>

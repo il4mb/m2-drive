@@ -6,6 +6,7 @@ import { getRequestContext } from "@/libs/requestContext";
 import { currentTime, generateKey } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 import { IsNull } from "typeorm";
+import { checkPermission, checkPermissionSilent } from "../checkPermission";
 
 
 type CreateFolderProps = {
@@ -19,12 +20,17 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("401: Unauthenticated");
 
+    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
+    if (!isRoot) {
+        await checkPermission(actor, "can-create-folder");
+    }
+
     if (!userId) {
         throw new Error("Failed Create Folder: userId tidak boleh kosong!");
     }
 
-    if (actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
-        throw new Error("Failed Create Folder: Not allowed to performs this action");
+    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
+        throw new Error("Gagal Membuat Folder: Permision complicated!");
     }
 
     if (name.length < 1 || name.length > 34) {
@@ -81,9 +87,15 @@ type UpdateFileProps = {
 };
 
 export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) => {
-    
+
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("Failed Update File: Unauthenticated");
+
+    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
+    if (!isRoot) {
+        await checkPermission(actor, "can-edit-file");
+    }
+
 
     const source = await getConnection();
     const fileRepository = source.getRepository(File);
@@ -95,8 +107,8 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     const isOwner = !isSystem && actor?.id === file.uId;
 
     // Check permissions
-    if (!isSystem && !isAdmin && !isOwner) {
-        throw new Error("Failed Update File: Not allowed to perform this action");
+    if (!isRoot && !isSystem && !isAdmin && !isOwner) {
+        throw new Error("Gagal: Permision complicated!");
     }
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
@@ -133,8 +145,12 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
 
         if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
-            throw new Error("Failed Update File: Admin can only update tags for files they don't own");
+            throw new Error("Gagal: Tidak ada pembaruan!");
         }
+    }
+
+    if(!isRoot && data.meta?.generalPermit) {
+        await checkPermission(actor, "can-share-file");
     }
 
     // Check for unknown top-level keys for regular users

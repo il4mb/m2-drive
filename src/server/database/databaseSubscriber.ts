@@ -147,9 +147,6 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
     private async handleEvent(eventType: DatabaseEvent, event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>) {
         try {
 
-
-            if (eventType == "INSERT") console.log("EVENT", eventType);
-
             const collection = this.getEntityName(event.metadata);
             if (!collection) {
                 console.debug(`Skipping event for unrecognized entity: ${event.metadata.name}`);
@@ -208,7 +205,9 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             if (["INSERT", "UPDATE"].includes(payload.eventName) && relations?.length > 0) {
                 const relationFields = payload.event.metadata.relations.map(rel => rel.propertyName);
                 if (relationFields.length <= 0 || relationFields.some(e => !relationFields.includes(e))) {
-                    console.log("RELATION NOT VALID OR NOT EXIST");
+                    if (debug) {
+                        console.log("RELATION NOT VALID OR NOT EXIST");
+                    }
                     continue;
                 }
 
@@ -226,15 +225,15 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 } catch (err) {
                     console.warn(`Failed to load relations for ${collection}:`, err);
                 }
-
             }
-
 
             const isValid = validateByConditions(data || {}, conditions);
             const isValid2 = validateByConditions(previousData || {}, conditions);
 
-            if (!isValid && !isValid2) {
-                console.log("SKIP EVENT", payload.collection, payload.eventName, "to", uid);
+            if (payload.eventName != "DELETE" && !isValid && !isValid2) {
+                if (debug) {
+                    console.log("SKIP EVENT", payload.collection, payload.eventName, "to", uid, isValid, isValid2);
+                }
                 continue;
             }
 
@@ -265,6 +264,9 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
 
                 // remove typeorm Event entity to prevent unexpected error
                 const { event, ...safe } = payload;
+                if (debug) {
+                    console.log("EMIT EVENT TO", uid);
+                }
                 socket.emit(`change-${id}`, { ...safe, data });
 
             } catch (error) {

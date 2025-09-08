@@ -14,7 +14,7 @@ export default function page() {
 
     const { openWithSupportedViewer } = useViewerManager();
     const session = useCurrentSession();
-    const query = useMemo(() => getMany("file").where("pId", "IS NULL").where("uId", "==", session?.user?.id), [session]);
+    const query = useMemo(() => getMany("file").where("pId", "IS NULL").where("uId", "==", session.userId), [session]);
     const { pId } = useParams<{ pId: string[] }>();
 
     const handleOpen = (file: File) => {

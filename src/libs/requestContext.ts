@@ -1,4 +1,4 @@
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { AsyncLocalStorage } from "async_hooks";
 
 type RequestContextType = {

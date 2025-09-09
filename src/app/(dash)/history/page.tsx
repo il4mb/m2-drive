@@ -1,6 +1,6 @@
 "use client";
 
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import {
     Stack,
     Typography,

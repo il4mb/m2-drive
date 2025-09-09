@@ -10,7 +10,7 @@ import FileView, { FileMenuState } from '@/components/drive/FileView';
 import { contextMenuStack } from '@/components/context-menu/ContextMenuItem';
 import ActionDelete from '@/components/menu-actions/ActionDelete';
 import ActionRestore from '@/components/menu-actions/ActionRestore';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { enqueueSnackbar } from 'notistack';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';

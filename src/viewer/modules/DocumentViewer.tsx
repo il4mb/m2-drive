@@ -2,7 +2,7 @@
 
 import { FileText, ZoomIn, ZoomOut, Download, Printer, RotateCw, Search, ChevronLeft, ChevronRight, BookOpen, FileIcon } from "lucide-react"
 import { ViewerModule } from "@/viewer/ModuleViewerManager";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
     Stack,

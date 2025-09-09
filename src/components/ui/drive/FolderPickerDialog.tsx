@@ -2,7 +2,7 @@
 
 import { Button, Dialog, DialogActions, DialogContent, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import FolderPicker from '@/components/drive/FolderPicker';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 

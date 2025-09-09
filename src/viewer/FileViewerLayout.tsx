@@ -8,7 +8,7 @@ import StickyHeader from '@/components/navigation/StickyHeader';
 import { ArrowLeft, FolderOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'motion/react';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { FileIcon } from '@untitledui/file-icons';
 import { formatFileSize } from '@/libs/utils';
 import WhoViewer from '@/components/file-viewers/WhoViewer';

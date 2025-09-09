@@ -1,7 +1,7 @@
 'use server'
 
 import { getConnection } from "@/data-source";
-import Role from "@/entity/Role";
+import Role from "@/entities/Role";
 import { currentTime } from "@/libs/utils";
 import { withAction } from "@/libs/withApi";
 import { SYSTEM_ROLES } from "@/permission";

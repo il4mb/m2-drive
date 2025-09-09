@@ -61,6 +61,7 @@ export class SnapshotManager {
     ): Unsubscribe {
         const queryConfig = query.toJSON();
         const queryKey = this.getQueryKey(queryConfig);
+        const isCount = queryConfig.type == "count";
         const isSingle = queryConfig.type === "one";
 
         // Check if subscription already exists
@@ -86,7 +87,7 @@ export class SnapshotManager {
         }
 
         // Create new subscription
-        let currentData: E[] | E | null = isSingle ? null : [];
+        let currentData: E[] | E | number | null = isSingle ? null : [];
         let subscribeId = '';
 
         const callbacks = new Map<Function, { options?: SnapshotOptions }>();
@@ -105,7 +106,9 @@ export class SnapshotManager {
 
         const handleQueryResponse = (response: any) => {
             if (response.success) {
-                if (isSingle) {
+                if (isCount) {
+                    currentData = parseInt(response.data) || 0;
+                } else if (isSingle) {
                     const item = response.data || null;
                     if (item && !this.evaluateConditions(item, queryConfig.conditions)) {
                         currentData = null;
@@ -151,22 +154,48 @@ export class SnapshotManager {
         }
 
         const handleDatabaseChange = (payload: DatabaseChangePayload) => {
-
-            if (payload.collection !== queryConfig.collection) return;
-
-            const dataKeys = Object.keys(payload.data);
-
-            if (dataKeys.length == 0 && payload.eventName == "DELETE") {
-                // manual refresh when delete with no response data
-                return runExecuteQuery();
-            }
-
-            const hasAllRelationKeys = queryConfig.relations?.every(table => dataKeys.includes(table)) ?? true;
-            if (["INSERT", "UPDATE"].includes(payload.eventName) && queryConfig.relations?.length > 0 && !hasAllRelationKeys) {
-                return;
-            }
-
+            
             try {
+
+                if (payload.collection !== queryConfig.collection) return;
+                if (isCount) {
+                    if (payload.eventName == "DELETE") {
+                        currentData = parseInt(`${currentData || 0}`) - 1;
+                    } else if (payload.eventName == "INSERT") {
+                        currentData = parseInt(`${currentData || 0}`) + 1;
+                    }
+
+                    // Update subscription data and notify
+                    const currentSubscription = this.subscriptions.get(queryKey);
+                    if (currentSubscription) {
+                        currentSubscription.currentData = currentData;
+                        notifyAllCallbacks(currentData);
+                    }
+
+                    // Notify metadata
+                    callbacks.forEach(({ options }) => {
+                        options?.onMetadata?.({
+                            lastUpdate: new Date(),
+                            count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0),
+                            source: 'change'
+                        });
+                    });
+                    return;
+                }
+
+                const dataKeys = Object.keys(payload.data);
+
+                if (dataKeys.length == 0 && payload.eventName == "DELETE") {
+                    // manual refresh when delete with no response data
+                    return runExecuteQuery();
+                }
+
+                const hasAllRelationKeys = queryConfig.relations?.every(table => dataKeys.includes(table)) ?? true;
+                if (["INSERT", "UPDATE"].includes(payload.eventName) && queryConfig.relations?.length > 0 && !hasAllRelationKeys) {
+                    return;
+                }
+
+
                 if (isSingle) {
                     this.handleSingleChange(payload, queryConfig, currentData, (newData: any) => {
                         currentData = newData;
@@ -602,6 +631,13 @@ export function onSnapshot<T extends EntityName, Q extends 'one', E = InstanceTy
 export function onSnapshot<T extends EntityName, Q extends 'list', E = InstanceType<EntityMap[T]>>(
     query: Query<T, Q>,
     callback: (data: E[]) => void,
+    options?: SnapshotOptions
+): Unsubscribe;
+
+// Count overload
+export function onSnapshot<T extends EntityName, Q extends 'count', E = InstanceType<EntityMap[T]>>(
+    query: Query<T, Q>,
+    callback: (count: number) => void,
     options?: SnapshotOptions
 ): Unsubscribe;
 

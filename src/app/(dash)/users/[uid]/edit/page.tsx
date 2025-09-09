@@ -141,13 +141,9 @@ export default function Page() {
                             </Button>
                         }
                     />
-                }>
+                }
+                canGoback>
                 <Stack direction="row" gap={1} alignItems="center">
-                    <Tooltip title="Kembali" sx={{ mr: 1 }} arrow>
-                        <IconButton LinkComponent={Link} href="/users">
-                            <ChevronLeft size={18} />
-                        </IconButton>
-                    </Tooltip>
                     <UserPen size={28} />
                     <Typography fontSize={22} fontWeight={600}>
                         Sunting Pengguna

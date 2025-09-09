@@ -1,4 +1,4 @@
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { getMany, Json } from '@/libs/websocket/query';
 import { Stack, Typography, Avatar, Tooltip } from '@mui/material';
 import { useEffect, useState } from 'react';

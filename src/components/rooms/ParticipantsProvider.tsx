@@ -2,7 +2,7 @@
 
 import React, { ComponentProps, ComponentPropsWithRef, ElementType, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCurrentSession } from '../context/CurrentSessionProvider';
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { useRoom } from './RoomProvider';
 
 import { getMany } from '@/libs/websocket/query';

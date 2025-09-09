@@ -1,5 +1,6 @@
 "use client"
 
+import ActivitiesCard from '@/components/activities/ActivitiesCard';
 import DriveSummary from '@/components/analistic/DriveSummary';
 import Container from '@/components/Container';
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
@@ -11,21 +12,23 @@ export default function page() {
     const session = useCurrentSession();
 
     return (
-        <Container maxWidth='lg' scrollable>
-            <Stack component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2 }}>
+        <Container maxWidth={'xl'} scrollable>
+            <Stack component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2, mb: 4 }}>
                 <Typography fontSize={26} fontWeight={600} mb={3}>
                     Selamat Datang di <strong>M2</strong> Drive
                 </Typography>
                 <OnlineUsers />
             </Stack>
 
-            <Stack component={Paper} p={4} mt={4} sx={{ boxShadow: 2, borderRadius: 2 }}>
-                <Typography mb={2} fontSize={26}>
-                    Statistik Drive Saya
-                </Typography>
-                <DriveSummary user={session?.user || undefined} />
+            <Stack direction={'row-reverse'} alignItems={'flex-start'} spacing={3}>
+                <ActivitiesCard sx={{ boxShadow: 2, flexBasis: 300 }} />
+                <Stack flex={1} component={Paper} p={4} mt={4} sx={{ boxShadow: 2, borderRadius: 2, flexBasis: 800 }}>
+                    <Typography mb={2} fontSize={26}>
+                        Statistik Drive Saya
+                    </Typography>
+                    <DriveSummary user={session?.user || undefined} />
+                </Stack>
             </Stack>
-
         </Container>
     );
 }

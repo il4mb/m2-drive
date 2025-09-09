@@ -2,7 +2,7 @@
 
 import { Folder, Video, Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Settings } from "lucide-react"
 import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { getMany } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";

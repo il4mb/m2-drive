@@ -21,9 +21,6 @@ export interface BroadcastContext {
 
 export type BroadcastRule = (context: BroadcastContext) => boolean;
 
-
-
-
 export type QueryOperator =
     | '=='           // Equal
     | '!='           // Not equal
@@ -66,7 +63,7 @@ export interface OrderBy {
 }
 
 
-export type QueryType = "list" | "one";
+export type QueryType = "list" | "one" | "count";
 export interface QueryConfig {
     collection: EntityName;
     type?: QueryType;

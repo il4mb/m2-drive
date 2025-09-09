@@ -12,7 +12,7 @@ import { LoadingState } from './LoadingState';
 import { ViewerContent } from './ViewerContent';
 
 export default function FileContentViewer() {
-    
+
     const { getViewerById, getSupportedViewers } = useViewerManager();
     const searchParams = useSearchParams();
     const fileLayout = useFileViewerLayout();
@@ -47,10 +47,10 @@ export default function FileContentViewer() {
         // Only set pending if the viewer is actually changing
         const currentViewerId = viewerModule?.id;
         const newViewerId = viewerParam || defaultViewerModule?.id;
-        
+
         if (currentViewerId !== newViewerId) {
             setViewerPending(true);
-            
+
             if (viewerParam) {
                 const module = getViewerById(viewerParam);
                 setViewerModule(module);
@@ -62,7 +62,7 @@ export default function FileContentViewer() {
                 setViewerPending(false);
             }, 100);
         }
-    }, [viewerParam, getViewerById, defaultViewerModule, viewerModule?.id]); // Add viewerModule.id to dependencies
+    }, [viewerParam, getViewerById, defaultViewerModule, viewerModule?.id]);
 
     useEffect(() => {
         fileLayout.setFile(file || null);
@@ -76,27 +76,25 @@ export default function FileContentViewer() {
         onRefresh: handleRefresh
     }), [viewerModule, file, supportedViewers, handleViewerChange, handleRefresh]);
 
-    if (loading || viewerPending) {
-        return <LoadingState />;
-    }
-
-    if (error || !success) {
-        return <ErrorState error={error || undefined} onRefresh={handleRefresh} file={file} />;
-    }
-
-    if (!viewerModule) {
-        return (
-            <NoViewerState
-                file={file}
-                supportedViewers={supportedViewers}
-                onViewerChange={handleViewerChange}
-            />
-        );
-    }
-
     return (
         <Paper component={Stack} sx={{ flex: 1, overflow: 'hidden', mb: 1 }}>
-            <ViewerContent {...fileContentProps as any} />
+
+            {(loading || viewerPending) ? (
+                <LoadingState />
+            ) : (error || !success) ? (
+                <ErrorState
+                    error={error || undefined}
+                    onRefresh={handleRefresh}
+                    file={file} />
+            ) : !viewerModule ? (
+                <NoViewerState
+                    file={file}
+                    supportedViewers={supportedViewers}
+                    onViewerChange={handleViewerChange}
+                />
+            ) : (
+                <ViewerContent {...fileContentProps as any} />
+            )}
             {error && !loading && (
                 <Alert
                     severity="error"

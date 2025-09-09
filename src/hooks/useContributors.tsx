@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from "react";
-import Contributor from "@/entity/Contributor";
+import Contributor from "@/entities/Contributor";
 import { getMany } from "@/libs/websocket/query";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { onSnapshot } from "@/libs/websocket/SnapshotManager";

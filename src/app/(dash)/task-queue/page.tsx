@@ -5,7 +5,7 @@ import AnchorMenu from '@/components/context-menu/AnchorMenu';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
-import { Task } from '@/entity/Task';
+import { Task } from '@/entities/Task';
 import { epochTime, formatLocaleDate } from '@/libs/utils';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { getMany } from '@/libs/websocket/query';

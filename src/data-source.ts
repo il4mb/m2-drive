@@ -1,16 +1,17 @@
 import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { File } from "./entity/File"
-import { Options } from "./entity/Options";
-import Contributor from "./entity/Contributor";
-import Token from "./entity/Token";
-import User from "./entity/User";
-import Role from "./entity/Role";
-import { RoleSubscriber } from "./entity/subscribers/RoleSubscriber";
-import { UserSubscriber } from "./entity/subscribers/UserSubscriber";
-import { Task } from "./entity/Task";
-import { FileSubscriber } from "./entity/subscribers/FileSubscriber";
+import { File } from "./entities/File"
+import { Options } from "./entities/Options";
+import Contributor from "./entities/Contributor";
+import Token from "./entities/Token";
+import User from "./entities/User";
+import Role from "./entities/Role";
+import { RoleSubscriber } from "./entities/subscribers/RoleSubscriber";
+import { UserSubscriber } from "./entities/subscribers/UserSubscriber";
+import { Task } from "./entities/Task";
+import { FileSubscriber } from "./entities/subscribers/FileSubscriber";
 import { DatabaseSubscriber } from "./server/database/databaseSubscriber";
+import { Activity } from "./entities/Activity";
 
 const dev = process.env.NODE_ENV !== "production";
 
@@ -26,7 +27,8 @@ const source = new DataSource({
         Contributor,
         Token,
         Role,
-        Task
+        Task,
+        Activity,
     ],
     subscribers: [
         UserSubscriber,

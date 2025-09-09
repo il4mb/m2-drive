@@ -1,19 +1,27 @@
-import { LinearProgress, Paper, Stack, SxProps } from '@mui/material';
+import { IconButton, LinearProgress, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 import { motion } from 'motion/react';
 import React, { ReactNode, useEffect, useMemo } from 'react';
 import { useStickyHeaderManager } from './StickyHeaderManager';
 import ActionView from './ActionView';
+import { ChevronLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export interface StickyHeaderProps {
     children?: ReactNode;
     sx?: SxProps;
     loading?: boolean;
     actions?: ReactNode;
+    canGoback?: boolean;
 }
 
-export default function StickyHeader({ children, sx, loading = false, actions }: StickyHeaderProps) {
+export default function StickyHeader({ children, sx, loading = false, actions, canGoback = false }: StickyHeaderProps) {
 
+    const router = useRouter();
     const manager = useStickyHeaderManager();
+
+    const handleGoback = () => {
+        router.back();
+    }
 
     // Memoize the header element to prevent infinite re-renders
     const headerElement = useMemo(() => {
@@ -33,7 +41,16 @@ export default function StickyHeader({ children, sx, loading = false, actions }:
                     ...(sx as any)
                 }}>
                 <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
-                    {children}
+                    <Stack flex={1} direction={"row"} spacing={1} alignItems={"center"}>
+                        {canGoback && (
+                            <Tooltip title="Kembali" onClick={handleGoback} sx={{ mr: 1 }} arrow>
+                                <IconButton>
+                                    <ChevronLeft size={18} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        {children}
+                    </Stack>
                     <Stack direction={"row"} spacing={1} alignItems={"center"}>
                         <ActionView minWidth='md' />
                         {actions}
@@ -46,7 +63,7 @@ export default function StickyHeader({ children, sx, loading = false, actions }:
                 )}
             </Paper>
         );
-    }, [children, sx, loading, actions]);
+    }, [children, sx, canGoback, loading, actions]);
 
     // If inside a manager, register and return null
     useEffect(() => {

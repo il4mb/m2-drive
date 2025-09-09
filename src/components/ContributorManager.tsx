@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Stack, Typography, Button, TextField, List, ListItem, ListItemText, IconButton, Avatar, MenuItem, LinearProgress } from '@mui/material';
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { useContributors } from '@/hooks/useContributors';
 import { useUsers } from '@/hooks/useUsers';
 import UserAvatar from './ui/UserAvatar';

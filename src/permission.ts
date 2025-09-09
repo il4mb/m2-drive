@@ -1,5 +1,5 @@
 
-import Role from "./entity/Role";
+import Role from "./entities/Role";
 
 export type TPermission = {
     label: string;

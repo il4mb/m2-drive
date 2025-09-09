@@ -3,7 +3,7 @@
 import { Tooltip, Typography } from "@mui/material";
 import { RotateCcw } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { enqueueSnackbar } from "notistack";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import CloseSnackbar from "../ui/CloseSnackbar";

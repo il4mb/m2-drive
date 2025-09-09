@@ -2,7 +2,7 @@
 
 import { getConnection } from "@/data-source";
 import { createFunction } from "../funcHelper";
-import { Options } from "@/entity/Options";
+import { Options } from "@/entities/Options";
 import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission } from "../checkPermission";
 

@@ -2,7 +2,7 @@
 
 import { getRequestContext } from "@/libs/requestContext";
 import { createFunction } from "../funcHelper"
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { getConnection } from "@/data-source";
 
 export type UserDriveSummary = {

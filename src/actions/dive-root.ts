@@ -2,7 +2,7 @@
 
 import { getConnection } from "@/data-source"
 import { withAction } from "@/libs/withApi"
-import { File, Folder } from "@/entity/File"
+import { File, Folder } from "@/entities/File"
 import { IsNull } from "typeorm"
 import { currentTime, generateKey } from "@/libs/utils"
 import { getCurrentToken, getUserByToken } from "./current-session"

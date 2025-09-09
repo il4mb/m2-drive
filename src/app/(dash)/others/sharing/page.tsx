@@ -7,7 +7,7 @@ import { LinearProgress, Paper, Stack, Typography, Box, Divider } from '@mui/mat
 import { Share2 } from 'lucide-react';
 import { motion } from "motion/react";
 import FileView from '@/components/drive/FileView';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { useRouter } from 'next/navigation';
 import { useViewerManager } from '@/viewer/ModuleViewerManager';
 

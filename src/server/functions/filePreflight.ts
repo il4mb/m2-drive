@@ -3,8 +3,8 @@
 import { getRequestContext } from "@/libs/requestContext";
 import { createFunction } from "../funcHelper";
 import { getConnection } from "@/data-source";
-import { File } from "@/entity/File";
-import Contributor from "@/entity/Contributor";
+import { File } from "@/entities/File";
+import Contributor from "@/entities/Contributor";
 import { Repository } from "typeorm";
 
 type FilePreflight = {

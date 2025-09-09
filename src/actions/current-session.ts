@@ -1,9 +1,9 @@
 'use server'
 
 import { getConnection } from "@/data-source";
-import Role from "@/entity/Role";
-import Token from "@/entity/Token";
-import User from "@/entity/User";
+import Role from "@/entities/Role";
+import Token from "@/entities/Token";
+import User from "@/entities/User";
 import { currentTime } from "@/libs/utils";
 import { withAction } from "@/libs/withApi";
 import { PERMISSION_LIST, TPermission } from "@/permission";

@@ -6,7 +6,7 @@ import { Breakpoint, Button, Paper, Stack, Typography, useTheme } from "@mui/mat
 import { HardDrive, UploadCloud, } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Dispatch, ReactNode, SetStateAction, useEffect, useState } from "react";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { StickyHeaderManager } from "@/components/navigation/StickyHeaderManager";
 import { AnimatePresence } from "motion/react";

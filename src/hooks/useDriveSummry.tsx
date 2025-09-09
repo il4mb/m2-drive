@@ -6,7 +6,7 @@ export const useDriveUssageSummary = (userId?: string) => {
 
     const [data, setData] = useState<UserDriveSummary>();
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!userId) return;

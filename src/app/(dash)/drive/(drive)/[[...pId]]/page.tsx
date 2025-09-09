@@ -1,7 +1,7 @@
 'use client'
 
 import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { getMany } from '@/libs/websocket/query';
 import FileContentViewer from '@/viewer/FileContentViewer';
 import { CustomFolderViewerComponent } from '@/viewer/modules/FolderViewer';

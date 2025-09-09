@@ -2,7 +2,7 @@
 
 import { AppWindow, FolderOpen } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { Box, ListItemIcon, ListItemText, MenuItem, Popover, Stack, Typography, Divider, Button, Chip } from "@mui/material";
 import { useViewerManager } from "../../viewer/ModuleViewerManager";
 import { useMemo, useState } from "react";

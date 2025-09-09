@@ -137,3 +137,7 @@ export const getMany = <T extends EntityName>(collection: T): Query<T, 'list'> =
 export const getOne = <T extends EntityName>(collection: T): Query<T, 'one'> => {
     return new Query(collection, "one").limit(1);
 }
+
+export const getCount = <T extends EntityName>(collection: T): Query<T, 'count'> => {
+    return new Query(collection, "count").limit(1);
+}

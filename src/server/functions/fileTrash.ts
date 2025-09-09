@@ -1,11 +1,11 @@
 'use server'
 
 import { getConnection } from "@/data-source"
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { currentTime } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 import { Brackets } from "typeorm";
-import Contributor from "@/entity/Contributor";
+import Contributor from "@/entities/Contributor";
 import { getRequestContext } from "@/libs/requestContext";
 import { addTaskQueue } from "@/server/taskQueue";
 import { checkPermission, checkPermissionSilent } from "../checkPermission";

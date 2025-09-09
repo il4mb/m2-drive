@@ -4,7 +4,7 @@ import { Pen } from "lucide-react";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { useFileTags } from "@/hooks/useFileTag";
 import { useCurrentSession } from "../context/CurrentSessionProvider";

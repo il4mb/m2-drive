@@ -1,13 +1,15 @@
-import { File } from "@/entity/File";
-import User from "@/entity/User";
-import Contributor from "@/entity/Contributor";
-import { Options } from "@/entity/Options";
-import Role from "@/entity/Role";
-import Token from "@/entity/Token";
-import { Task } from "@/entity/Task";
+import { File } from "@/entities/File";
+import User from "@/entities/User";
+import Contributor from "@/entities/Contributor";
+import { Options } from "@/entities/Options";
+import Role from "@/entities/Role";
+import Token from "@/entities/Token";
+import { Task } from "@/entities/Task";
+import { Activity } from "@/entities/Activity";
 
 
 export const entityMap = {
+    activity: Activity,
     file: File,
     user: User,
     contributor: Contributor,

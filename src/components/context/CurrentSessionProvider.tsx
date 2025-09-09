@@ -1,7 +1,7 @@
 'use client'
 
-import Token from '@/entity/Token';
-import User from '@/entity/User';
+import Token from '@/entities/Token';
+import User from '@/entities/User';
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import useRequest from '@/hooks/useRequest';
 import { getCurrentSession } from '@/actions/current-session';

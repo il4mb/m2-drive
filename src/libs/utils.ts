@@ -84,14 +84,14 @@ export const toRelativeTime = (time: number) => {
 		if (diff >= unit.seconds) {
 			const value = Math.floor(diff / unit.seconds);
 			const label = `${value} ${unit.name}`;
-			return isFuture ? `dalam ${label}` : `${label}`;
+			return isFuture ? `dalam ${label}` : `${label} lalu`;
 		}
 	}
 
 	return "baru saja";
 }
 
-export function toRelativeTimeFrom(start: number, time: number): string {
+export function toTimeLeft(start: number, time: number): string {
 
 	const from = start + DATE_EPOCH;
 	const timestamp = time + DATE_EPOCH;

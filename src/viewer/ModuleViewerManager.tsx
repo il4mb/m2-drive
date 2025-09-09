@@ -1,4 +1,4 @@
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { useRouter } from 'next/navigation';
 import { enqueueSnackbar } from 'notistack';
 import { createContext, useContext, useState, ReactNode } from 'react';

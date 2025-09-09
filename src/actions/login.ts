@@ -1,8 +1,8 @@
 'use server'
 
 import { getConnection } from "@/data-source";
-import Token from "@/entity/Token";
-import User from "@/entity/User";
+import Token from "@/entities/Token";
+import User from "@/entities/User";
 import { currentTime, generateKey } from "@/libs/utils";
 import bcrypt from "bcrypt";
 import { cookies } from "next/headers";

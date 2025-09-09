@@ -1,6 +1,6 @@
 import { getCurrentToken } from "@/actions/current-session";
 import { getConnection } from "@/data-source";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { requestContext } from "@/libs/requestContext";
 import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";

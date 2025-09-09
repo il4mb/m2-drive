@@ -55,13 +55,6 @@ const MENU: IMenu[] = [
     },
     {
         type: "link",
-        label: "Socket Metrics",
-        icon: <ChartArea />,
-        href: "/socket-metrics",
-        permission: 'can-manage-socket-connection'
-    },
-    {
-        type: "link",
         label: "Manage Pengguna",
         icon: <Users2 />,
         href: "/users",
@@ -69,7 +62,14 @@ const MENU: IMenu[] = [
     },
     {
         type: "link",
-        label: "Manage Drive Root",
+        label: "Socket Metrics",
+        icon: <ChartArea />,
+        href: "/socket-metrics",
+        permission: 'can-manage-socket-connection'
+    },
+    {
+        type: "link",
+        label: "Drive Metrics",
         icon: <FolderRoot />,
         href: "/drive-root",
         permission: 'can-manage-drive-root'

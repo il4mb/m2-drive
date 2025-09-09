@@ -28,7 +28,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChangeEvent, useState } from "react";
 import TransferList from "./TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
-import Role from "@/entity/Role";
+import Role from "@/entities/Role";
 import _ from "lodash";
 import useRoles from "@/hooks/useRoles";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";

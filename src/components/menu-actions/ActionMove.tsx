@@ -2,7 +2,7 @@
 
 import { Move } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import FolderPicker from "@/components/drive/FolderPicker";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { useState } from "react";

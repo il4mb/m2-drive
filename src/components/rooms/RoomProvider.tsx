@@ -1,6 +1,6 @@
 'use client'
 
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { getMany } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/snapshot';
 import { Room, RoomUser } from '@/server/socketHandlers';

@@ -1,9 +1,9 @@
 // server/database/databaseRules.ts
 import { EntityMap, EntityName } from ".";
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { DatabaseEvent } from "./databaseSubscriber";
 import { DataSource } from "typeorm";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { checkPermission } from "../checkPermission";
 
 export interface DatabaseRuleContext<E = any> {
@@ -23,8 +23,8 @@ export interface DatabaseRuleContext<E = any> {
 export type DatabaseRule<E> = (context: DatabaseRuleContext<E>) => (Promise<boolean> | boolean);
 
 /**
- * Map of rules for each entity.
- * The `default` rule applies if no entity-specific rule is defined.
+ * Map of rules for each entities.
+ * The `default` rule applies if no entities-specific rule is defined.
  */
 type DatabaseRuleMap = {
     [K in EntityName]: DatabaseRule<InstanceType<EntityMap[K]>>;

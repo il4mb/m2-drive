@@ -1,6 +1,6 @@
 import { getConnection } from "@/data-source";
-import Token from "@/entity/Token";
-import User from "@/entity/User";
+import Token from "@/entities/Token";
+import User from "@/entities/User";
 import { currentTime } from "@/libs/utils";
 
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import usePresignUrl from '@/hooks/usePresignUrl';
 import { Box, Stack, Typography, Button, Menu, MenuItem, IconButton, Chip } from '@mui/material';
 import { ReactNode, useState } from 'react';

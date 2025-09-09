@@ -1,4 +1,4 @@
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { ViewerModule } from "../ModuleViewerManager";
 import {
 	Box,

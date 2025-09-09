@@ -2,20 +2,21 @@
 
 import Container from "@/components/Container";
 import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { Alert, AlertTitle, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Calendar, CaseSensitive, Clock, Pen, Users2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUsers } from "@/hooks/useUsers";
 import StickyHeader from "@/components/navigation/StickyHeader";
 import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AnchorMenu from "@/components/context-menu/AnchorMenu";
-import MobileAction from "@/components/navigation/MobileAction";
+import { useActionsProvider } from "@/components/navigation/ActionsProvider";
 
 export default function page() {
 
+    const actionProvider = useActionsProvider();
     const checkPermission = useCheckMyPermission();
     const canListuser = checkPermission('can-list-user');
     const canAddUser = checkPermission('can-add-user');
@@ -58,11 +59,31 @@ export default function page() {
         }
     ]), [order, sortBy])
 
-    const { users, loading } = useUsers({
-        keyword,
-        sortBy,
-        order
-    });
+    const props = useMemo(() => ({ keyword, sortBy, order }), [keyword, sortBy, order])
+    const { users, loading } = useUsers(props);
+
+
+    useEffect(() => {
+        return actionProvider.addAction("menu", {
+            component: (
+                <AnchorMenu items={menuItem}
+                    buttonProps={{ disabled: loading }}
+                />
+            )
+        })
+    }, [menuItem]);
+
+    useEffect(() => {
+        return actionProvider.addAction("search", {
+            component: (
+                <TextField
+                    size="small"
+                    label={"Cari..."}
+                    value={keyword}
+                    onChange={e => setKeyword(e.target.value)} />
+            )
+        })
+    }, [keyword]);
 
     return (
         <Container maxWidth="lg" scrollable>
@@ -84,18 +105,6 @@ export default function page() {
                         Manage Pengguna
                     </Typography>
                 </Stack>
-
-                <MobileAction id="action">
-                    <AnchorMenu items={menuItem}
-                        buttonProps={{ disabled: loading }}
-                    />
-                    <TextField
-                        size="small"
-                        label={"Cari..."}
-                        value={keyword}
-                        onChange={e => setKeyword(e.target.value)} />
-                </MobileAction>
-
             </StickyHeader>
 
             <Stack component={Paper} p={2} flex={1} borderRadius={2}>
@@ -132,8 +141,18 @@ export default function page() {
                             gap={1}
                             alignItems={"center"}
                             justifyContent={"space-between"}>
-                            <Stack direction={"row"} gap={1} alignItems={"center"}>
-                                <UserAvatar size={40} userId={e.id} />
+                            <Stack
+                                flex={1}
+                                component={Link}
+                                href={`/users/${e.id}`}
+                                direction={"row"}
+                                gap={1}
+                                alignItems={"center"}
+                                sx={{
+                                    textDecoration: 'none',
+                                    color: 'inherit'
+                                }}>
+                                <UserAvatar size={40} user={e} />
                                 <Stack>
                                     <Typography component={'div'} fontSize={18} fontWeight={600}>
                                         {e.name}

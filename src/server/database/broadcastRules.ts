@@ -9,8 +9,8 @@ import { BroadcastContext } from './databaseSubscriber';
 export type BroadcastRule<E> = (context: BroadcastContext<E>) => (Promise<boolean> | boolean);
 
 /**
- * Map of rules for each entity.
- * The `default` rule applies if no entity-specific rule is defined.
+ * Map of rules for each entities.
+ * The `default` rule applies if no entities-specific rule is defined.
  */
 type BroadcastRuleMap = {
     [K in EntityName]: BroadcastRule<InstanceType<EntityMap[K]>>;
@@ -28,7 +28,7 @@ export const broadcastRules: BroadcastRuleMap = {
     },
 
     /**
-     * User entity broadcast rules
+     * User entities broadcast rules
      */
     user: (context): boolean => {
         const { user, event, data } = context;
@@ -53,7 +53,7 @@ export const broadcastRules: BroadcastRuleMap = {
     },
 
     /**
-     * File entity broadcast rules
+     * File entities broadcast rules
      */
     file: (context): boolean => {
         const { user, data } = context;

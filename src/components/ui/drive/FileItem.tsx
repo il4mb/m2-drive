@@ -1,7 +1,7 @@
 "use client"
 
 import usePresignUrl from '@/hooks/usePresignUrl';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { Avatar, Stack, Typography } from '@mui/material';
 import { FileImage, Folder } from 'lucide-react';
 import ContextMenu from '../../context-menu/ContextMenu';

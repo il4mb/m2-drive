@@ -1,4 +1,4 @@
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useEffect, useState } from "react";
 
 export const useFileTags = (file: File|null, checktags: string[]) => {

@@ -1,7 +1,7 @@
 'use server'
 
 import { getConnection } from "@/data-source";
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { putPublicObjectFromBuffer } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
 import sharp from "sharp";

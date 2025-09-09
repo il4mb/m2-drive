@@ -2,7 +2,7 @@ import { Box, Stack, Paper, Typography, Chip, IconButton, Tooltip, Menu, MenuIte
 import { RefreshCw, ChevronDown, Check } from 'lucide-react';
 import { ViewerModule } from './ModuleViewerManager';
 import { useEffect, useState } from 'react';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 
 interface ViewerContentProps {
     viewerModule: ViewerModule;

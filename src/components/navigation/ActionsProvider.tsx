@@ -6,7 +6,7 @@ import { createContext, useContext, useState, ReactNode, useMemo, useCallback, u
 
 export interface Action<T = Record<string, any>> {
     id: string;
-    icon: ReactNode;
+    icon?: ReactNode;
     componentProps?: T;
     component: ReactNode | FunctionComponent<T>;
     showAsPopover?: boolean;

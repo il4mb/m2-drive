@@ -1,7 +1,7 @@
 'use server'
 
 import { getConnection } from "@/data-source"
-import Contributor from "@/entity/Contributor";
+import Contributor from "@/entities/Contributor";
 import { currentTime } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 import { getRequestContext } from "@/libs/requestContext";

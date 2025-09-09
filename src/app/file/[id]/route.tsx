@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConnection } from '@/data-source';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { bucketName, s3Client } from '@/libs/s3-storage';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 

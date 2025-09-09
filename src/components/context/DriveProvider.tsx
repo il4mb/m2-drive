@@ -1,6 +1,6 @@
 'use client'
 
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import FolderPickerDialog from '../ui/drive/FolderPickerDialog';
 

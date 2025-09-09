@@ -1,5 +1,5 @@
 import { getConnection } from "@/data-source";
-import { Task, TaskStatus } from "@/entity/Task";
+import { Task, TaskStatus } from "@/entities/Task";
 import { EventEmitter } from "events";
 import { createLogger } from "@/libs/logger";
 import { performance } from "perf_hooks";

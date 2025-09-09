@@ -1,6 +1,6 @@
 'use client'
 
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import useUserDrive from '@/hooks/useDrive';
 import { getColor } from '@/theme/colors';
 import { Breadcrumbs, List, ListItem, ListItemIcon, ListItemText, Stack, Typography, CircularProgress, Box, Paper, } from '@mui/material';

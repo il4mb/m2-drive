@@ -1,5 +1,5 @@
 // global.d.ts
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import type { Server as SocketIOServer } from "socket.io";
 
 declare global {

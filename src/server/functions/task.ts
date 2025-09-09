@@ -1,6 +1,6 @@
 'use server'
 
-import { Task } from "@/entity/Task";
+import { Task } from "@/entities/Task";
 import { createFunction } from "../funcHelper"
 import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission } from "../checkPermission";

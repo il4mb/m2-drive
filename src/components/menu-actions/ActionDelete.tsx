@@ -4,7 +4,7 @@ import { Alert, AlertTitle, alpha, Button, Dialog, DialogActions, DialogContent,
 import { Trash } from "lucide-react";
 import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useRemoveFile } from "@/hooks/useFileRemove";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 

@@ -2,7 +2,7 @@
 
 import { Folder, Square, Download, ExternalLink, Info, Copy } from "lucide-react"
 import { ViewerModule } from "@/viewer/ModuleViewerManager";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useState } from "react";
 import { motion } from "motion/react"
 import {

@@ -1,7 +1,7 @@
 'use client'
 
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useViewerForFile, useViewerManager } from "../../viewer/ModuleViewerManager";
 
 type State = {

@@ -2,7 +2,7 @@ import { Stack, Typography, Button, Menu, MenuItem, ListItemIcon, ListItemText }
 import { FileQuestion, Download, ChevronDown, Check } from 'lucide-react';
 import { ViewerModule } from './ModuleViewerManager';
 import { useState } from 'react';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 
 interface NoViewerStateProps {
     file?: File | null;

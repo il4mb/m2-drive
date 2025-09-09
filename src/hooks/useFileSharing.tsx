@@ -1,5 +1,5 @@
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider"
-import Contributor from "@/entity/Contributor";
+import Contributor from "@/entities/Contributor";
 import { getMany, IsNull, Json } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { useEffect, useMemo, useState } from "react";

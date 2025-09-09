@@ -5,11 +5,14 @@ import { requestContext } from '@/libs/requestContext';
 import { QueryConfig } from './database/types';
 import { executeQuery } from './database/queryExecutor';
 import { currentTime, generateKey } from '@/libs/utils';
-import Token from '@/entity/Token';
+import Token from '@/entities/Token';
 import { generateIndonesianAnimalName } from './animal-names';
 import functions from "./functions";
 import { getConnection } from '@/data-source';
-import User from '@/entity/User';
+import User from '@/entities/User';
+import { Activity } from '@/entities/Activity';
+import { Between } from 'typeorm';
+import { writeActivity } from './funcHelper';
 
 
 // Define types for better type safety
@@ -200,6 +203,8 @@ export async function setupSocketHandlers(io: Server) {
         })
     }
 
+
+
     console.log("LOADED FUNCTIONS", functions)
 
     io.use(async (socket: CustomSocket, next) => {
@@ -242,9 +247,59 @@ export async function setupSocketHandlers(io: Server) {
 
     io.on('connection', (socket: CustomSocket) => {
 
+        const ipAddress = socket.handshake.headers["x-forwarded-for"]?.toString().split(",")[0] || socket.handshake.address;
+        const userAgent = socket.handshake.headers["user-agent"] || "Unknown";
+
+        // const writeActivity = async (type: string, description: string, metadata: Record<string, any> = {}) => {
+        //     const uid = !socket.data.isGuest ? socket.data.uid : null;
+        //     if (!uid) return;
+
+        //     const activityRepository = connection.getRepository(Activity);
+
+        //     const now = currentTime(); // epoch-based number
+        //     const oneMinuteAgo = now - 60;
+
+        //     // Try to find existing activity in last 1 minute
+        //     const existing = await activityRepository.findOne({
+        //         where: {
+        //             userId: uid,
+        //             type,
+        //             description,
+        //             createdAt: Between(oneMinuteAgo, now),
+        //         },
+        //     });
+
+        //     if (existing) {
+        //         // Update timestamp
+        //         existing.createdAt = now;
+        //         await activityRepository.save(existing);
+        //         return existing;
+        //     }
+
+        //     // Insert new activity
+        //     const activity = activityRepository.create({
+        //         userId: uid,
+        //         type,
+        //         description,
+        //         ipAddress,
+        //         userAgent,
+        //         metadata,
+        //         createdAt: now,
+        //     });
+
+        //     await activityRepository.save(activity);
+        //     return activity;
+        // }
 
         if (socket.data.isGuest == false && socket.data.uid) {
-            markAsActive(socket.data.uid);
+            markAsActive(socket.data.uid).then(() => {
+                writeActivity(socket.data.uid, {
+                    type: "CONNECT",
+                    description: "Berhasil terhubung/masuk ke sistem",
+                    ipAddress,
+                    userAgent
+                });
+            });
         }
 
 
@@ -290,7 +345,7 @@ export async function setupSocketHandlers(io: Server) {
         });
 
 
-        console.log(`Client connected: ${socket.id}, Name: ${socket.data.displayName}`);
+        console.log(`Client connected: ${ipAddress}, ${userAgent} and ${socket.id}, Name: ${socket.data.displayName}`);
         connectionMetrics.totalConnections++;
         connectionMetrics.activeConnections++;
         connectionMetrics.maxConcurrentConnections = Math.max(
@@ -759,7 +814,14 @@ export async function setupSocketHandlers(io: Server) {
         socket.on('disconnect', (reason) => {
 
             if (socket.data.isGuest == false && socket.data.uid) {
-                markAsInactive(socket.data.uid);
+                markAsInactive(socket.data.uid).then(() => {
+                    writeActivity(socket.data.uid, {
+                        type: "DISCONNECT",
+                        description: "Koneksi terputus atau keluar dari sistem.",
+                        ipAddress,
+                        userAgent
+                    });
+                })
             }
             console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Guest: ${socket.data.isGuest}`);
 

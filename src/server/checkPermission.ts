@@ -1,6 +1,6 @@
 import { getConnection } from "@/data-source";
-import Role from "@/entity/Role";
-import User from "@/entity/User";
+import Role from "@/entities/Role";
+import User from "@/entities/User";
 import { PERMISSION_NAMES } from "@/permission";
 
 export const checkPermission = async (userId: User | string | undefined | null, permission: PERMISSION_NAMES | PERMISSION_NAMES[]) => {

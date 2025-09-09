@@ -1,7 +1,7 @@
 import { Drawer, Box, Typography, IconButton, Chip, Divider, List, ListItem, ListItemText, ListItemIcon, Avatar, Tooltip } from "@mui/material";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { Info, X, FileText, Folder, User, Users, Calendar, Clock, Download, Star, Trash2, Share2, Tag, Image, Edit, Eye } from "lucide-react";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import useUser from "@/hooks/useUser";
 import { useContributors } from "@/hooks/useContributors";
 import { useTheme } from "@mui/material/styles";

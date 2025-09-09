@@ -1,5 +1,5 @@
 'use client';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { useState, useEffect } from 'react';
 

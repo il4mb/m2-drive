@@ -3,7 +3,7 @@ import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { ChevronRight, Flag, Folder } from "lucide-react";
 import TransferList, { TransferListItem } from "@/app/(dash)/settings/ui/TransferList";
 import { useEffect, useMemo, useState } from "react";
-import { File, FileTags } from "@/entity/File";
+import { File, FileTags } from "@/entities/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { isEqual } from "lodash";
 import { FileIcon } from "@untitledui/file-icons";

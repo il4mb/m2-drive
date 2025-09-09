@@ -54,6 +54,14 @@ export class DatabaseService {
                 console.log(qb.getQueryAndParameters())
             }
 
+            if (config.type == "count") {
+                const row = await qb.getCount();
+                if (config.debug) {
+                    console.log("RESULT COUNT", row);
+                }
+                return row as T;
+            }
+
             if (config.type === "one") {
                 // Ensure only one row
                 if (!config.limit) qb.limit(1);
@@ -83,9 +91,9 @@ export class DatabaseService {
     /** Get repository for a collection */
     private async getRepository(collection: EntityName): Promise<Repository<any>> {
         const connection: DataSource = await getConnection();
-        const entity = entityMap[collection];
-        if (!entity) throw new Error(`No entity mapping found for collection: ${collection}`);
-        return connection.getRepository(entity);
+        const entities = entityMap[collection];
+        if (!entities) throw new Error(`No entities mapping found for collection: ${collection}`);
+        return connection.getRepository(entities);
     }
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import useUser from '@/hooks/useUser';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { useParams } from 'next/navigation';
 import { ReactNode, useMemo } from 'react';
 import { useViewerManager } from '@/viewer/ModuleViewerManager';

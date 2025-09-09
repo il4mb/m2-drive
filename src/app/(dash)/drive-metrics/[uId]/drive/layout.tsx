@@ -3,7 +3,7 @@
 import { Breakpoint, Stack } from "@mui/material";
 import { useParams } from "next/navigation";
 import { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { AnimatePresence } from "motion/react";
 import FileViewerLayout from "@/viewer/FileViewerLayout";

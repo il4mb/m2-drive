@@ -1,4 +1,4 @@
-import Role from "@/entity/Role";
+import Role from "@/entities/Role";
 import { useEffect, useState } from "react";
 import { SYSTEM_ROLES } from "@/permission";
 import _ from "lodash";

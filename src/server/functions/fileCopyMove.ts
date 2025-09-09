@@ -1,7 +1,7 @@
 'use server'
 
 import { getConnection } from "@/data-source"
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { currentTime, generateKey } from "@/libs/utils";
 import { createFunction } from "../funcHelper";
 import { IsNull, Repository } from "typeorm";

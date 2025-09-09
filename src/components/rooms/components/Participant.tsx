@@ -1,6 +1,6 @@
 'use client'
 
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { ReactNode } from 'react';
 import { motion } from "motion/react";
 import { alpha, Chip, Paper, Stack, useTheme } from '@mui/material';

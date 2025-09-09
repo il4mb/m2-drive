@@ -4,7 +4,7 @@ import { ChevronRight, Folder, FolderPlus, HardDrive } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import { ChangeEvent, useMemo, useState } from "react";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useCreateFolder } from "@/hooks/useFolderCreate";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 import useUser from "@/hooks/useUser";

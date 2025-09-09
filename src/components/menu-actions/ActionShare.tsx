@@ -5,7 +5,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, S
 import { ChangeEvent, useEffect, useState } from "react";
 import { enqueueSnackbar } from "notistack";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import ContributorManager from "../ContributorManager";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import CloseSnackbar from "../ui/CloseSnackbar";

@@ -1,6 +1,6 @@
 'use client'
 
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 import { formatFileSize } from '@/libs/utils';
 import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';

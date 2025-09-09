@@ -1,7 +1,7 @@
 'use server'
 
 import { getConnection } from "@/data-source"
-import { Options } from "@/entity/Options";
+import { Options } from "@/entities/Options";
 import { withAction } from "@/libs/withApi"
 
 export type UploadUnit = "kb" | "mb" | "gb";

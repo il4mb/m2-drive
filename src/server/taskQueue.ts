@@ -6,7 +6,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
 import { PassThrough } from "stream";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { currentTime } from "@/libs/utils";
 import { createLogger } from "@/libs/logger";
 import { imageSize } from "image-size";

@@ -1,4 +1,4 @@
-import User from '@/entity/User';
+import User from '@/entities/User';
 import { getOne } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/snapshot';
 import { getColor } from '@/theme/colors';
@@ -7,7 +7,7 @@ import { ReactNode, useEffect, useState } from 'react';
 
 export interface UserAvatarProps {
     userId?: string;
-    user?: User;
+    user?: User|null;
     size?: number;
     sx?: SxProps;
     tooltip?: ReactNode;

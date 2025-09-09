@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { getOne } from "@/libs/websocket/query";
 
 export default function useUser(uId?: string|null) {
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<User|null>();
 
     useEffect(() => {

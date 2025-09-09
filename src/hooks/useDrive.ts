@@ -1,6 +1,6 @@
 'use client'
 
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useEffect, useState } from "react";
 import { onSnapshot } from "@/libs/websocket/snapshot";
 import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";

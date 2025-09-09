@@ -2,7 +2,7 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent, RemoveEvent, EntityMetadata } from "typeorm";
 
 import { EntityMap, entityMap, EntityName } from ".";
-import User from "@/entity/User";
+import User from "@/entities/User";
 import { broadcastRules, BroadcastRule } from "./broadcastRules";
 import { databaseRules } from "./databaseRules";
 import { getRequestContext } from "@/libs/requestContext";
@@ -126,19 +126,19 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         const user = ctx?.user;
 
         // Extract the data for this event type
-        const { data, previousData } = this.extractEventData(event);
-        const rule = databaseRules[collection] || databaseRules.default;
+        // const { data, previousData } = this.extractEventData(event);
+        // const rule = databaseRules[collection] || databaseRules.default;
 
-        try {
-            // console.log(rule);
-            const allowed = await rule({ connection: event.connection, user, collection, event: type, data, previousData });
+        // try {
+        //     // console.log(rule);
+        //     const allowed = await rule({ connection: event.connection, user, collection, event: type, data, previousData });
 
-            if (!allowed) {
-                throw new Error(`Permission denied for ${type} on ${collection}`);
-            }
-        } catch (error: any) {
-            throw new Error(`Permission denied: ${error.message}`);
-        }
+        //     if (!allowed) {
+        //         throw new Error(`Permission denied for ${type} on ${collection}`);
+        //     }
+        // } catch (error: any) {
+        //     throw new Error(`Permission denied: ${error.message}`);
+        // }
     }
 
     /**
@@ -279,10 +279,10 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
     }
 
     /**
-     * Subscribe to all entities dynamically
+     * Subscribe to all entity dynamically
      */
     listenTo(): Function | string {
-        return Object; // Listen to all entities
+        return Object; // Listen to all entity
     }
 }
 

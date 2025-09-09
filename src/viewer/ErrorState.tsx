@@ -1,6 +1,6 @@
 import { Stack, Typography, Button } from '@mui/material';
 import { AlertCircle, RefreshCw, Download } from 'lucide-react';
-import { File } from '@/entity/File';
+import { File } from '@/entities/File';
 
 interface ErrorStateProps {
     error?: string;

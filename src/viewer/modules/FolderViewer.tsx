@@ -2,7 +2,7 @@
 
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, CaseSensitive, Clock, FileDigit, Folder, LayoutGrid, StretchHorizontal, TriangleAlert } from "lucide-react"
 import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
-import { File } from "@/entity/File";
+import { File } from "@/entities/File";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { getMany, IsNull, Json, Query } from "@/libs/websocket/query";
 import { onSnapshot } from "@/libs/websocket/SnapshotManager";
@@ -244,20 +244,26 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
                         transition: 'opacity 0.2s ease-in-out'
                     }}>
                     {files?.map((file, index) => (
-                        <motion.div
+                        <Box component={motion.div}
                             key={`${layout}-${file.id}`}
                             initial={{ y: 10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.02 * index }}
-                            style={{
-                                maxWidth: layout === "grid" ? '200px' : '100%',
-                                width: '100%'
+                            sx={{
+                                maxWidth: layout === "grid" ? {
+                                    xs: '180px',
+                                    md: '200px'
+                                } : '100%',
+                                width: {
+                                    xs: '46%',
+                                    md: '100%'
+                                }
                             }}>
                             <FileView
                                 {...fileViewProps}
                                 file={file}
                             />
-                        </motion.div>
+                        </Box>
                     ))}
 
                 </Stack>

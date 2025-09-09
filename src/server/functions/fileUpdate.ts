@@ -4,7 +4,7 @@ import { getConnection } from "@/data-source"
 import { File } from "@/entities/File";
 import { getRequestContext } from "@/libs/requestContext";
 import { currentTime, generateKey } from "@/libs/utils";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { IsNull } from "typeorm";
 import { checkPermission, checkPermissionSilent } from "../checkPermission";
 
@@ -74,6 +74,7 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
     });
 
     await fileRepository.save(file);
+    writeActivity("CREATE_FOLDER", `Membuat ${file.type} ${file.name}`);
 })
 
 export type UpdateFilePart = Partial<Omit<File, "meta">> & {
@@ -99,9 +100,10 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
 
     const source = await getConnection();
     const fileRepository = source.getRepository(File);
-    const file = await fileRepository.findOneBy({ id });
-    if (!file) throw new Error("Failed Update File: File not found");
+    const oldFile = await fileRepository.findOneBy({ id });
+    if (!oldFile) throw new Error("Failed Update File: File not found");
 
+    const file = Object.assign({}, oldFile);
     const isSystem = actor == "system";
     const isAdmin = !isSystem && actor?.meta.role === "admin";
     const isOwner = !isSystem && actor?.id === file.uId;
@@ -149,7 +151,7 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         }
     }
 
-    if(!isRoot && data.meta?.generalPermit) {
+    if (!isRoot && data.meta?.generalPermit) {
         await checkPermission(actor, "can-share-file");
     }
 
@@ -223,5 +225,14 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
 
     file.updatedAt = currentTime();
     await fileRepository.save(file);
+
+    if (data.meta?.generalPermit) {
+        writeActivity("SHARE_FILE", `${data.meta?.generalPermit != 'none' ? `Membagikan general akses sebagai ${data.meta?.generalPermit}` : 'Tidak membagikan'} pada ${file.type} ${file.name}`);
+    } if (data.name) {
+        writeActivity("EDIT_FILE", `Mengganti nama ${file.type} ${oldFile.name} menjadi ${file.name}`);
+    } else {
+        writeActivity("EDIT_FILE", `Memperbarui ${file.type} ${file.name}`);
+    }
+
     return file;
 })

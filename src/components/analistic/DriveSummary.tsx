@@ -71,150 +71,152 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                     </Typography>
                 </Stack>
             ) : (
-                <Grid component={motion.div}
+                <Stack component={motion.div}
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -10, opacity: 0 }}
-                    container spacing={3}>
-                    {/* Statistics Cards */}
-                    <Grid size={{ xs: 12, md: 4 }}>
-                        <Card sx={{ p: 3, height: '100%', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
-                            <Stack spacing={2}>
-                                <Typography variant="h6" color="primary.main" fontWeight="bold">
-                                    Overview
+                    spacing={3}>
+                    <Stack direction={"row"} flexWrap={'wrap'}>
+                        {/* Statistics Cards */}
+                        <Stack sx={{ flexBasis: 300 }}>
+                            <Card sx={{ p: 3, height: '100%', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                                <Stack spacing={2}>
+                                    <Typography variant="h6" color="primary.main" fontWeight="bold">
+                                        Overview
+                                    </Typography>
+
+                                    <Box>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Total Files
+                                            </Typography>
+                                            <Chip label={totalFiles.toLocaleString()} size="small" color="primary" />
+                                        </Stack>
+
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Folders
+                                            </Typography>
+                                            <Chip label={folderCount.toLocaleString()} size="small" color="secondary" />
+                                        </Stack>
+
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="body2" color="text.secondary">
+                                                Total Size
+                                            </Typography>
+                                            <Chip
+                                                label={formatFileSize(totalSize)}
+                                                size="small"
+                                                color={usagePercentage > 90 ? "error" : "success"}
+                                            />
+                                        </Stack>
+                                    </Box>
+
+                                    {driveSizeLimit && (
+                                        <Box mt={2}>
+                                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Storage Used
+                                                </Typography>
+                                                <Typography variant="caption" fontWeight="bold">
+                                                    {usagePercentage.toFixed(1)}%
+                                                </Typography>
+                                            </Stack>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={Math.min(usagePercentage, 100)}
+                                                color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}
+                                                sx={{ height: 6, borderRadius: 3 }}
+                                            />
+                                            <Typography variant="caption" color="text.secondary">
+                                                {formatFileSize(totalSize)} of {formatFileSize(driveSizeLimit)}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Stack>
+                            </Card>
+                        </Stack>
+
+                        {/* Pie Chart */}
+                        <Stack sx={{ flexBasis: 600 }}>
+                            <Card sx={{ p: 3, height: '100%' }}>
+                                <Typography variant="h6" gutterBottom fontWeight="bold">
+                                    File Type Distribution
                                 </Typography>
 
-                                <Box>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Total Files
+                                {totalFiles > 0 ? (
+                                    <Box sx={{ height: 300, mt: 2 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={mimeData}
+                                                    dataKey="count"
+                                                    nameKey="type"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius="60%"
+                                                    outerRadius="80%"
+                                                    paddingAngle={2}
+                                                    label={({ type, count, percent }) =>
+                                                        `${type}: ${((percent || 0) * 100).toFixed(0)}%`
+                                                    }
+                                                    labelLine={false}>
+                                                    {mimeData.map((_, index) => (
+                                                        <Cell
+                                                            key={`cell-${index}`}
+                                                            fill={COLORS[index % COLORS.length]}
+                                                            stroke={theme.palette.background.paper}
+                                                            strokeWidth={2}
+                                                        />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip
+                                                    formatter={(value: number) => [`${value} files`, 'Count']}
+                                                    labelFormatter={(label, payload) => {
+                                                        const item = payload?.[0]?.payload;
+                                                        return item?.fullType || label;
+                                                    }}
+                                                />
+                                                <Legend
+                                                    verticalAlign="middle"
+                                                    align="right"
+                                                    layout="vertical"
+                                                    wrapperStyle={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 500,
+                                                        paddingLeft: '20px'
+                                                    }}
+                                                    formatter={(value, entry) => {
+                                                        const item = mimeData.find(m => m.type === value);
+                                                        return `${value} (${item?.count})`;
+                                                    }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{
+                                        height: 300,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexDirection: 'column',
+                                        color: 'text.secondary'
+                                    }}>
+                                        <Typography variant="body2" gutterBottom>
+                                            No files found
                                         </Typography>
-                                        <Chip label={totalFiles.toLocaleString()} size="small" color="primary" />
-                                    </Stack>
-
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Folders
-                                        </Typography>
-                                        <Chip label={folderCount.toLocaleString()} size="small" color="secondary" />
-                                    </Stack>
-
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                        <Typography variant="body2" color="text.secondary">
-                                            Total Size
-                                        </Typography>
-                                        <Chip
-                                            label={formatFileSize(totalSize)}
-                                            size="small"
-                                            color={usagePercentage > 90 ? "error" : "success"}
-                                        />
-                                    </Stack>
-                                </Box>
-
-                                {driveSizeLimit && (
-                                    <Box mt={2}>
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Storage Used
-                                            </Typography>
-                                            <Typography variant="caption" fontWeight="bold">
-                                                {usagePercentage.toFixed(1)}%
-                                            </Typography>
-                                        </Stack>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={Math.min(usagePercentage, 100)}
-                                            color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}
-                                            sx={{ height: 6, borderRadius: 3 }}
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {formatFileSize(totalSize)} of {formatFileSize(driveSizeLimit)}
+                                        <Typography variant="caption">
+                                            Upload files to see statistics
                                         </Typography>
                                     </Box>
                                 )}
-                            </Stack>
-                        </Card>
-                    </Grid>
-
-                    {/* Pie Chart */}
-                    <Grid size={{ xs: 12, md: 8 }}>
-                        <Card sx={{ p: 3, height: '100%' }}>
-                            <Typography variant="h6" gutterBottom fontWeight="bold">
-                                File Type Distribution
-                            </Typography>
-
-                            {totalFiles > 0 ? (
-                                <Box sx={{ height: 300, mt: 2 }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={mimeData}
-                                                dataKey="count"
-                                                nameKey="type"
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius="60%"
-                                                outerRadius="80%"
-                                                paddingAngle={2}
-                                                label={({ type, count, percent }) =>
-                                                    `${type}: ${((percent || 0) * 100).toFixed(0)}%`
-                                                }
-                                                labelLine={false}>
-                                                {mimeData.map((_, index) => (
-                                                    <Cell
-                                                        key={`cell-${index}`}
-                                                        fill={COLORS[index % COLORS.length]}
-                                                        stroke={theme.palette.background.paper}
-                                                        strokeWidth={2}
-                                                    />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                formatter={(value: number) => [`${value} files`, 'Count']}
-                                                labelFormatter={(label, payload) => {
-                                                    const item = payload?.[0]?.payload;
-                                                    return item?.fullType || label;
-                                                }}
-                                            />
-                                            <Legend
-                                                verticalAlign="middle"
-                                                align="right"
-                                                layout="vertical"
-                                                wrapperStyle={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 500,
-                                                    paddingLeft: '20px'
-                                                }}
-                                                formatter={(value, entry) => {
-                                                    const item = mimeData.find(m => m.type === value);
-                                                    return `${value} (${item?.count})`;
-                                                }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </Box>
-                            ) : (
-                                <Box sx={{
-                                    height: 300,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexDirection: 'column',
-                                    color: 'text.secondary'
-                                }}>
-                                    <Typography variant="body2" gutterBottom>
-                                        No files found
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        Upload files to see statistics
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Card>
-                    </Grid>
+                            </Card>
+                        </Stack>
+                    </Stack>
 
                     {/* Additional Stats Row */}
-                    <Grid size={{ xs: 12 }}>
+                    <Stack>
                         <Card sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom fontWeight="bold">
                                 Additional Information
@@ -271,8 +273,8 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                                 </Grid>
                             </Grid>
                         </Card>
-                    </Grid>
-                </Grid>
+                    </Stack>
+                </Stack>
             )}
 
         </Box>

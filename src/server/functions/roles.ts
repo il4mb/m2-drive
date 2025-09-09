@@ -5,7 +5,7 @@ import Role from "@/entities/Role";
 import { currentTime } from "@/libs/utils";
 import { SYSTEM_ROLES } from "@/permission";
 import z from "zod";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission } from "../checkPermission";
 
@@ -60,7 +60,9 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
 
         await repo.save(role);
 
+        writeActivity("ADD_ROLE", `Menambahkan role ${role.id}, ${role.abilities.length} ability`);
         return role;
+
     } else {
         // UPDATE existing role
         if (role.label !== parsed.label && await repo.existsBy({ label: parsed.label })) {
@@ -71,7 +73,7 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
         role.abilities = parsed.abilities;
 
         await repo.save(role);
-
+        writeActivity("EDIT_ROLE", `Mengedit role ${role.id}, ${role.abilities.length} ability`);
         return role;
     }
 });
@@ -83,7 +85,7 @@ export const deleteRole = createFunction(async ({ name }: { name: string }) => {
     const { user: actor } = getRequestContext();
     // Permission check
     await checkPermission(actor, "can-manage-roles");
-    
+
     const source = await getConnection();
     const repo = source.getRepository(Role);
 
@@ -93,4 +95,6 @@ export const deleteRole = createFunction(async ({ name }: { name: string }) => {
     }
 
     await repo.remove(role);
+    writeActivity("DELETE_ROLE", `Menghapus role ${role.id}`);
+
 });

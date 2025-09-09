@@ -2,7 +2,7 @@
 
 import { getConnection } from "@/data-source";
 import User from "@/entities/User";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { getRequestContext } from "@/libs/requestContext";
 import { currentTime } from "@/libs/utils";
 import { checkPermission } from "../checkPermission";
@@ -42,6 +42,7 @@ export const updateUser = createFunction(
     async ({ userId, data }: UpdateUserProps) => {
 
         const { user: actor } = getRequestContext();
+
         const source = await getConnection();
         const usersRepository = source.getRepository(User);
         if (actor != "system" && actor?.meta.role != "admin" && userId != actor?.id) {
@@ -53,6 +54,8 @@ export const updateUser = createFunction(
         if (!user) {
             throw new Error("404: User tidak ditemukan!");
         }
+
+        const isHim = typeof actor == "object" && actor?.id == user.id;
 
         const updatedData = { ...user, ...data }
         let updatedMeta = user.meta;
@@ -66,5 +69,11 @@ export const updateUser = createFunction(
         updatedData.meta = updatedMeta;
         updatedData.updatedAt = currentTime();
         await usersRepository.save(updatedData);
+
+        if (isHim) {
+            writeActivity("EDIT_USER", `Memperbarui profile`);
+        } else {
+            writeActivity("EDIT_USER", `Memperbarui pengguna ${user.name}`);
+        }
     }
 )

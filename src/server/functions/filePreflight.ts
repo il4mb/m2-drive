@@ -1,7 +1,7 @@
 'use server'
 
 import { getRequestContext } from "@/libs/requestContext";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { getConnection } from "@/data-source";
 import { File } from "@/entities/File";
 import Contributor from "@/entities/Contributor";
@@ -31,8 +31,14 @@ export const filePreflight = createFunction(async ({ fileId, subsId }: FilePrefl
     // 2️⃣ Validate tree and get final target file
     const targetFile = await validateTreeAndGetTarget(subsId, fileRepository, rootFile);
 
+    const handleWriteActivity = () => {
+        writeActivity("VIEW_FILE", `Membuka file ${targetFile.name}`);
+    }
+
+
     // 3️⃣ Check guest access
     if (['viewer', 'editor'].includes(rootFile.meta?.generalPermit || 'none')) {
+        handleWriteActivity();
         return targetFile;
     }
 
@@ -45,6 +51,7 @@ export const filePreflight = createFunction(async ({ fileId, subsId }: FilePrefl
         rootFile.uId === actor.id ||
         actor.meta?.role === "admin"
     ) {
+        handleWriteActivity();
         return targetFile;
     }
 
@@ -55,6 +62,7 @@ export const filePreflight = createFunction(async ({ fileId, subsId }: FilePrefl
     });
 
     if (contributor) {
+        handleWriteActivity();
         return targetFile;
     }
 

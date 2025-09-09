@@ -3,7 +3,7 @@
 import { getConnection } from "@/data-source"
 import { File } from "@/entities/File";
 import { currentTime, generateKey } from "@/libs/utils";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { IsNull, Repository } from "typeorm";
 import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission, checkPermissionSilent } from "../checkPermission";
@@ -34,9 +34,10 @@ export const copyFile = createFunction(
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);
 
+        let targetFolder: File | null = null;
         // Validate target folder if specified
         if (targetId) {
-            const targetFolder = await fileRepository.findOne({
+            targetFolder = await fileRepository.findOne({
                 where: { id: targetId, type: "folder" }
             });
             if (!targetFolder) {
@@ -104,6 +105,11 @@ export const copyFile = createFunction(
             foldersCopied: 0,
             totalSize: 0
         };
+
+
+        const sourceFile = await fileRepository.findOneBy({ id: sourceId });
+        if (!sourceFile) throw new Error("Failed Copy File: Source file not found!");
+
 
         const copyItem = async (fileId: string, newParentId: string | null): Promise<File> => {
             if (copiedItems.has(fileId)) {
@@ -188,6 +194,8 @@ export const copyFile = createFunction(
         if (targetId) {
             await updateFolderItemCount(targetId, fileRepository);
         }
+
+        writeActivity("COPY_FILE", `Mengcopy ${sourceFile.type} dari ${sourceFile.name} ke ${targetFolder?.name || 'My Drive'}`);
 
         return {
             success: true,
@@ -350,6 +358,8 @@ export const moveFile = createFunction(
         if (targetId) {
             await updateFolderItemCount(targetId, repository);
         }
+
+        writeActivity("MOVE_FILE", `Memindahkan ${file.type} dari ${file.name} ke ${targetFolder?.name || 'My Drive'}`);
 
         return {
             success: true,

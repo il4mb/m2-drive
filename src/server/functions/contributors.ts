@@ -3,9 +3,11 @@
 import { getConnection } from "@/data-source"
 import Contributor from "@/entities/Contributor";
 import { currentTime } from "@/libs/utils";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { getRequestContext } from "@/libs/requestContext";
-import { checkPermission, checkPermissionSilent } from "../checkPermission";
+import { checkPermission } from "../checkPermission";
+import { File } from "@/entities/File";
+import User from "@/entities/User";
 
 export const getFileContributors = createFunction(async ({ fileId }: { fileId: string }) => {
 
@@ -36,10 +38,19 @@ export const addFileContributor = createFunction(async ({ fileId, userId, role }
 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
+    const fileRepository = source.getRepository(File);
+    const userRepository = source.getRepository(User);
 
-    const existing = await contributorRepository.findOneBy({ fileId, userId });
+    const existing = await contributorRepository.findOne({ where: { fileId, userId } });
     if (existing) {
         throw new Error("Contributor already exists for this file.");
+    }
+
+    const user = await userRepository.findOneBy({ id: userId });
+    const file = await fileRepository.findOneBy({ id: fileId });
+
+    if (!user || !file) {
+        throw new Error("Failed Add Contributor: User or File not found!");
     }
 
     const contributor = contributorRepository.create({
@@ -50,7 +61,7 @@ export const addFileContributor = createFunction(async ({ fileId, userId, role }
     });
 
     await contributorRepository.save(contributor);
-
+    writeActivity("ADD_CONTRIBUTOR", `Menambahkan ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`);
     return contributor;
 });
 
@@ -70,14 +81,18 @@ export const updateFileContributor = createFunction(async ({ contributorId: id, 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 
-    const contributor = await contributorRepository.findOneBy({ id });
+    const contributor = await contributorRepository.findOne({ where: { id }, relations: ['user', 'file'] });
     if (!contributor) {
         throw new Error("404: Kontributor tidak ditemukan!");
     }
+    const user = contributor.user;
+    const file = contributor.file;
 
     contributor.role = role;
     contributor.updatedAt = currentTime();
     await contributorRepository.save(contributor);
+
+    writeActivity("EDIT_CONTRIBUTOR", `Memperbarui ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`);
 })
 
 
@@ -89,9 +104,14 @@ export const removeFileContributor = createFunction(async ({ id }: { id: string 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 
-    const contributor = await contributorRepository.findOneBy({ id });
+    const contributor = await contributorRepository.findOne({ where: { id }, relations: ['user', 'file'] });
     if (!contributor) {
         throw new Error("404: Kontributor tidak ditemukan!");
     }
+    const user = contributor.user;
+    const file = contributor.file;
+
     await contributorRepository.remove(contributor);
+
+    writeActivity("DELETE_CONTRIBUTOR", `Mengeluarkan ${user.name} pada ${file?.type} ${file?.name}`);
 })

@@ -20,9 +20,9 @@ export default function page() {
                 <OnlineUsers />
             </Stack>
 
-            <Stack direction={'row-reverse'} alignItems={'flex-start'} spacing={3}>
-                <ActivitiesCard sx={{ boxShadow: 2, flexBasis: 300 }} />
-                <Stack flex={1} component={Paper} p={4} mt={4} sx={{ boxShadow: 2, borderRadius: 2, flexBasis: 800 }}>
+            <Stack direction={['column', 'column', 'column', 'row-reverse']} alignItems={'flex-start'} gap={3}>
+                <ActivitiesCard sx={{ boxShadow: 2, width: '100%', flexBasis: { lg: 300 } }} />
+                <Stack flex={1} component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2, width: '100%', flexBasis: { lg: 800 } }}>
                     <Typography mb={2} fontSize={26}>
                         Statistik Drive Saya
                     </Typography>

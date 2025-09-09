@@ -27,7 +27,7 @@ export default function page() {
                 </Button>
             )
         })
-    }, [uid])
+    }, [uid]);
 
     return (
         <Stack direction={"row-reverse"} spacing={3} alignItems={"flex-start"}>
@@ -40,16 +40,16 @@ export default function page() {
                 sx={{
                     width: '100%',
                     maxWidth: 1200,
-                    flexBasis: 800,
+                    flexBasis: 900,
                     mx: 'auto',
                     boxShadow: 2
                 }}>
                 <Typography mb={2} fontSize={26}>
-                    Statistik Drive {user?.name}
+                    Statistik Drive <strong>{user?.name}</strong>
                 </Typography>
                 <DriveSummary user={user || undefined} />
             </Stack>
-            <ActivitiesCard userId={uid} sx={{ boxShadow: 2, flexBasis: 400 }} />
+            <ActivitiesCard userId={uid} sx={{ boxShadow: 2, flexBasis: 300 }} />
         </Stack>
     );
 }

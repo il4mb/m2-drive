@@ -250,55 +250,15 @@ export async function setupSocketHandlers(io: Server) {
         const ipAddress = socket.handshake.headers["x-forwarded-for"]?.toString().split(",")[0] || socket.handshake.address;
         const userAgent = socket.handshake.headers["user-agent"] || "Unknown";
 
-        // const writeActivity = async (type: string, description: string, metadata: Record<string, any> = {}) => {
-        //     const uid = !socket.data.isGuest ? socket.data.uid : null;
-        //     if (!uid) return;
-
-        //     const activityRepository = connection.getRepository(Activity);
-
-        //     const now = currentTime(); // epoch-based number
-        //     const oneMinuteAgo = now - 60;
-
-        //     // Try to find existing activity in last 1 minute
-        //     const existing = await activityRepository.findOne({
-        //         where: {
-        //             userId: uid,
-        //             type,
-        //             description,
-        //             createdAt: Between(oneMinuteAgo, now),
-        //         },
-        //     });
-
-        //     if (existing) {
-        //         // Update timestamp
-        //         existing.createdAt = now;
-        //         await activityRepository.save(existing);
-        //         return existing;
-        //     }
-
-        //     // Insert new activity
-        //     const activity = activityRepository.create({
-        //         userId: uid,
-        //         type,
-        //         description,
-        //         ipAddress,
-        //         userAgent,
-        //         metadata,
-        //         createdAt: now,
-        //     });
-
-        //     await activityRepository.save(activity);
-        //     return activity;
-        // }
+        const handlWriteActivity = async (type: string, description: string) => {
+            if (socket.data.isGuest) return;
+            const user = await getUserByToken(socket.data.token!);
+            await requestContext.run({ user, userAgent, ipAddress }, async () => writeActivity(type, description));
+        }
 
         if (socket.data.isGuest == false && socket.data.uid) {
             markAsActive(socket.data.uid).then(() => {
-                writeActivity(socket.data.uid, {
-                    type: "CONNECT",
-                    description: "Berhasil terhubung/masuk ke sistem",
-                    ipAddress,
-                    userAgent
-                });
+                handlWriteActivity("CONNECT", "Berhasil terhubung/masuk ke sistem");
             });
         }
 
@@ -475,7 +435,7 @@ export async function setupSocketHandlers(io: Server) {
 
                 const user = isGuest ? undefined : await getUserByToken(socket.data.token!);
 
-                await requestContext.run({ user }, async () => {
+                await requestContext.run({ user, userAgent, ipAddress }, async () => {
 
                     try {
 
@@ -539,7 +499,7 @@ export async function setupSocketHandlers(io: Server) {
 
             try {
                 const user = socket.data.token ? await getUserByToken(socket.data.token) : undefined;
-                await requestContext.run({ user }, async () => {
+                await requestContext.run({ user, ipAddress, userAgent }, async () => {
                     try {
                         const result = await executeQuery(queryData);
                         const response: any = {
@@ -815,13 +775,8 @@ export async function setupSocketHandlers(io: Server) {
 
             if (socket.data.isGuest == false && socket.data.uid) {
                 markAsInactive(socket.data.uid).then(() => {
-                    writeActivity(socket.data.uid, {
-                        type: "DISCONNECT",
-                        description: "Koneksi terputus atau keluar dari sistem.",
-                        ipAddress,
-                        userAgent
-                    });
-                })
+                    handlWriteActivity("DISCONNECT", "Koneksi terputus atau keluar dari sistem.");
+                });
             }
             console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Guest: ${socket.data.isGuest}`);
 

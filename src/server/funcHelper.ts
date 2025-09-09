@@ -1,6 +1,7 @@
 import { getConnection } from "@/data-source";
 import { Activity } from "@/entities/Activity";
 import User from "@/entities/User";
+import { getRequestContext } from "@/libs/requestContext";
 import { currentTime } from "@/libs/utils";
 import { Between } from "typeorm";
 
@@ -19,18 +20,20 @@ export function createFunction<T extends (args: any) => Promise<any>>(handler: T
     };
 }
 
-export const writeActivity = async (userId: string | User, data: Omit<Activity, 'id' | 'userId' | 'createdAt' | 'user'>) => {
+export const writeActivity = async (type: string, description: string, metadata: Record<string, any> = {}) => {
 
     try {
-        if (!data.description || !data.type) {
+
+        const { user, ipAddress, userAgent } = getRequestContext();
+        if (!description || !type) {
             throw new Error("Failed Write Activity: Missing required filed!");
         }
+
+        if (!user) throw new Error("Failed Write Activity: user not found!");
+        if (typeof user == "string") return;
+
         const connection = await getConnection();
         const activityRepository = connection.getRepository(Activity);
-
-        let user = await (typeof userId == "object" ? userId : (connection.getRepository(User)).findOneBy({ id: userId }));
-        if (!user) throw new Error("Failed Write Activity: user not found!");
-
         const now = currentTime();
         const oneMinuteAgo = now - 60;
 
@@ -38,8 +41,8 @@ export const writeActivity = async (userId: string | User, data: Omit<Activity, 
         const existing = await activityRepository.findOne({
             where: {
                 userId: user.id,
-                type: data.type,
-                description: data.description,
+                type,
+                description,
                 createdAt: Between(oneMinuteAgo, now),
             },
         });
@@ -54,7 +57,11 @@ export const writeActivity = async (userId: string | User, data: Omit<Activity, 
         // Insert new activity
         const activity = activityRepository.create({
             userId: user.id,
-            ...data,
+            description,
+            type,
+            metadata,
+            ipAddress,
+            userAgent,
             createdAt: now,
         });
 

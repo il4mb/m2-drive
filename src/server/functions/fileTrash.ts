@@ -3,7 +3,7 @@
 import { getConnection } from "@/data-source"
 import { File } from "@/entities/File";
 import { currentTime } from "@/libs/utils";
-import { createFunction } from "../funcHelper";
+import { createFunction, writeActivity } from "../funcHelper";
 import { Brackets } from "typeorm";
 import Contributor from "@/entities/Contributor";
 import { getRequestContext } from "@/libs/requestContext";
@@ -160,6 +160,8 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
     file.meta = cleanMeta;
 
     await repository.save(file);
+
+    writeActivity("DELETE_FILE", `Menghapus ${file.type} ${file.name}`);
 });
 
 
@@ -210,4 +212,7 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
 
     // Permanently remove them from the DB
     await repository.delete(trashedFiles.map(f => f.id));
+
+    writeActivity("DELETE_FILE", `Menghapus banyak file/folder jumlah ${trashedFiles.length || 0}`);
+
 });

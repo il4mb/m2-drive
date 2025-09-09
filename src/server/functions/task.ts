@@ -1,7 +1,7 @@
 'use server'
 
 import { Task } from "@/entities/Task";
-import { createFunction } from "../funcHelper"
+import { createFunction, writeActivity } from "../funcHelper"
 import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission } from "../checkPermission";
 import { getConnection } from "@/data-source";
@@ -30,6 +30,12 @@ export const updateTask = createFunction(async ({ taskId, data }: UpdateTask) =>
     Object.assign(task, data);
     await taskRepository.save(task);
 
+    if (data.status == "pending") {
+        writeActivity("RESTART_TASK", `Memulai ulang task ${task.id}`);
+    } else {
+        writeActivity("EDIT_TASK", `Memperbarui task ${task.id}`);
+    }
+
     return task;
 });
 
@@ -51,6 +57,8 @@ export const deleteTask = createFunction(async ({ taskId }: { taskId: string }) 
 
     await taskRepository.remove(task);
 
+    writeActivity("DELETE_TASK", `Menghapus task ${task.id}`);
+
     return { deletedId: taskId };
 });
 
@@ -63,6 +71,8 @@ export const bulkDeleteTask = createFunction(async ({ tasksId }: { tasksId: stri
     const connection = await getConnection();
     const taskRepository = connection.getRepository(Task);
     const result = await taskRepository.delete({ id: In(tasksId) });
+
+    writeActivity("DELETE_TASK", `Menghapus banyak task dengan jumlah ${result.affected ?? 0}`);
 
     return {
         deletedIds: tasksId,

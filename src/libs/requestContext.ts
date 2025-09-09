@@ -2,8 +2,10 @@ import User from "@/entities/User";
 import { AsyncLocalStorage } from "async_hooks";
 
 type RequestContextType = {
-    user?: User | 'system';
-};
+    user?: User | 'system'|null;
+    ipAddress?: string;
+    userAgent?: string;
+}
 
 export const requestContext = new AsyncLocalStorage<RequestContextType>();
 

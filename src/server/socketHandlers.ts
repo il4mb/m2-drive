@@ -378,7 +378,7 @@ export async function setupSocketHandlers(io: Server) {
                         if (!fn || typeof fn !== 'function') {
                             throw new Error(`Function "${data.function}" not found`);
                         }
-
+                        // @ts-ignore
                         const result = await fn(data.args || {});
                         callback({ success: true, data: result });
                     });

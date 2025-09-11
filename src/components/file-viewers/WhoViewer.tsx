@@ -10,12 +10,6 @@ export default function WhoViewer() {
 
     const viewers = useFileViewers();
 
-    useEffect(() => {
-        return () => {
-            console.log("UNMOUNT")
-        }
-    }, [])
-
     return (
         <Stack direction={"row"} mr={2}>
             <AnimatePresence mode={'wait'}>

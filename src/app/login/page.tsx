@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import { useSessionManager } from "@/components/context/SessionManager";
 import { socket } from "@/socket";
 import Link from "next/link";
+import { enqueueSnackbar } from "notistack";
+import CloseSnackbar from "@/components/ui/CloseSnackbar";
 
 
 export default function page() {
@@ -32,10 +34,12 @@ export default function page() {
             return Boolean(isEmailValid(email) && password.length >= 8);
         },
         onError(error) {
-            console.log(error)
+            enqueueSnackbar(error.message, { 
+                variant: "error", 
+                action: CloseSnackbar 
+            })
         },
         onSuccess({ data }) {
-            // console.log(response)
             setTokenId(data?.tokenId || "");
         }
     });

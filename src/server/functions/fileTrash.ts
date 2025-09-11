@@ -85,8 +85,6 @@ export const removeFile = createFunction(
                         .where('f.meta->>\'Key\' = :key', { key })
                         .getCount()
 
-                    console.log(ussageCount)
-
                     if (ussageCount <= 1) {
                         // @ts-ignore
                         addTaskQueue("delete-file", { objectKey: key });

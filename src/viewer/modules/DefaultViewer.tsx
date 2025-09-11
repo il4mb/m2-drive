@@ -1,22 +1,15 @@
 'use client'
 
-import { Folder, Square, Download, ExternalLink, Info, Copy } from "lucide-react"
+import { Square, Download, Info } from "lucide-react"
 import { ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entities/File";
-import { useState } from "react";
 import { motion } from "motion/react"
 import {
     Button,
     Chip,
     Stack,
     Typography,
-    Paper,
-    Box,
-    IconButton,
-    Divider,
-    Tooltip,
-    Alert,
-    Snackbar
+    Box
 } from "@mui/material";
 import { formatFileSize, formatLocaleDate } from "@/libs/utils";
 import { useTheme } from "@mui/material/styles";
@@ -31,15 +24,14 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
     const updatedAt = file.updatedAt || 0;
 
     const handleDownload = () => {
-        // Implement download logic
-        console.log('Downloading file:', file.name);
+        const source = `/file/${file.id}`;
+        const link = document.createElement("a");
+        link.href = source;
+        link.download = file.name || "download";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
-
-    const handleOpenInBrowser = () => {
-        // Implement open in browser logic
-        console.log('Opening file in browser:', file.name);
-    };
-
 
 
     const getFileTypeColor = () => {
@@ -191,27 +183,6 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
                             transition: 'all 0.2s ease'
                         }}>
                         Download File
-                    </Button>
-
-                    <Button
-                        variant="outlined"
-                        size="large"
-                        startIcon={<ExternalLink size={20} />}
-                        onClick={handleOpenInBrowser}
-                        sx={{
-                            minWidth: 200,
-                            height: 50,
-                            borderRadius: 3,
-                            borderColor: getFileTypeColor(),
-                            color: getFileTypeColor(),
-                            '&:hover': {
-                                borderColor: getFileTypeColor(),
-                                bgcolor: `${getFileTypeColor()}10`,
-                                transform: 'translateY(-2px)'
-                            },
-                            transition: 'all 0.2s ease'
-                        }}>
-                        Open in Browser
                     </Button>
                 </Stack>
             </motion.div>

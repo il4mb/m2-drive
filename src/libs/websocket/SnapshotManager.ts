@@ -39,7 +39,6 @@ export class SnapshotManager {
 
     public setSocket(socket: Socket) {
         this.socket = socket;
-        console.log("SOCKET SET");
     }
 
     private getQueryKey(queryConfig: QueryConfig): string {
@@ -68,14 +67,12 @@ export class SnapshotManager {
         let subscription = this.subscriptions.get(queryKey);
 
         if (subscription) {
-            console.log("JOIN EXIST CLIENT");
             // Add callback to existing subscription
             subscription.callbacks.set(callback, { options });
 
             // Immediately send current data to new callback if available
             if (subscription.currentData !== undefined) {
                 try {
-                    console.log("SEND CURRENT DATA", subscription.currentData);
                     callback(subscription.currentData as any);
                 } catch (error) {
                     console.error('Error in initial callback:', error);
@@ -159,7 +156,6 @@ export class SnapshotManager {
         }
 
         const handleDatabaseChange = (payload: DatabaseChangePayload) => {
-            console.log(payload);
 
             try {
                 if (payload.collection !== queryConfig.collection) return;

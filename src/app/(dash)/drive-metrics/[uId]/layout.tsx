@@ -24,8 +24,8 @@ export default function Layout({ children }: layoutProps) {
     const { uId } = useParams<{ uId: string }>();
     const { user } = useUser(uId);
 
-    const isDrive = pathname.startsWith(`/drive-root/${uId}/drive`)
-    const isTrash = pathname.startsWith(`/drive-root/${uId}/deleted`)
+    const isDrive = pathname.startsWith(`/drive-metrics/${uId}/drive`)
+    const isTrash = pathname.startsWith(`/drive-metrics/${uId}/deleted`)
 
 
     return (
@@ -40,7 +40,7 @@ export default function Layout({ children }: layoutProps) {
                                     <Button
                                         size='small'
                                         LinkComponent={Link}
-                                        href={`/drive-root/${uId}/drive`}
+                                        href={`/drive-metrics/${uId}/drive`}
                                         variant={isDrive ? "contained" : "outlined"}>
                                         Drive
                                     </Button>
@@ -48,7 +48,7 @@ export default function Layout({ children }: layoutProps) {
                                         size='small'
                                         color='error'
                                         LinkComponent={Link}
-                                        href={`/drive-root/${uId}/deleted`}
+                                        href={`/drive-metrics/${uId}/deleted`}
                                         variant={isTrash ? "contained" : "outlined"}>
                                         Tempat Sampah
                                     </Button>

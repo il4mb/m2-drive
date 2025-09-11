@@ -59,7 +59,7 @@ export default function Page() {
                     <Paper component={Stack} sx={{ p: 3, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
                         <Stack mb={2} direction="row" alignItems="center" justifyContent="space-between" position={'relative'}>
                             <Stack spacing={2} alignItems={"center"} direction={"row"}>
-                                <IconButton LinkComponent={Link} href={`/drive-root/${uId}/drive`}>
+                                <IconButton LinkComponent={Link} href={`/drive-metrics/${uId}/drive`}>
                                     <ChevronLeft size={18} />
                                 </IconButton>
                                 <Stack alignItems="center" spacing={1} direction="row">

@@ -1,107 +1,107 @@
-'use client'
+// 'use client'
 
-import User from '@/entities/User';
-import { getMany } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
-import { Room, RoomUser } from '@/server/socketHandlers';
-import { socket } from '@/socket';
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-
-
-type ContextState<T extends Record<string, any> = Record<string, any>> = {
-    data: Room<T>;
-    updateMyData: (data: T) => void;
-}
-
-export interface RoomProviderProps {
-    children?: ReactNode;
-    roomId: string;
-}
-export default function RoomProvider<T extends Record<string, any>>({ children, roomId }: RoomProviderProps) {
-
-    const [data, setData] = useState<Room<T>>({} as any);
-
-    const updateMyData = (data: Record<string, any>) => {
-        socket.emit("room-update", roomId, data);
-    }
-
-    const state = useMemo<ContextState>(() => ({
-        data, updateMyData
-    }), [data, updateMyData]);
+// import User from '@/entities/User';
+// import { getMany } from '@/libs/websocket/query';
+// import { onSnapshot } from '@/libs/websocket/snapshot';
+// // import { Room, RoomUser } from '@/server/socketHandlers';
+// import { socket } from '@/socket';
+// import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
 
-    useEffect(() => {
-        if (!roomId) return;
-        setData({} as any);
-        const onRoomChanged = (data: any) => {
-            delete data.id;
-            setData(data);
-        }
+// type ContextState<T extends Record<string, any> = Record<string, any>> = {
+//     // data: Room<T>;
+//     // updateMyData: (data: T) => void;
+// }
 
-        socket.on("room-change", onRoomChanged);
-        socket.emit("room-join", roomId);
-        return () => {
-            socket.off("room-change", onRoomChanged);
-            socket.emit("room-leave", roomId);
-        }
-    }, [roomId]);
+// export interface RoomProviderProps {
+//     children?: ReactNode;
+//     roomId: string;
+// }
+// export default function RoomProvider<T extends Record<string, any>>({ children, roomId }: RoomProviderProps) {
 
+//     // const [data, setData] = useState<Room<T>>({} as any);
 
+//     const updateMyData = (data: Record<string, any>) => {
+//         socket.emit("room-update", roomId, data);
+//     }
 
-    return (
-        <Context.Provider value={state}>
-            {children}
-        </Context.Provider>
-    );
-}
+//     // const state = useMemo<ContextState>(() => ({
+//     //     data, updateMyData
+//     // }), [data, updateMyData]);
 
 
-const Context = createContext<ContextState | undefined>(undefined);
-export function useRoom<T extends Record<string, any>>() {
-    const context = useContext(Context);
-    if (!context) throw new Error("useRoom must call in RoomProvider");
-    return context as unknown as ContextState<T>;
-}
+//     // useEffect(() => {
+//     //     if (!roomId) return;
+//     //     setData({} as any);
+//     //     const onRoomChanged = (data: any) => {
+//     //         delete data.id;
+//     //         setData(data);
+//     //     }
+
+//     //     socket.on("room-change", onRoomChanged);
+//     //     socket.emit("room-join", roomId);
+//     //     return () => {
+//     //         socket.off("room-change", onRoomChanged);
+//     //         socket.emit("room-leave", roomId);
+//     //     }
+//     // }, [roomId]);
 
 
-export function useRoomUsers<T = Record<string, any>>() {
 
-    const context = useContext(Context);
-    const [existUsersId, setExistUsersId] = useState<string[]>([]);
-    const [users, setUsers] = useState<(RoomUser<T> & { id: string; user?: User })[]>([]);
+//     return (
+//         <Context.Provider value={{}}>
+//             {children}
+//         </Context.Provider>
+//     );
+// }
 
-    useEffect(() => {
-        const roomUsers = Object.entries(context?.data.users || {}).map(([id, data]) => ({
-            id,
-            ...(data as RoomUser<T>),
-        }));
 
-        const usersId = roomUsers
-            .filter(u => !u.isGuest && u.userId)
-            .map(u => u.userId);
+// const Context = createContext<ContextState | undefined>(undefined);
+// export function useRoom<T extends Record<string, any>>() {
+//     const context = useContext(Context);
+//     if (!context) throw new Error("useRoom must call in RoomProvider");
+//     return context as unknown as ContextState<T>;
+// }
 
-        setExistUsersId(usersId as any);
-        setUsers(roomUsers);
-    }, [context?.data]);
 
-    useEffect(() => {
-        if (!existUsersId.length) return;
+// export function useRoomUsers<T = Record<string, any>>() {
 
-        const query = getMany("user").where("id", "IN", existUsersId);
+//     const context = useContext(Context);
+//     const [existUsersId, setExistUsersId] = useState<string[]>([]);
+//     const [users, setUsers] = useState<(RoomUser<T> & { id: string; user?: User })[]>([]);
 
-        const unsubscribe = onSnapshot(query, (dbUsers: User[]) => {
-            setUsers(prev =>
-                prev.map(roomUser => {
-                    if (!roomUser.userId) return roomUser;
+//     useEffect(() => {
+//         const roomUsers = Object.entries(context?.data.users || {}).map(([id, data]) => ({
+//             id,
+//             ...(data as RoomUser<T>),
+//         }));
 
-                    const matchedUser = dbUsers.find(u => u.id === roomUser.userId);
-                    return { ...roomUser, user: matchedUser || roomUser.user };
-                })
-            );
-        });
+//         const usersId = roomUsers
+//             .filter(u => !u.isGuest && u.userId)
+//             .map(u => u.userId);
 
-        return unsubscribe;
-    }, [existUsersId]);
+//         setExistUsersId(usersId as any);
+//         setUsers(roomUsers);
+//     }, [context?.data]);
 
-    return users;
-}
+//     useEffect(() => {
+//         if (!existUsersId.length) return;
+
+//         const query = getMany("user").where("id", "IN", existUsersId);
+
+//         const unsubscribe = onSnapshot(query, (dbUsers: User[]) => {
+//             setUsers(prev =>
+//                 prev.map(roomUser => {
+//                     if (!roomUser.userId) return roomUser;
+
+//                     const matchedUser = dbUsers.find(u => u.id === roomUser.userId);
+//                     return { ...roomUser, user: matchedUser || roomUser.user };
+//                 })
+//             );
+//         });
+
+//         return unsubscribe;
+//     }, [existUsersId]);
+
+//     return users;
+// }

@@ -10,7 +10,7 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
     }
 
     async afterInsert(event: InsertEvent<User>) {
-        const user = event.entities;
+        const user = event.entity;
         if (!user || !user.id) return; // Guard
 
         const fileRepository = event.manager.getRepository(File);
@@ -36,7 +36,7 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
     }
 
     async afterRemove(event: RemoveEvent<User>) {
-        const userId = event.entities?.id ?? event.entityId;
+        const userId = event.entity?.id ?? event.entityId;
         if (!userId) return;
 
         // Optional: Remove all files belonging to this user

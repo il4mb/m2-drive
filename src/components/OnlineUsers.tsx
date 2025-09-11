@@ -11,7 +11,9 @@ export default function OnlineUsers() {
 
     useEffect(() => {
         const query = getMany('user').where(Json("meta", "isActive"), "==", true);
-        const unsubscribe = onSnapshot(query, setUsers);
+        const unsubscribe = onSnapshot(query, ({ rows }) => {
+            setUsers(rows);
+        });
         return unsubscribe;
     }, []);
 

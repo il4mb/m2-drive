@@ -10,7 +10,7 @@ export class FileSubscriber implements EntitySubscriberInterface<File> {
     }
 
     async afterInsert(event: InsertEvent<File>) {
-        const file = event.entities;
+        const file = event.entity;
         if (!file?.id) return;
 
         // Only proceed if this file has a parent folder
@@ -30,7 +30,7 @@ export class FileSubscriber implements EntitySubscriberInterface<File> {
     }
 
     async afterRemove(event: RemoveEvent<File>) {
-        const file = event.entities ?? { id: event.entityId as string, pId: null };
+        const file = event.entity ?? { id: event.entityId as string, pId: null };
         if (!file.pId) return;
 
         const fileRepository = event.manager.getRepository(File);
@@ -48,7 +48,7 @@ export class FileSubscriber implements EntitySubscriberInterface<File> {
     }
 
     async afterUpdate(event: UpdateEvent<File<"file" | "folder">>) {
-        const file = event.entities;
+        const file = event.entity;
         if (!file?.id) return;
 
         // Only proceed if this file has a parent folder

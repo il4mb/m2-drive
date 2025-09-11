@@ -14,10 +14,11 @@ import { DatabaseSubscriber } from "./server/database/databaseSubscriber";
 import { Activity } from "./entities/Activity";
 
 const dev = process.env.NODE_ENV !== "production";
+export const databasePath = `${process.cwd()}/database.sqlite`;
 
 const source = new DataSource({
     type: "sqlite",
-    database: `${process.cwd()}/database.sqlite`,
+    database: databasePath,
     synchronize: dev,
     logging: false,
     entities: [

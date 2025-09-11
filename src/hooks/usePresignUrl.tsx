@@ -26,3 +26,11 @@ export default function usePresignUrl(objKey?: string) {
 
     return cache?.value || undefined;
 }
+
+
+export const getPresignUrl = async (objectKey: string) => {
+    return (
+        await fetch(`/api/presign-url/${objectKey.replace(/^\//, '')}`)
+            .then(r => r.json())
+    )?.data?.url;
+}

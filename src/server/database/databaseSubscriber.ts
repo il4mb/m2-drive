@@ -122,8 +122,9 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             return;
         }
 
-        const ctx = getRequestContext();
-        const user = ctx?.user;
+        // this.handleEvent(event as any, type as any);
+        // const ctx = getRequestContext();
+        // const user = ctx?.user;
 
         // Extract the data for this event type
         // const { data, previousData } = this.extractEventData(event);
@@ -184,21 +185,21 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    async broadcastDatabaseChange<N extends EntityName, E = InstanceType<EntityMap[N]>>(
+    async broadcastDatabaseChange(
         payload: DatabaseChangePayload & { event: UpdateEvent<any> | InsertEvent<any> | RemoveEvent<any> },
         dataId?: string | number
     ) {
 
-
         for (const [id, { socket, collection, relations, conditions, debug }] of subscribers) {
+
             if (collection != payload.collection) {
                 if (debug) {
                     console.log("SKIPED", payload.eventName, collection, payload.collection);
                 }
                 continue;
             }
-            const uid = socket.data?.uid;
-            const isGuest = socket.data?.isAuthenticated || true;
+            const uid = socket.data?.userId;
+            const isGuest = socket.data?.isAuthenticated || false;
 
             let data = payload.data;
             const previousData = payload.previousData;
@@ -237,30 +238,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 continue;
             }
 
-
-            const user = (!isGuest ? (await payload.event.manager.getRepository(User).findOneBy({ id: uid })) : undefined) || undefined;
-
-            const context: BroadcastContext<E> = {
-                room: dataId
-                    ? "item"
-                    : payload.collection
-                        ? "collection"
-                        : "database",
-                user,
-                collection,
-                event: payload.eventName,
-                data: payload.data,
-                previousData: payload.previousData,
-            };
-
             try {
-                // const allowed = await rule(context);
-                // if (!allowed) {
-                //     if (debug) {
-                //         console.log("SKIPPED", "RULE NOT ALLOWED");
-                //     }
-                //     continue;
-                // }
 
                 // remove typeorm Event entity to prevent unexpected error
                 const { event, ...safe } = payload;

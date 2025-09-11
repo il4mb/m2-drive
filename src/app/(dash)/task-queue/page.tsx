@@ -4,24 +4,30 @@ import Container from '@/components/Container';
 import AnchorMenu from '@/components/context-menu/AnchorMenu';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
+import PermissionSuspense from '@/components/PermissionSuspense';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { Task } from '@/entities/Task';
 import { useMyPermission } from '@/hooks/useMyPermission';
 import { epochTime, formatLocaleDate } from '@/libs/utils';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { getMany } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import {
     Box, Chip, Paper, Stack, Typography, LinearProgress, IconButton,
     alpha, useTheme, Switch, FormControlLabel, Tooltip,
     Badge, Checkbox,
-    Alert
+    Alert,
+    Button
 } from '@mui/material';
 import {
     Cpu, MoreVertical, Clock, CheckCircle, XCircle, Play,
-    AlertCircle, RefreshCw, Hash, Trash2, RotateCcw
+    AlertCircle, RefreshCw, Hash, Trash2, RotateCcw,
+    Key,
+    Home
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 
@@ -285,7 +291,9 @@ const SelectionHeader = ({
 
 export default function TaskQueuePage() {
 
+    const router = useRouter();
     const canManageTask = useMyPermission("can-manage-task-queue");
+    const canSeeTask = useMyPermission("can-see-task-queue");
     const { addAction } = useActionsProvider();
     const theme = useTheme();
 
@@ -413,8 +421,9 @@ export default function TaskQueuePage() {
             query.where("status", "==", filter);
         }
 
-        const unsubscribe = onSnapshot(query, setTaskList);
-        return unsubscribe;
+        return onSnapshot(query, (data) => {
+            setTaskList(data.rows)
+        });
     }, [sortBy, order, filter]);
 
     useEffect(() => {
@@ -434,97 +443,92 @@ export default function TaskQueuePage() {
     }, [addAction, filter]);
 
     return (
-        <Container maxWidth='xl' scrollable>
-            <StickyHeader
-                actions={
-                    <>
-                        <Tooltip title="Refresh">
-                            <IconButton onClick={handleRefresh}>
-                                <RefreshCw size={18} className={isRefreshing ? 'spin' : ''} />
-                            </IconButton>
-                        </Tooltip>
-                        <FormControlLabel
-                            control={
-                                <Switch
+        <PermissionSuspense permission={"can-see-task-queue"}>
+            <Container maxWidth='xl' scrollable>
+                <StickyHeader
+                    actions={
+                        <>
+                            <Tooltip title="Refresh">
+                                <IconButton onClick={handleRefresh}>
+                                    <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                                </IconButton>
+                            </Tooltip>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        size="small"
+                                        checked={selectEnabled}
+                                        onChange={(e) => setSelectEnabled(e.target.checked)}
+                                    />
+                                }
+                                label="Select"
+                            />
+                        </>
+                    }>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+                        <Stack alignItems="center" spacing={1} direction="row">
+                            <Cpu size={24} />
+                            <Typography fontSize={20} fontWeight={600}>Task Queue</Typography>
+                            <Badge badgeContent={filteredTasks.length} color="primary" showZero>
+                                <Chip
+                                    label={`${stats.total} total`}
                                     size="small"
-                                    checked={selectEnabled}
-                                    onChange={(e) => setSelectEnabled(e.target.checked)}
+                                    variant="outlined"
+                                    sx={{ ml: 2 }}
                                 />
-                            }
-                            label="Select"
-                        />
-                    </>
-                }>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-                    <Stack alignItems="center" spacing={1} direction="row">
-                        <Cpu size={24} />
-                        <Typography fontSize={20} fontWeight={600}>Task Queue</Typography>
-                        <Badge badgeContent={filteredTasks.length} color="primary" showZero>
-                            <Chip
-                                label={`${stats.total} total`}
-                                size="small"
-                                variant="outlined"
-                                sx={{ ml: 2 }}
-                            />
-                        </Badge>
+                            </Badge>
+                        </Stack>
                     </Stack>
-                </Stack>
-            </StickyHeader>
+                </StickyHeader>
 
-            <Paper
-                component={Stack}
-                flex={1}
-                sx={{
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    backdropFilter: 'blur(10px)',
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                }}>
-                {!canManageTask && (
-                    <Alert severity='warning'>
-                        Kamu dalam mode <strong>Read Only.</strong>
-                    </Alert>
-                )}
-                {selectEnabled && (
-                    <SelectionHeader
-                        disabled={!canManageTask}
-                        selectedCount={selected.length}
-                        totalCount={filteredTasks.length}
-                        onSelectAll={handleSelectAll}
-                        onBulkDelete={handleBulkDelete}
-                        onBulkRetry={handleBulkRetry}
-                        canBulkRetry={canBulkRetry}
-                    />
-                )}
+                <Paper
+                    component={Stack}
+                    flex={1}
+                    sx={{
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                    }}>
+                    {!canManageTask && (
+                        <Alert severity='warning'>
+                            Kamu dalam mode <strong>Read Only.</strong>
+                        </Alert>
+                    )}
+                    {selectEnabled && (
+                        <SelectionHeader
+                            disabled={!canManageTask}
+                            selectedCount={selected.length}
+                            totalCount={filteredTasks.length}
+                            onSelectAll={handleSelectAll}
+                            onBulkDelete={handleBulkDelete}
+                            onBulkRetry={handleBulkRetry}
+                            canBulkRetry={canBulkRetry}
+                        />
+                    )}
 
-                <Stack flex={1} spacing={0}>
-                    <AnimatePresence mode='popLayout'>
-                        {filteredTasks.map((task) => (
-                            <TaskItem
-                                disabled={!canManageTask}
-                                key={task.id}
-                                task={task}
-                                isSelected={selected.includes(task.id)}
-                                selectEnabled={selectEnabled}
-                                onSelectionChange={handleSelectionChange}
-                                onRetry={handleRetry}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </AnimatePresence>
-                    {filteredTasks.length === 0 && <EmptyState />}
-                </Stack>
-            </Paper>
+                    {canSeeTask && (
+                        <Stack flex={1} spacing={0}>
+                            <AnimatePresence mode='popLayout'>
+                                {filteredTasks.map((task) => (
+                                    <TaskItem
+                                        disabled={!canManageTask}
+                                        key={task.id}
+                                        task={task}
+                                        isSelected={selected.includes(task.id)}
+                                        selectEnabled={selectEnabled}
+                                        onSelectionChange={handleSelectionChange}
+                                        onRetry={handleRetry}
+                                        onDelete={handleDelete}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                            {filteredTasks.length === 0 && <EmptyState />}
+                        </Stack>
+                    )}
 
-            <style jsx global>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
-        </Container>
+                </Paper>
+            </Container>
+        </PermissionSuspense>
     );
 }

@@ -13,9 +13,12 @@ import { motion } from "motion/react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AnchorMenu from "@/components/context-menu/AnchorMenu";
 import { useActionsProvider } from "@/components/navigation/ActionsProvider";
+import { useRouter } from "next/navigation";
+import PermissionSuspense from "@/components/PermissionSuspense";
 
 export default function page() {
 
+    const router = useRouter();
     const actionProvider = useActionsProvider();
     const checkPermission = useCheckMyPermissionState();
     const canListuser = checkPermission('can-list-user');
@@ -86,100 +89,102 @@ export default function page() {
     }, [keyword]);
 
     return (
-        <Container maxWidth="lg" scrollable>
+        <PermissionSuspense permission={"can-list-user"}>
+            <Container maxWidth="lg" scrollable>
 
-            <StickyHeader
-                loading={loading}
-                actions={
-                    <>
-                        {canAddUser && (
-                            <Button variant="contained" size="small" LinkComponent={Link} href="/users/create">
-                                Tambah Pengguna
-                            </Button>
+                <StickyHeader
+                    loading={loading}
+                    actions={
+                        <>
+                            {canAddUser && (
+                                <Button variant="contained" size="small" LinkComponent={Link} href="/users/create">
+                                    Tambah Pengguna
+                                </Button>
+                            )}
+                        </>
+                    }>
+                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                        <Users2 size={28} />
+                        <Typography fontSize={22} fontWeight={600}>
+                            Manage Pengguna
+                        </Typography>
+                    </Stack>
+                </StickyHeader>
+
+                <Stack component={Paper} p={2} flex={1} borderRadius={2}>
+                    <Stack p={2} flex={1}>
+
+                        {!canListuser && (
+                            <Alert severity="warning" sx={{ mb: 3 }} variant="outlined">
+                                <AlertTitle>Kesalahan Wewenang</AlertTitle>
+                                Kamu tidak memiliki wewenang untuk melihat daftar pengguna!
+                            </Alert>
                         )}
-                    </>
-                }>
-                <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                    <Users2 size={28} />
-                    <Typography fontSize={22} fontWeight={600}>
-                        Manage Pengguna
-                    </Typography>
-                </Stack>
-            </StickyHeader>
 
-            <Stack component={Paper} p={2} flex={1} borderRadius={2}>
-                <Stack p={2} flex={1}>
-
-                    {!canListuser && (
-                        <Alert severity="warning" sx={{ mb: 3 }} variant="outlined">
-                            <AlertTitle>Kesalahan Wewenang</AlertTitle>
-                            Kamu tidak memiliki wewenang untuk melihat daftar pengguna!
-                        </Alert>
-                    )}
-
-                    {users.length == 0 && (
-                        <Stack>
-                            <Typography fontSize={16}>Tidak ada pengguna!</Typography>
-                        </Stack>
-                    )}
-                    {users.map((e, i) => (
-                        <Stack
-                            key={e.id}
-                            component={motion.div}
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 10, opacity: 0 }}
-                            transition={{ delay: 0.05 * i }}
-                            sx={{
-                                p: 1.5,
-                                borderRadius: 1,
-                                "&:hover": {
-                                    bgcolor: 'action.hover'
-                                }
-                            }}
-                            direction={"row"}
-                            gap={1}
-                            alignItems={"center"}
-                            justifyContent={"space-between"}>
+                        {canListuser && users.length == 0 && (
+                            <Stack>
+                                <Typography fontSize={16}>Tidak ada pengguna!</Typography>
+                            </Stack>
+                        )}
+                        {canListuser && users.map((e, i) => (
                             <Stack
-                                flex={1}
-                                component={Link}
-                                href={`/users/${e.id}`}
+                                key={e.id}
+                                component={motion.div}
+                                initial={{ y: 10, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 10, opacity: 0 }}
+                                transition={{ delay: 0.05 * i }}
+                                sx={{
+                                    p: 1.5,
+                                    borderRadius: 1,
+                                    "&:hover": {
+                                        bgcolor: 'action.hover'
+                                    }
+                                }}
                                 direction={"row"}
                                 gap={1}
                                 alignItems={"center"}
-                                sx={{
-                                    textDecoration: 'none',
-                                    color: 'inherit'
-                                }}>
-                                <UserAvatar size={40} user={e} />
+                                justifyContent={"space-between"}>
+                                <Stack
+                                    flex={1}
+                                    component={Link}
+                                    href={`/users/${e.id}`}
+                                    direction={"row"}
+                                    gap={1}
+                                    alignItems={"center"}
+                                    sx={{
+                                        textDecoration: 'none',
+                                        color: 'inherit'
+                                    }}>
+                                    <UserAvatar size={40} user={e} />
+                                    <Stack>
+                                        <Typography component={'div'} fontSize={18} fontWeight={600}>
+                                            {e.name}
+                                            <Chip
+                                                label={e.meta.role}
+                                                sx={{ ml: 2 }} />
+                                        </Typography>
+                                        <Typography component={'div'} color="text.secondary" fontSize={12}>
+                                            {e.email}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
                                 <Stack>
-                                    <Typography component={'div'} fontSize={18} fontWeight={600}>
-                                        {e.name}
-                                        <Chip
-                                            label={e.meta.role}
-                                            sx={{ ml: 2 }} />
-                                    </Typography>
-                                    <Typography component={'div'} color="text.secondary" fontSize={12}>
-                                        {e.email}
-                                    </Typography>
+                                    {canEdituser && (
+                                        <Button
+                                            LinkComponent={Link}
+                                            href={`/users/${e.id}/edit`}
+                                            startIcon={<Pen size={16} />}
+                                            size="small">
+                                            Sunting
+                                        </Button>
+                                    )}
                                 </Stack>
                             </Stack>
-                            <Stack>
-                                {canEdituser && (
-                                    <Button
-                                        LinkComponent={Link}
-                                        href={`/users/${e.id}/edit`}
-                                        startIcon={<Pen size={16} />}
-                                        size="small">
-                                        Sunting
-                                    </Button>
-                                )}
-                            </Stack>
-                        </Stack>
-                    ))}
+                        ))}
+                    </Stack>
                 </Stack>
-            </Stack>
-        </Container>
+            </Container>
+        </PermissionSuspense>
     )
 }

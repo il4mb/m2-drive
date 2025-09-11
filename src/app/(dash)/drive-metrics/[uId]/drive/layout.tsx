@@ -2,7 +2,7 @@
 
 import { Breakpoint, Stack } from "@mui/material";
 import { useParams } from "next/navigation";
-import { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
+import { Dispatch, ReactNode, SetStateAction, useEffect, useMemo } from "react";
 import { File } from "@/entities/File";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { AnimatePresence } from "motion/react";
@@ -32,17 +32,18 @@ export default function layout({ children }: layoutProps) {
 
     const contextMenu = useContextMenu();
     const { fId, uId, } = useParams<{ uId: string; fId: string[] }>();
+    const userId = useMemo(() => uId, [uId]);
     const firstId = fId?.[0];
 
-    // useEffect(() => {
-    //     return contextMenu.addMenu("addFolder", ActionNewFolder);
-    // }, []);
+    useEffect(() => {
+        return contextMenu.addState({ userId });
+    }, [userId]);
 
     if (fId?.length > 0) {
         return (
             <FileViewerLayout
                 pathList={fId}
-                pageEndpoint={`/drive-root/${uId}/drive/${firstId}/{ID}`}
+                pageEndpoint={`/drive-metrics/${uId}/drive/${firstId}/{ID}`}
                 canGoBack>
                 {children}
             </FileViewerLayout>
@@ -51,7 +52,7 @@ export default function layout({ children }: layoutProps) {
 
     return (
         <AnimatePresence mode={"wait"}>
-            <ModuleViewerManager endpoint={`/drive-root/${uId}/drive/{ID}`}>
+            <ModuleViewerManager endpoint={`/drive-metrics/${uId}/drive/{ID}`}>
                 <Stack flex={1} overflow={"hidden"}>
                     {children}
                 </Stack>

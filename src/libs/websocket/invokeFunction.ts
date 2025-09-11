@@ -11,7 +11,7 @@ const invokeCache = new Map<string, number>();
 
 export function invokeFunction<N extends FunctionName>(
     name: N,
-    args: FunctionProps<N>
+    args?: FunctionProps<N>
 ): Promise<InvokeResult<FunctionReturn<N>>> {
     const key = `${name}:${stableKey(args)}`;
     const now = Date.now();

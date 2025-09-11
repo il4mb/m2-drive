@@ -1,7 +1,7 @@
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider"
 import { File } from "@/entities/File";
 import { getMany, IsNull, Json } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { useEffect, useState } from "react";
 
 export const useMyHistory = () => {
@@ -22,7 +22,7 @@ export const useMyHistory = () => {
             .limit(10)
 
         const unsubscribe = onSnapshot(query, (data) => {
-            setFiles(data);
+            setFiles(data.rows);
         });
         return unsubscribe;
     }, [session?.user]);

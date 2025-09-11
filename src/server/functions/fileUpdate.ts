@@ -24,12 +24,12 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
     if (!userId) {
         throw new Error("Failed Create Folder: userId tidak boleh kosong!");
     }
-    if (!isRoot && actor != "system") {
+    if (!isRoot) {
         await checkPermission("can-create-folder");
     }
 
-    if (name.length < 1 || name.length > 34) {
-        throw new Error("Failed Create Folder: Nama folder tidak boleh lebih kecil dari 1 dan lebih dari 34 karakter!");
+    if (name.length < 1 || name.length > 112) {
+        throw new Error("Failed Create Folder: Nama folder tidak boleh lebih kecil dari 1 dan lebih dari 112 karakter!");
     }
 
 
@@ -100,14 +100,14 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     const isOwner = !isSystem && actor?.id === file.uId;
 
     // Check permissions
-    if (!isRoot && !isSystem && !isAdmin && !isOwner) {
+    if (!isRoot) {
         if (file.type == "file") {
-            checkPermission("can-edit-file");
+            await checkPermission("can-edit-file");
         } else {
-            checkPermission("can-edit-folder");
+            await checkPermission("can-edit-folder");
         }
-
     }
+    
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
     const folderMetaFields = [
@@ -136,16 +136,16 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     ];
     const allowedMetaFields = file.type === "folder" ? folderMetaFields : fileMetaFields;
 
-    // If user is admin, only allow updating tags in meta
-    if (isAdmin && !isOwner) {
-        // Check if admin is trying to update anything other than meta.tags
-        const hasNonMetaUpdates = Object.keys(data).some(key => key !== "meta");
-        const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
+    // // If user is admin, only allow updating tags in meta
+    // if (isAdmin && !isOwner) {
+    //     // Check if admin is trying to update anything other than meta.tags
+    //     const hasNonMetaUpdates = Object.keys(data).some(key => key !== "meta");
+    //     const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
 
-        if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
-            throw new Error("Gagal: Tidak ada pembaruan!");
-        }
-    }
+    //     // if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
+    //     //     throw new Error("Gagal: Tidak ada pembaruan!");
+    //     // }
+    // }
 
     if (!isRoot && data.meta?.generalPermit) {
         if (file.type == "file") {
@@ -153,6 +153,10 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         } else {
             await checkPermission("can-share-folder");
         }
+    }
+
+     if (data.name && (data.name.length < 1 || data.name.length > 112)) {
+        throw new Error(`Failed: Nama ${file.type} tidak boleh lebih kecil dari 1 dan lebih dari 112 karakter!`);
     }
 
     // Check for unknown top-level keys for regular users

@@ -123,7 +123,7 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
     if (!fileId?.trim()) {
         throw new Error("400: Request tidak valid!");
     }
-    
+
     const { user: actor } = getRequestContext();
     const isRoot = await checkPermissionSilent("can-manage-drive-root");
     const source = await getConnection();
@@ -136,8 +136,12 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
         throw new Error("404: File tidak ditemukan!");
     }
 
-    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
-        throw new Error("403: Not allowed to restore this " + file.type);
+    if (!isRoot && actor != "system") {
+        if (file.type == "file") {
+            await checkPermission("can-delete-file");
+        } else {
+            await checkPermission("can-delete-folder");
+        }
     }
 
     // Check if parent exists and is not trashed
@@ -180,7 +184,7 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
     const source = await getConnection();
     const repository = source.getRepository(File);
 
-    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
+    if (!isRoot && actor != "system" && actor?.id != userId) {
         throw new Error("403: Not allowed to performs this action");
     }
 

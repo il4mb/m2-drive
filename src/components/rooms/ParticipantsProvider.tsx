@@ -3,7 +3,7 @@
 import React, { ComponentProps, ComponentPropsWithRef, ElementType, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCurrentSession } from '../context/CurrentSessionProvider';
 import User from '@/entities/User';
-import { useRoom } from './RoomProvider';
+// import { useRoom } from './RoomProvider';
 
 import { getMany } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/snapshot';
@@ -43,7 +43,7 @@ export default function ParticipantsProvider({ children, container, containerPro
     const Container = container || Stack;
     const theme = useTheme();
     const session = useCurrentSession();
-    const { data, updateMyData } = useRoom<any>();
+    const { data, updateMyData } = {} as any;//useRoom<any>();
     const containerRef = useRef<HTMLDivElement>(null);
     const scrollableElementsRef = useRef<Set<HTMLElement>>(new Set());
 

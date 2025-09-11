@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { startTaskQueue } from "./src/server/taskQueue";
 import { getConnection } from "@/data-source";
 import { setupSocketHandlers } from "@/server/socketHandlers";
+import { setupScheduler } from "@/server/scheduler";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -25,7 +26,10 @@ app.prepare().then(async () => {
         }
     });
     (globalThis as typeof globalThis & { ioServer?: Server }).ioServer = io;
+
+    
     setupSocketHandlers(io);
+    setupScheduler();
 
     httpServer.listen(port, () => {
         console.log(`> Ready on http://${hostname}:${port}`);

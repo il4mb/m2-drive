@@ -1,7 +1,7 @@
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider"
 import Contributor from "@/entities/Contributor";
 import { getMany, IsNull, Json } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { useEffect, useMemo, useState } from "react";
 
 export const useSharing = () => {
@@ -30,8 +30,7 @@ export const useSharing = () => {
                     }),
                 (data) => {
                     setLoading(prev => ({ ...prev, fromMe: false }));
-                    // @ts-ignore
-                    setFromMe(data.filter(e => !e.file.meta.trashed));
+                    setFromMe(data.rows.filter(e => !e.file.meta?.trashed));
                 }),
             onSnapshot(
                 getMany('contributor')
@@ -43,8 +42,7 @@ export const useSharing = () => {
                     }),
                 (data) => {
                     setLoading(prev => ({ ...prev, toMe: false }));
-                    // @ts-ignore
-                    setToMe(data.filter(e => !e.file.meta.trashed));
+                    setToMe(data.rows.filter(e => !e.file.meta?.trashed));
                 })
         ];
 

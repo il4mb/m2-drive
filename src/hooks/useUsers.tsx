@@ -13,6 +13,7 @@ type QueryProps = {
 };
 
 export const useUsers = ({ keyword, sortBy, order, limit, exclude }: QueryProps) => {
+
     const session = useCurrentSession();
     const me = session?.user;
     const [loading, setLoading] = useState(false);
@@ -47,7 +48,7 @@ export const useUsers = ({ keyword, sortBy, order, limit, exclude }: QueryProps)
             }
 
             const unsubscribe = onSnapshot(query, (data) => {
-                setUsers(data);
+                setUsers(data.rows);
                 setLoading(false);
             });
 

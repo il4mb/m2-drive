@@ -6,10 +6,11 @@ import { createElement, useMemo } from 'react';
 export interface ActionSlotsProps {
     maxWidth?: Breakpoint;
     minWidth?: Breakpoint;
+    id?: string | string[];
 }
 
-export default function ActionView({ maxWidth, minWidth }: ActionSlotsProps) {
-    
+export default function ActionView({ maxWidth, minWidth, id }: ActionSlotsProps) {
+
     const provider = useActionsProvider();
     const isMatch = useMediaQuery((theme: any) => {
         if (maxWidth && minWidth) {
@@ -25,8 +26,8 @@ export default function ActionView({ maxWidth, minWidth }: ActionSlotsProps) {
     });
 
     const actions = useMemo(
-        () => (isMatch ? provider.actions : []),
-        [isMatch, provider.actions]
+        () => (isMatch ? provider.actions.filter(e => id ? (Array.isArray(id) ? id : [id]).includes(e[0]) : true) : []),
+        [isMatch, provider.actions, id]
     );
 
     return (

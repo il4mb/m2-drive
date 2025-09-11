@@ -1,8 +1,8 @@
-import { getConnection } from "@/data-source";
+import { databasePath, getConnection } from "@/data-source";
 import { requestContext } from "@/libs/requestContext";
 import { bucketName, s3Client } from "@/libs/s3-storage";
 import { TaskHandlerMap, TaskQueue } from "@/libs/TaskQueue";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
 import { PassThrough } from "stream";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -11,7 +11,11 @@ import { currentTime } from "@/libs/utils";
 import { createLogger } from "@/libs/logger";
 import { imageSize } from "image-size";
 import { EventEmitter } from "events";
+import { readFileSync } from "fs";
+import { Task } from "@/entities/Task";
+import { In, JsonContains } from "typeorm";
 
+const MAX_BACKUPS = 7;
 // Create a logger for task queue
 const logger = createLogger("task-queue");
 
@@ -82,9 +86,10 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
             throw error;
         }
     },
-
     "generate-thumbnail": async ({ fileId, objectKey }) => {
+
         try {
+
             await requestContext.run({ user: "system" }, async () => {
                 logger.info(`Generating thumbnail for file: ${fileId}`);
 
@@ -222,6 +227,83 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
             throw error;
         }
     },
+    "backup-database": async ({ objectKey }: { objectKey: string }) => {
+        try {
+
+            if (!objectKey.startsWith("backup/")) {
+                throw new Error("Object Key must start with backup/");
+            }
+            const buffer = readFileSync(databasePath);
+
+            await s3Client.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    Body: buffer,
+                    ContentType: "application/x-sqlite3",
+                    ACL: "private",
+                })
+            );
+
+            console.log("✅ Backup uploaded:", objectKey);
+        } catch (error) {
+            logger.error(`❌ Failed to backup database:`, error);
+            taskQueueEvents.emit("taskFailed", "backup-database");
+            throw error;
+        }
+    },
+    "delete-old-backup": async () => {
+        try {
+            const listResp = await s3Client.send(
+                new ListObjectsV2Command({
+                    Bucket: bucketName,
+                    Prefix: "backup/",
+                })
+            );
+
+            const backups = (listResp.Contents || [])
+                .sort(
+                    (a, b) =>
+                        (b.LastModified?.getTime() || 0) -
+                        (a.LastModified?.getTime() || 0)
+                );
+
+            if (backups.length <= MAX_BACKUPS) {
+                console.log("ℹ️ No old backups to delete.");
+                return;
+            }
+
+            const oldBackups = backups.slice(MAX_BACKUPS);
+            const keysToDelete = oldBackups.map((obj) => obj.Key!);
+
+            await s3Client.send(
+                new DeleteObjectsCommand({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: keysToDelete.map((key) => ({ Key: key })),
+                    },
+                })
+            );
+
+            console.log("🗑️ Deleted old backups from S3:", keysToDelete);
+
+            // --- Delete related Task records in DB
+            const connection = await getConnection();
+            const taskRepository = connection.getRepository(Task);
+
+            // assuming Task.payload is JSON like { objectKey: "backup/xxx.sqlite" }
+            await taskRepository.delete({
+                payload: In(keysToDelete.map((k) => JSON.stringify({ objectKey: k }))),
+            });
+
+            console.log("🗑️ Deleted related Task rows:", keysToDelete.length);
+
+        } catch (error) {
+            logger.error(`❌ Failed to delete old backups:`, error);
+            taskQueueEvents.emit("taskFailed", "delete-old-backup");
+            throw error;
+        }
+    },
 };
 
 export type TaskPayloads = {
@@ -232,6 +314,8 @@ export type TaskPayloads = {
         fileId: string;
         objectKey: string;
     };
+    "backup-database": { objectKey: string };
+    "delete-old-backup": {}
 };
 
 let started = false;

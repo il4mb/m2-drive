@@ -16,10 +16,10 @@ function mergeRolesDeep(rolesA: any[], rolesB: any[]) {
 
 export default function useRoles() {
 
-    const [roles, setRoles] = useState<Role[]>(SYSTEM_ROLES);
+    const [roles, setRoles] = useState<Role[]>([]);
     useEffect(() => {
-        return onSnapshot(getMany("role"), (roles) => {
-            setRoles(mergeRolesDeep(roles, SYSTEM_ROLES));
+        return onSnapshot(getMany("role"), (data) => {
+            setRoles(mergeRolesDeep(data.rows, SYSTEM_ROLES));
         })
     }, []);
 

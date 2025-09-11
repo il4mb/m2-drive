@@ -26,11 +26,7 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
     if (data.name === "admin") {
         throw new Error(`Failed Save Role: Tidak dapat membuat atau memperbarui role dengan nama "admin".`);
     }
-
-    const { user: actor } = getRequestContext();
-    // Permission check
-    await checkPermission("can-manage-roles");
-
+    await checkPermission("can-manage-role");
     const parsed = SaveRoleSchema.parse({
         ...data,
         name: data.name.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
@@ -82,7 +78,7 @@ export const deleteRole = createFunction(async ({ name }: { name: string }) => {
 
     if (name == "admin") throw new Error(`Failed Remove Role: Role admin tidak bisa dihapus.`);
     // Permission check
-    await checkPermission("can-manage-roles");
+    await checkPermission("can-manage-role");
 
     const source = await getConnection();
     const repo = source.getRepository(Role);

@@ -102,6 +102,6 @@ export const databaseRules: DatabaseRuleMap = {
     task: async (context) => {
         const { user } = context;
         if (user == "system") return true;
-        return await checkPermission(user, "can-manage-task-queue");
+        return await checkPermission("can-manage-task-queue");
     }
 };

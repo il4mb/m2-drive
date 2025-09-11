@@ -116,15 +116,15 @@ export class TaskQueue extends EventEmitter {
             });
 
         } catch (error: any) {
+
             const processingTime = performance.now() - startTime;
             const errorMessage = error.message || "Unknown error";
 
-            // Handle retries
             if (task.retryCount < this.maxRetries) {
                 task.status = "pending" as TaskStatus;
                 task.retryCount++;
                 task.error = errorMessage;
-                task.updatedAt = currentTime(); // Store as epoch number
+                task.updatedAt = currentTime();
                 await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
                 this.emit('taskRetry', task, error, task.retryCount);
@@ -137,8 +137,8 @@ export class TaskQueue extends EventEmitter {
                 // Mark as failed after max retries
                 task.status = "failed" as TaskStatus;
                 task.error = errorMessage;
-                task.completedAt = currentTime(); // Store as epoch number
-                task.updatedAt = currentTime(); // Store as epoch number
+                task.completedAt = currentTime();
+                task.updatedAt = currentTime();
                 await requestContext.run({ user: "system" }, async () => await repo.save(task))
 
                 this.updateMetrics(false, processingTime);

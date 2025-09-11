@@ -6,9 +6,10 @@ import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvide
 import LogoutButton from '@/components/ui/LogoutButton';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { currentTime, formatLocaleDate, toTimeLeft } from '@/libs/utils';
-import { Button, Paper, Stack, Typography, Divider, Box } from '@mui/material';
+import { Button, Paper, Stack, Typography, Divider, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Cookie } from 'lucide-react';
+import { Cookie, Pen } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Page() {
 
@@ -16,7 +17,7 @@ export default function Page() {
     const { permissions, role } = useMyAbilities();
 
     if (!session?.user) return null;
-    const { user, refreshToken, createdAt, expiredAt } = session;
+    const { user } = session;
 
     return (
         <Container scrollable>
@@ -47,7 +48,12 @@ export default function Page() {
                                     sx={{ width: 100, height: 100, border: '3px solid', borderColor: 'primary.main' }}
                                 />
                             </motion.div>
-                            <Typography fontSize={22} fontWeight={700}>{user.name}</Typography>
+                            <Typography fontSize={22} fontWeight={700}>
+                                {user.name}
+                                <IconButton size='small' sx={{ ml: 1 }} LinkComponent={Link} href='/profile/edit'>
+                                    <Pen size={16} />
+                                </IconButton>
+                            </Typography>
                             <Typography fontSize={14} color="text.secondary">{user.email}</Typography>
                             <Typography
                                 fontSize={16}

@@ -6,6 +6,10 @@ import { SocketResult } from "@/server/socketHandlers";
 import { Socket } from "socket.io-client";
 import { isSpecialValue } from "@/server/objectHelper";
 
+export type ListData<T> = {
+    rows: T[];
+    total: number;
+}
 export interface SnapshotOptions {
     onError?: (error: Error) => void;
     onMetadata?: (metadata: { lastUpdate: Date; count: number, source: string }) => void;
@@ -15,7 +19,7 @@ interface SnapshotSubscription {
     queryConfig: QueryConfig;
     callbacks: Map<Function, { options?: SnapshotOptions }>;
     unsubscribe: Unsubscribe;
-    currentData: any;
+    currentData: QueryConfig['type'] extends 'list' ? ListData<any> : any;
     subscribeId: string;
 }
 
@@ -50,13 +54,9 @@ export class SnapshotManager {
         });
     }
 
-    public onSnapshot<
-        T extends EntityName,
-        Q extends QueryType,
-        E = InstanceType<EntityMap[T]>
-    >(
+    public onSnapshot<T extends EntityName, Q extends QueryType, E = InstanceType<EntityMap[T]>>(
         query: Query<T, Q>,
-        callback: Q extends "one" ? (data: E | null) => void : (data: E[]) => void,
+        callback: Q extends "one" ? (data: E | null) => void : (data: ListData<E>) => void,
         options?: SnapshotOptions
     ): Unsubscribe {
         const queryConfig = query.toJSON();
@@ -76,7 +76,7 @@ export class SnapshotManager {
             if (subscription.currentData !== undefined) {
                 try {
                     console.log("SEND CURRENT DATA", subscription.currentData);
-                    callback(subscription.currentData);
+                    callback(subscription.currentData as any);
                 } catch (error) {
                     console.error('Error in initial callback:', error);
                     options?.onError?.(error as Error);
@@ -87,7 +87,7 @@ export class SnapshotManager {
         }
 
         // Create new subscription
-        let currentData: E[] | E | number | null = isSingle ? null : [];
+        let currentData: ListData<E> | E | number | null = isSingle ? null : { rows: [], total: 0 };
         let subscribeId = '';
 
         const callbacks = new Map<Function, { options?: SnapshotOptions }>();
@@ -116,14 +116,18 @@ export class SnapshotManager {
                         currentData = item;
                     }
                 } else {
-                    let filteredData = (response.data || []).filter((item: E) =>
+                    // Handle the new {rows, total} format
+                    let filteredRows = (response.data.rows || []).filter((item: E) =>
                         this.evaluateConditions(item, queryConfig.conditions)
                     );
 
-                    filteredData = this.applySorting(queryConfig, filteredData);
-                    filteredData = this.applyLimitOffset(queryConfig, filteredData);
+                    filteredRows = this.applySorting(queryConfig, filteredRows);
+                    filteredRows = this.applyLimitOffset(queryConfig, filteredRows);
 
-                    currentData = filteredData;
+                    currentData = {
+                        rows: filteredRows,
+                        total: response.data.total || filteredRows.length
+                    };
                 }
 
                 // Update subscription data and notify
@@ -137,7 +141,9 @@ export class SnapshotManager {
                 callbacks.forEach(({ options }) => {
                     options?.onMetadata?.({
                         lastUpdate: new Date(),
-                        count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0),
+                        count: isCount ? currentData as number : 
+                               isSingle ? (currentData ? 1 : 0) : 
+                               (currentData as ListData<E>).rows.length,
                         source: 'initial'
                     });
                 });
@@ -148,16 +154,16 @@ export class SnapshotManager {
             }
         };
 
-
         const runExecuteQuery = () => {
             this.socket?.emit('execute-query', queryConfig, handleQueryResponse);
         }
 
         const handleDatabaseChange = (payload: DatabaseChangePayload) => {
-            
-            try {
+            console.log(payload);
 
+            try {
                 if (payload.collection !== queryConfig.collection) return;
+                
                 if (isCount) {
                     if (payload.eventName == "DELETE") {
                         currentData = parseInt(`${currentData || 0}`) - 1;
@@ -176,7 +182,7 @@ export class SnapshotManager {
                     callbacks.forEach(({ options }) => {
                         options?.onMetadata?.({
                             lastUpdate: new Date(),
-                            count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0),
+                            count: currentData as number,
                             source: 'change'
                         });
                     });
@@ -195,13 +201,12 @@ export class SnapshotManager {
                     return;
                 }
 
-
                 if (isSingle) {
                     this.handleSingleChange(payload, queryConfig, currentData, (newData: any) => {
                         currentData = newData;
                     });
                 } else {
-                    this.handleMultipleChange(payload, queryConfig, currentData as any[], (newData: any) => {
+                    this.handleMultipleChange(payload, queryConfig, currentData as ListData<E>, (newData: any) => {
                         currentData = newData;
                     });
                 }
@@ -217,7 +222,7 @@ export class SnapshotManager {
                 callbacks.forEach(({ options }) => {
                     options?.onMetadata?.({
                         lastUpdate: new Date(),
-                        count: Array.isArray(currentData) ? currentData.length : (currentData ? 1 : 0),
+                        count: isSingle ? (currentData ? 1 : 0) : (currentData as ListData<E>).rows.length,
                         source: 'change'
                     });
                 });
@@ -269,21 +274,15 @@ export class SnapshotManager {
     private removeCallback(queryKey: string, callback: Function) {
         const subscription = this.subscriptions.get(queryKey);
         if (!subscription) {
-            // console.log("THERES NO CLIENT");
-            // console.log(this.getStats())
             return;
         }
 
         subscription.callbacks.delete(callback);
 
         if (subscription.callbacks.size === 0) {
-            // No more callbacks, cleanup
             subscription.unsubscribe();
             this.subscriptions.delete(queryKey);
-            // console.log("NO MORE CLIENT");
         }
-
-        // console.log(this.getStats())
     }
 
     private handleSingleChange(
@@ -320,57 +319,72 @@ export class SnapshotManager {
     private handleMultipleChange(
         payload: DatabaseChangePayload,
         queryConfig: QueryConfig,
-        currentData: any[],
-        updateData: (newData: any[]) => void
+        currentData: ListData<any>,
+        updateData: (newData: ListData<any>) => void
     ) {
         const item = payload.data;
         const itemId = this.resolveFieldValue(item, 'id');
 
         switch (payload.eventName) {
             case "DELETE":
-                const deleteIndex = currentData.findIndex(i =>
+                const deleteIndex = currentData.rows.findIndex(i =>
                     this.resolveFieldValue(i, 'id') === itemId
                 );
                 if (deleteIndex !== -1) {
-                    const newData = [...currentData];
-                    newData.splice(deleteIndex, 1);
-                    updateData(newData);
+                    const newRows = [...currentData.rows];
+                    newRows.splice(deleteIndex, 1);
+                    updateData({
+                        rows: newRows,
+                        total: currentData.total - 1
+                    });
                 }
                 break;
 
             case "UPDATE":
-                const updateIndex = currentData.findIndex(i =>
+                const updateIndex = currentData.rows.findIndex(i =>
                     this.resolveFieldValue(i, 'id') === itemId
                 );
                 const matchesConditions = this.evaluateConditions(item, queryConfig.conditions);
 
                 if (updateIndex !== -1) {
                     if (matchesConditions) {
-                        const newData = [...currentData];
-                        newData[updateIndex] = item;
-                        const sortedData = this.applySorting(queryConfig, newData);
-                        const limitedData = this.applyLimitOffset(queryConfig, sortedData);
-                        updateData(limitedData);
+                        const newRows = [...currentData.rows];
+                        newRows[updateIndex] = item;
+                        const sortedRows = this.applySorting(queryConfig, newRows);
+                        const limitedRows = this.applyLimitOffset(queryConfig, sortedRows);
+                        updateData({
+                            rows: limitedRows,
+                            total: currentData.total
+                        });
                     } else {
-                        const newData = [...currentData];
-                        newData.splice(updateIndex, 1);
-                        updateData(newData);
+                        const newRows = [...currentData.rows];
+                        newRows.splice(updateIndex, 1);
+                        updateData({
+                            rows: newRows,
+                            total: currentData.total - 1
+                        });
                     }
                 } else if (matchesConditions) {
-                    const newData = [...currentData, item];
-                    const sortedData = this.applySorting(queryConfig, newData);
-                    const limitedData = this.applyLimitOffset(queryConfig, sortedData);
-                    updateData(limitedData);
+                    const newRows = [...currentData.rows, item];
+                    const sortedRows = this.applySorting(queryConfig, newRows);
+                    const limitedRows = this.applyLimitOffset(queryConfig, sortedRows);
+                    updateData({
+                        rows: limitedRows,
+                        total: currentData.total + 1
+                    });
                 }
                 break;
 
             case "INSERT":
                 const insertMatches = this.evaluateConditions(item, queryConfig.conditions);
                 if (insertMatches) {
-                    const newData = [...currentData, item];
-                    const sortedData = this.applySorting(queryConfig, newData);
-                    const limitedData = this.applyLimitOffset(queryConfig, sortedData);
-                    updateData(limitedData);
+                    const newRows = [...currentData.rows, item];
+                    const sortedRows = this.applySorting(queryConfig, newRows);
+                    const limitedRows = this.applyLimitOffset(queryConfig, sortedRows);
+                    updateData({
+                        rows: limitedRows,
+                        total: currentData.total + 1
+                    });
                 }
                 break;
         }
@@ -630,7 +644,7 @@ export function onSnapshot<T extends EntityName, Q extends 'one', E = InstanceTy
 // Many-items overload
 export function onSnapshot<T extends EntityName, Q extends 'list', E = InstanceType<EntityMap[T]>>(
     query: Query<T, Q>,
-    callback: (data: E[]) => void,
+    callback: (data: ListData<E>) => void,
     options?: SnapshotOptions
 ): Unsubscribe;
 
@@ -647,7 +661,7 @@ export function onSnapshot<
     E = InstanceType<EntityMap[T]>
 >(
     query: Query<T, Q>,
-    callback: Q extends "one" ? (data: E | null) => void : (data: E[]) => void,
+    callback: Q extends "one" ? (data: E | null) => void : (data: ListData<E>) => void,
     options?: SnapshotOptions
 ): Unsubscribe {
     const manager = SnapshotManager.getInstance();

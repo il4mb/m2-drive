@@ -38,10 +38,10 @@ export interface Client {
 
 // Constants
 const RATE_LIMIT_WINDOW = 20000; // 20 seconds
-const MAX_REQUESTS_PER_MINUTE_AUTH = 10000;
-const MAX_REQUESTS_PER_MINUTE_GUEST = 1000;
+const MAX_REQUESTS_PER_MINUTE_AUTH = 1000;
+const MAX_REQUESTS_PER_MINUTE_GUEST = 100;
 const HEARTBEAT_INTERVAL = 30000;
-const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minute
 const SUBSCRIPTION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 // Track metrics for monitoring
@@ -393,6 +393,7 @@ export async function setupSocketHandlers(io: Server) {
             });
 
             socket.on('execute-query', async (queryData: QueryConfig, callback) => {
+
                 const isGuest = !socket.data.isAuthenticated;
                 const rateLimit = checkRateLimit(socket.id, isGuest);
 
@@ -456,6 +457,110 @@ export async function setupSocketHandlers(io: Server) {
                 }
             });
 
+            // Get active users
+            socket.on('admin-get-active-users', (callback) => {
+                const users = Array.from(clients.entries()).map(([sessionId, client]) => ({
+                    socketId: socket.id,
+                    sessionId: client.sessionId,
+                    userId: client.userId,
+                    displayName: client.displayName,
+                    isAuthenticated: client.isAuthenticated,
+                    connectedAt: socket.handshake.time
+                }));
+                callback({ success: true, data: users });
+            });
+
+            // Get all subscriptions
+            socket.on('admin-get-subscriptions', (callback) => {
+                const subs = Array.from(subscribers.entries()).map(([id, sub]) => ({
+                    id,
+                    collection: sub.collection,
+                    conditions: sub.conditions,
+                    relations: sub.relations,
+                    debug: sub.debug,
+                    createdAt: sub.createdAt,
+                    socketId: sub.socket.id
+                }));
+                callback({ success: true, data: subs });
+            });
+
+            // Get rate limits
+            socket.on('admin-get-rate-limits', (callback) => {
+                const limits = Array.from(rateLimits.entries()).map(([id, limit]) => ({
+                    id,
+                    count: limit.count,
+                    lastReset: limit.lastReset,
+                    isGuest: limit.isGuest,
+                    remaining: limit.isGuest ? MAX_REQUESTS_PER_MINUTE_GUEST - limit.count : MAX_REQUESTS_PER_MINUTE_AUTH - limit.count
+                }));
+                callback({ success: true, data: limits });
+            });
+
+            // Clear all rate limits
+            socket.on('admin-clear-rate-limits', (callback) => {
+                rateLimits.clear();
+                callback({ success: true, message: 'Rate limits cleared successfully' });
+            });
+
+            // Disconnect all guests
+            socket.on('admin-disconnect-guests', (callback) => {
+                let count = 0;
+                io.sockets.sockets.forEach(socket => {
+                    const client = (socket as CustomSocket).data;
+                    if (!client.isAuthenticated) {
+                        socket.disconnect(true);
+                        count++;
+                    }
+                });
+                callback({ success: true, message: `Disconnected ${count} guest users` });
+            });
+
+            // Disconnect all users
+            socket.on('admin-disconnect-all', (callback) => {
+                const count = io.sockets.sockets.size;
+                io.disconnectSockets();
+                callback({ success: true, message: `Disconnected ${count} users` });
+            });
+
+            // Reload functions
+            socket.on('admin-reload-functions', async (callback) => {
+                try {
+                    // Clear require cache for functions
+                    Object.keys(require.cache).forEach(key => {
+                        if (key.includes('functions')) {
+                            delete require.cache[key];
+                        }
+                    });
+
+                    // Reload functions
+                    const newFunctions = require('./functions');
+                    Object.assign(functions, newFunctions);
+
+                    callback({ success: true, message: 'Functions reloaded successfully' });
+                } catch (error: any) {
+                    callback({ success: false, error: error.message });
+                }
+            });
+
+            // Clear metrics
+            socket.on('admin-clear-metrics', (callback) => {
+                connectionMetrics.totalConnections = 0;
+                connectionMetrics.maxConcurrentConnections = 0;
+                connectionMetrics.functionInvocations = 0;
+                connectionMetrics.queryExecutions = 0;
+                callback({ success: true, message: 'Metrics cleared successfully' });
+            });
+
+            // Remove specific subscription
+            socket.on('admin-remove-subscription', (data: { id: string }, callback) => {
+                if (subscribers.has(data.id)) {
+                    subscribers.delete(data.id);
+                    callback({ success: true, message: 'Subscription removed successfully' });
+                } else {
+                    callback({ success: false, error: 'Subscription not found' });
+                }
+            });
+
             socket.on('disconnect', async (reason) => {
                 console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Authenticated: ${socket.data.isAuthenticated}`);
 
@@ -489,7 +594,7 @@ export async function setupSocketHandlers(io: Server) {
             socket.on('error', (error) => {
                 console.error('Socket error:', error);
             });
-        };
+        }
 
         setupEventHandlers();
     });

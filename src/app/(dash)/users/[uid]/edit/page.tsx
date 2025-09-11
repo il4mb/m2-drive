@@ -12,25 +12,24 @@ import {
     Button,
     Checkbox,
     FormControlLabel,
-    IconButton,
     MenuItem,
     Paper,
     Stack,
     TextField,
-    Tooltip,
     Typography,
 } from '@mui/material';
-import { ChevronLeft, Save, UserIcon, UserPen } from 'lucide-react';
+import { Save, UserIcon, UserPen } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import useUser from '@/hooks/useUser';
-import { deleteUser, updateUser } from '@/actions/user';
+import { uploadAvatar } from '@/actions/user';
 import { enqueueSnackbar } from 'notistack';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
+import { invokeFunction } from '@/libs/websocket/invokeFunction';
+import PermissionSuspense from '@/components/PermissionSuspense';
 
 export default function Page() {
 
@@ -80,16 +79,27 @@ export default function Page() {
         setLoading(true)
         try {
             setSubmitError(null);
-            const result = await updateUser({
-                uid,
-                role,
-                name,
-                email,
-                avatar,
-                ...(changePw && { password }),
+
+            let avatarUrl: string | null = null;
+            if (avatar) {
+                const uploadAvatarResult = await uploadAvatar(uid, avatar);
+                if (!uploadAvatarResult?.status) {
+                    throw new Error(uploadAvatarResult?.message || "Unknown Error");
+                }
+                avatarUrl = uploadAvatarResult.data?.avatar || null;
+            }
+
+            const result = await invokeFunction("updateUser", {
+                userId: uid,
+                role, name, email, avatar: avatarUrl,
+                ...(changePw && { password })
+            })
+            if (!result.success) throw new Error(result.error);
+            enqueueSnackbar("Berhasil memperbarui pengguna!", {
+                variant: "success",
+                action: CloseSnackbar
             });
-            if (!result.status) throw new Error(result.message);
-            enqueueSnackbar("Berhasil memperbarui pengguna!", { variant: "success", action: CloseSnackbar })
+
         } catch (err: any) {
             console.error('Failed to update user:', err);
             setSubmitError(err?.message || 'Gagal menyimpan perubahan pengguna.');
@@ -101,13 +111,16 @@ export default function Page() {
     const handleDelete = async () => {
         try {
 
-            const result = await deleteUser(uid);
-            if (!result.status) throw new Error(result.message || "Unknown Error");
+            const result = await invokeFunction("deleteUser", { userId: uid });
+            if (!result.success) throw new Error(result.error || "Unknown Error");
             enqueueSnackbar("Behasil menghapus pengguna!", { variant: "success", action: CloseSnackbar });
-            router.back();
+            router.push("/users");
 
         } catch (error: any) {
-            enqueueSnackbar(error.message || "Unknown Error", { variant: "error", action: CloseSnackbar })
+            enqueueSnackbar(error.message || "Unknown Error", {
+                variant: "error",
+                action: CloseSnackbar
+            })
         }
     }
 
@@ -121,170 +134,172 @@ export default function Page() {
     }, [user]);
 
     return (
-        <Container>
-            {/* Header */}
-            <StickyHeader
-                actions={
-                    <ConfirmationDialog
-                        type='error'
-                        onConfirm={handleDelete}
-                        title='Apakah kamu yakin?'
-                        message={
-                            <>
-                                <Typography>Kamu akan menghapus <strong>{user?.name || uid}</strong>!.</Typography>
-                                <Typography>Tindakan ini tidak dapat dibatalkan.</Typography>
-                            </>
-                        }
-                        triggerElement={
-                            <Button color='error'>
-                                Hapus Pengguna
-                            </Button>
-                        }
-                    />
-                }
-                canGoback>
-                <Stack direction="row" gap={1} alignItems="center">
-                    <UserPen size={28} />
-                    <Typography fontSize={22} fontWeight={600}>
-                        Sunting Pengguna
-                    </Typography>
-                </Stack>
-            </StickyHeader>
-
-            {/* Form */}
-            <Stack component={Paper} borderRadius={2} boxShadow={2}>
-                <Stack gap={2} p={[2, 2, 4]}>
-                    {/* Permission warning */}
-                    {!canEditUser && (
-                        <Alert severity="warning" variant="outlined">
-                            <AlertTitle>Kesalahan Wewenang</AlertTitle>
-                            Kamu tidak memiliki wewenang untuk menyunting pengguna!
-                        </Alert>
-                    )}
-
-                    {/* Submit error */}
-                    {submitError && (
-                        <Alert severity="error" variant="outlined">
-                            <AlertTitle>Gagal</AlertTitle>
-                            {submitError}
-                        </Alert>
-                    )}
-
-                    {/* Avatar */}
-                    <AvatarPicker
-                        disabled={!canEditUser || isBusy}
-                        src={user?.meta?.avatar}
-                        size={{ width: 100, height: 100 }}
-                        value={avatar}
-                        onChange={setAvatar}>
-                        <UserIcon />
-                    </AvatarPicker>
-
-                    {/* Name */}
-                    <Stack>
-                        <TextField
-                            label="Nama"
-                            value={name}
-                            disabled={!canEditUser || isBusy}
-                            error={!nameValid}
-                            onChange={(e) => {
-                                const value = e.target.value.trim();
-                                if (value.length <= 64) setName(e.target.value);
-                            }}
-                        />
-                        <Typography variant='caption' color='text.secondary'>
-                            {!nameValid ? 'Nama harus 3–64 karakter.' : `${name.length} karakter`}
-                        </Typography>
-                    </Stack>
-
-                    {/* Email */}
-                    <Stack>
-                        <TextField
-                            type="email"
-                            label="Alamat Surel"
-                            value={email}
-                            disabled={!canEditUser || isBusy}
-                            error={!emailValid}
-                            onChange={(e) => {
-                                const value = e.target.value.trim().toLowerCase();
-                                if (value.length <= 64) setEmail(value);
-                            }}
-                        />
-                        <Typography variant='caption' color='text.secondary'>
-                            {!emailValid ? 'Email tidak valid atau panjang salah.' : `${email.length} karakter`}
-                        </Typography>
-                    </Stack>
-
-
-                    {/* Role */}
-                    <TextField
-                        label="Jabatan"
-                        placeholder="Pilih Jabatan Pengguna"
-                        value={role}
-                        disabled={!canEditUser || isBusy}
-                        error={!roleValid}
-                        onChange={(e) => setRole(e.target.value)}
-                        select>
-                        {roles.map((r) => (
-                            <MenuItem key={r.id} value={r.id}>
-                                {r.label}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-
-                    {/* Password change */}
-                    <Stack>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    disabled={!canEditUser || isBusy}
-                                    checked={changePw}
-                                    onChange={(e) => setChangePw(e.target.checked)}
-                                />
+        <PermissionSuspense permission={"can-edit-user"}>
+            <Container>
+                {/* Header */}
+                <StickyHeader
+                    actions={
+                        <ConfirmationDialog
+                            type='error'
+                            onConfirm={handleDelete}
+                            title='Apakah kamu yakin?'
+                            message={
+                                <>
+                                    <Typography>Kamu akan menghapus <strong>{user?.name || uid}</strong>!.</Typography>
+                                    <Typography>Tindakan ini tidak dapat dibatalkan.</Typography>
+                                </>
                             }
-                            label="Ubah Kata Sandi?"
+                            triggerElement={
+                                <Button color='error'>
+                                    Hapus Pengguna
+                                </Button>
+                            }
                         />
-                        <AnimatePresence>
-                            {changePw && (
-                                <motion.div
-                                    initial={{ y: 10, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 10, opacity: 0 }}>
-                                    <PasswordField
-                                        disabled={!canEditUser || isBusy}
-                                        value={password}
-                                        onChange={(val) => {
-                                            if (val.length <= 64) setPassword(val);
-                                        }}
-                                        label="Buat Kata Sandi Baru"
-                                        progressable
-                                        showable
-                                    />
-                                    <Typography variant='caption' color='text.secondary'>
-                                        {
-                                            !passwordValid
-                                                ? 'Kata sandi harus 8-64 karakter.'
-                                                : `${password.length} karakter`
-                                        }
-                                    </Typography>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                    }
+                    canGoback>
+                    <Stack direction="row" gap={1} alignItems="center">
+                        <UserPen size={28} />
+                        <Typography fontSize={22} fontWeight={600}>
+                            Sunting Pengguna
+                        </Typography>
                     </Stack>
+                </StickyHeader>
 
-                    {/* Save button */}
-                    {canEditUser && (
-                        <Button
-                            disabled={!isValid || isBusy}
-                            onClick={handleSubmit}
-                            variant="contained"
-                            sx={{ alignSelf: 'flex-end', mt: 4 }}
-                            startIcon={<Save size={16} />}>
-                            Simpan
-                        </Button>
-                    )}
+                {/* Form */}
+                <Stack component={Paper} borderRadius={2} boxShadow={2}>
+                    <Stack gap={2} p={[2, 2, 4]}>
+                        {/* Permission warning */}
+                        {!canEditUser && (
+                            <Alert severity="warning" variant="outlined">
+                                <AlertTitle>Kesalahan Wewenang</AlertTitle>
+                                Kamu tidak memiliki wewenang untuk menyunting pengguna!
+                            </Alert>
+                        )}
+
+                        {/* Submit error */}
+                        {submitError && (
+                            <Alert severity="error" variant="outlined">
+                                <AlertTitle>Gagal</AlertTitle>
+                                {submitError}
+                            </Alert>
+                        )}
+
+                        {/* Avatar */}
+                        <AvatarPicker
+                            disabled={!canEditUser || isBusy}
+                            src={user?.meta?.avatar}
+                            size={{ width: 100, height: 100 }}
+                            value={avatar}
+                            onChange={setAvatar}>
+                            <UserIcon />
+                        </AvatarPicker>
+
+                        {/* Name */}
+                        <Stack>
+                            <TextField
+                                label="Nama"
+                                value={name}
+                                disabled={!canEditUser || isBusy}
+                                error={!nameValid}
+                                onChange={(e) => {
+                                    const value = e.target.value.trim();
+                                    if (value.length <= 64) setName(e.target.value);
+                                }}
+                            />
+                            <Typography variant='caption' color='text.secondary'>
+                                {!nameValid ? 'Nama harus 3–64 karakter.' : `${name.length} karakter`}
+                            </Typography>
+                        </Stack>
+
+                        {/* Email */}
+                        <Stack>
+                            <TextField
+                                type="email"
+                                label="Alamat Surel"
+                                value={email}
+                                disabled={!canEditUser || isBusy}
+                                error={!emailValid}
+                                onChange={(e) => {
+                                    const value = e.target.value.trim().toLowerCase();
+                                    if (value.length <= 64) setEmail(value);
+                                }}
+                            />
+                            <Typography variant='caption' color='text.secondary'>
+                                {!emailValid ? 'Email tidak valid atau panjang salah.' : `${email.length} karakter`}
+                            </Typography>
+                        </Stack>
+
+
+                        {/* Role */}
+                        <TextField
+                            label="Jabatan"
+                            placeholder="Pilih Jabatan Pengguna"
+                            value={role}
+                            disabled={!canEditUser || isBusy}
+                            error={!roleValid}
+                            onChange={(e) => setRole(e.target.value)}
+                            select>
+                            {roles.map((r) => (
+                                <MenuItem key={r.id} value={r.id}>
+                                    {r.label}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+
+                        {/* Password change */}
+                        <Stack>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        disabled={!canEditUser || isBusy}
+                                        checked={changePw}
+                                        onChange={(e) => setChangePw(e.target.checked)}
+                                    />
+                                }
+                                label="Ubah Kata Sandi?"
+                            />
+                            <AnimatePresence>
+                                {changePw && (
+                                    <motion.div
+                                        initial={{ y: 10, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: 10, opacity: 0 }}>
+                                        <PasswordField
+                                            disabled={!canEditUser || isBusy}
+                                            value={password}
+                                            onChange={(val) => {
+                                                if (val.length <= 64) setPassword(val);
+                                            }}
+                                            label="Buat Kata Sandi Baru"
+                                            progressable
+                                            showable
+                                        />
+                                        <Typography variant='caption' color='text.secondary'>
+                                            {
+                                                !passwordValid
+                                                    ? 'Kata sandi harus 8-64 karakter.'
+                                                    : `${password.length} karakter`
+                                            }
+                                        </Typography>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </Stack>
+
+                        {/* Save button */}
+                        {canEditUser && (
+                            <Button
+                                disabled={!isValid || isBusy}
+                                onClick={handleSubmit}
+                                variant="contained"
+                                sx={{ alignSelf: 'flex-end', mt: 4 }}
+                                startIcon={<Save size={16} />}>
+                                Simpan
+                            </Button>
+                        )}
+                    </Stack>
                 </Stack>
-            </Stack>
-        </Container>
+            </Container>
+        </PermissionSuspense>
     );
 }

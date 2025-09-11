@@ -2,12 +2,9 @@
 
 import User from '@/entities/User';
 import { PERMISSION_LIST, PERMISSION_NAMES, TPermission } from '@/permission';
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import useRequest from '@/hooks/useRequest';
-import { getCurrentUserAbilities } from '@/actions/current-session';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import Role from '@/entities/Role';
-import { useCurrentSession } from './CurrentSessionProvider';
-import useUser from '@/hooks/useUser';
+import useMyRole from '@/hooks/useMyRole';
 
 interface CurrentUserAbilityProviderState {
     permissions: TPermission[];
@@ -22,22 +19,14 @@ type CurrentUserAbilityProviderProps = {
 }
 export const CurrentUserAbilitiesProvider = ({ children, user }: CurrentUserAbilityProviderProps) => {
 
+    const myRole = useMyRole();
+    const role = useMemo(() => myRole || undefined, [myRole]);
     const [permissions, setPermissions] = useState<TPermission[]>([]);
-    const [role, setRole] = useState<Role>();
-    const request = useRequest({
-        action: getCurrentUserAbilities,
-        onSuccess(result) {
-            setPermissions(result.data?.permissions || []);
-            setRole(result.data?.role);
-        },
-    });
-
 
     useEffect(() => {
-        request.send();
-    }, [user?.meta.role]);
-
-
+        setPermissions(PERMISSION_LIST.filter(e => (role?.abilities || []).includes(e.value)));
+    }, [role]);
+    
     return (
         <CurrentUserAbilityProviderContext.Provider value={{ permissions, role }}>
             {children}

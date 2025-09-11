@@ -38,7 +38,7 @@ export default createContextMenu<State>({
 
         const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
-            if (value.length > 34) return;
+            if (value.length > 112) return;
             setName(value.replace(/[^a-z0-9_\-\(\)\.\s]+/gi, ''));
         }
 
@@ -84,7 +84,7 @@ export default createContextMenu<State>({
                         autoFocus
                         fullWidth />
                     <Typography component={"small"} fontSize={12}>
-                        {name.length} / 1 - 34
+                        {name.length} / 1 - 112
                     </Typography>
                 </DialogContent>
                 <DialogActions>

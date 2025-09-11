@@ -28,9 +28,6 @@ export const copyFile = createFunction(
 
         const { user: actor } = getRequestContext();
         const canManage = await checkPermissionSilent("can-manage-drive-root");
-        if (!canManage) {
-            await checkPermission("can-edit-file");
-        }
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);
 
@@ -109,6 +106,14 @@ export const copyFile = createFunction(
 
         const sourceFile = await fileRepository.findOneBy({ id: sourceId });
         if (!sourceFile) throw new Error("Failed Copy File: Source file not found!");
+
+         if (!canManage) {
+            if(sourceFile.type == "file") {
+                await checkPermission("can-edit-file");
+            } else {
+                await checkPermission("can-edit-folder");
+            }
+        }
 
 
         const copyItem = async (fileId: string, newParentId: string | null): Promise<File> => {
@@ -236,8 +241,12 @@ export const moveFile = createFunction(
         }
 
         // Check permission - user can only move their own files unless no userId is provided
-        if (!canManage && actor != "system" && actor?.meta.role != "admin") {
-            await checkPermission("can-edit-file");
+        if (!canManage) {
+            if (file.type == "file") {
+                await checkPermission("can-edit-file");
+            } else {
+                await checkPermission("can-edit-folder");
+            }
         }
 
         if (file.pId === targetId) {
@@ -422,7 +431,7 @@ type BulkCopyMoveProps = {
 }
 export const bulkCopyMove = createFunction(
     async ({ userId, sourceIds, targetId, operation, conflictResolution = "rename" }: BulkCopyMoveProps) => {
-        
+
         const canManage = await checkPermissionSilent("can-manage-drive-root");
         if (!canManage) {
             await checkPermission("can-edit-file");

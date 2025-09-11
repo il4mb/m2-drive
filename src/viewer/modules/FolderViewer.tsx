@@ -143,9 +143,9 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
             query.where("name", "STARTS WITH", keyword);
         }
 
-        const unsubscribe = onSnapshot(query, (newFiles) => {
+        const unsubscribe = onSnapshot(query, (data) => {
             setTimeout(() => {
-                setFiles(newFiles);
+                setFiles(data.rows);
                 setIsLoading(false);
             }, 250);
         });

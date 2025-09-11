@@ -1,7 +1,7 @@
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider"
 import { File } from "@/entities/File";
-import { getMany, getOne } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { getMany } from "@/libs/websocket/query";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { useEffect, useState } from "react";
 
 export const useMyDrive = (pId: string | null) => {
@@ -17,8 +17,7 @@ export const useMyDrive = (pId: string | null) => {
             .where('pId', '==', pId || "@IsNull")
 
         const unsubscriber = onSnapshot(query, (data) => {
-            console.log("CHANGE")
-            setFiles(data);
+            setFiles(data.rows);
         });
 
         return () => {

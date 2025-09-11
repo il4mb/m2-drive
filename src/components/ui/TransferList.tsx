@@ -13,9 +13,11 @@ import {
     IconButton,
     Tooltip,
     Stack,
-    InputAdornment
+    InputAdornment,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, ChevronUp, ChevronDown, ChevronsDown, ChevronsUp } from 'lucide-react';
 
 export type TransferListItem<T extends string = string> = {
     label: string;
@@ -45,6 +47,8 @@ export default function TransferList<T extends string>({
     disabled = false,
     titles = { left: 'Available', right: 'Selected' }
 }: Props<T>) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [checked, setChecked] = useState<string[]>([]);
     const [left, setLeft] = useState<TransferListItem[]>([]);
     const [right, setRight] = useState<TransferListItem[]>([]);
@@ -78,14 +82,12 @@ export default function TransferList<T extends string>({
         );
     }, [left, leftSearch]);
 
-
     const filteredRight = useMemo(() => {
         if (!rightSearch) return right;
         return right.filter(item =>
             item.label.toLowerCase().includes(rightSearch.toLowerCase())
         );
     }, [right, rightSearch]);
-
 
     const toggleCheck = (val: string) => {
         if (disabled) return;
@@ -135,7 +137,6 @@ export default function TransferList<T extends string>({
             }
         });
     }
-
 
     const handleToggleAll = (itemsToToggle: TransferListItem[], shouldCheck: boolean) => {
         if (disabled) return;
@@ -188,10 +189,97 @@ export default function TransferList<T extends string>({
         }
     };
 
+    // Mobile layout - vertical stacking
+    if (isMobile) {
+        return (
+            <Stack spacing={2}>
+                {/* Available List */}
+                <CustomList
+                    checked={checked}
+                    toggleCheck={toggleCheck}
+                    disabled={disabled}
+                    maxHeight={maxHeight}
+                    title={titles.left || 'Available'}
+                    items={filteredLeft}
+                    checkedItems={leftChecked}
+                    searchTerm={leftSearch}
+                    onSearchChange={setLeftSearch}
+                    showSearch={showSearch}
+                    onToggleAll={(shouldCheck) => handleToggleAll(filteredLeft, shouldCheck)}
+                    scrollRef={leftScrollRef}
+                />
 
+                {/* Transfer Buttons - Mobile */}
+                <Paper sx={{ p: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    <Tooltip title="Move all to selected">
+                        <span>
+                            <IconButton
+                                onClick={selectAll}
+                                disabled={disabled || left.length === 0}
+                                color="primary"
+                                size="small">
+                                <ChevronsDown size={18} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="Move selected to right">
+                        <span>
+                            <IconButton
+                                onClick={selectChecked}
+                                disabled={disabled || leftChecked.length === 0}
+                                color="primary"
+                                size="small">
+                                <ChevronDown size={18} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="Move selected to left">
+                        <span>
+                            <IconButton
+                                onClick={unselectChecked}
+                                disabled={disabled || rightChecked.length === 0}
+                                color="primary"
+                                size="small">
+                                <ChevronUp size={18} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="Move all to available">
+                        <span>
+                            <IconButton
+                                onClick={unselectAll}
+                                disabled={disabled || right.length === 0}
+                                color="primary"
+                                size="small">
+                                <ChevronsUp size={18} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </Paper>
+
+                {/* Selected List */}
+                <CustomList
+                    checked={checked}
+                    toggleCheck={toggleCheck}
+                    disabled={disabled}
+                    maxHeight={maxHeight}
+                    title={titles.right || 'Selected'}
+                    items={filteredRight}
+                    checkedItems={rightChecked}
+                    searchTerm={rightSearch}
+                    onSearchChange={setRightSearch}
+                    showSearch={showSearch}
+                    onToggleAll={(shouldCheck) => handleToggleAll(filteredRight, shouldCheck)}
+                    scrollRef={rightScrollRef}
+                />
+            </Stack>
+        );
+    }
+
+    // Desktop layout - horizontal
     return (
         <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
-            <Grid size={5.5}>
+            <Grid size={{ xs: 12, md: 5.5 }}>
                 <CustomList
                     checked={checked}
                     toggleCheck={toggleCheck}
@@ -208,7 +296,7 @@ export default function TransferList<T extends string>({
                 />
             </Grid>
 
-            <Grid>
+            <Grid size={{ xs: 12, md: 1 }}>
                 <Grid container direction="column" alignItems="center" spacing={1}>
                     <Grid>
                         <Tooltip title="Move all to selected">
@@ -265,7 +353,7 @@ export default function TransferList<T extends string>({
                 </Grid>
             </Grid>
 
-            <Grid size={5.5}>
+            <Grid size={{ xs: 12, md: 5.5 }}>
                 <CustomList
                     checked={checked}
                     toggleCheck={toggleCheck}
@@ -340,24 +428,22 @@ const CustomList = ({
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
                         sx={{ mt: 1 }}
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search size={18} />
-                                    </InputAdornment>
-                                ),
-                                endAdornment: searchTerm && (
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => onSearchChange('')}
-                                            disabled={disabled}>
-                                            <X size={16} />
-                                        </IconButton>
-                                    </InputAdornment>
-                                )
-                            }
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search size={18} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchTerm && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => onSearchChange('')}
+                                        disabled={disabled}>
+                                        <X size={16} />
+                                    </IconButton>
+                                </InputAdornment>
+                            )
                         }}
                     />
                 )}
@@ -404,22 +490,18 @@ const CustomList = ({
                                         tabIndex={-1}
                                         disableRipple
                                         disabled={disabled}
-                                        slotProps={{
-                                            input: {
-                                                'aria-labelledby': labelId
-                                            }
+                                        inputProps={{
+                                            'aria-labelledby': labelId
                                         }}
                                     />
                                 </ListItemIcon>
                                 <ListItemText
                                     id={labelId}
                                     primary={item.label}
-                                    slotProps={{
-                                        primary: {
-                                            fontSize: '0.875rem',
-                                            noWrap: true,
-                                            title: item.label
-                                        }
+                                    primaryTypographyProps={{
+                                        fontSize: '0.875rem',
+                                        noWrap: true,
+                                        title: item.label
                                     }}
                                 />
                             </ListItemButton>

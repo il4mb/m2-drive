@@ -4,17 +4,14 @@ import Container from "@/components/Container";
 import StickyHeader from "@/components/navigation/StickyHeader";
 import { Breakpoint, Button, Paper, Stack, Typography, useTheme } from "@mui/material";
 import { HardDrive, UploadCloud, } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { Dispatch, ReactNode, SetStateAction, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
 import { File } from "@/entities/File";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
 import { StickyHeaderManager } from "@/components/navigation/StickyHeaderManager";
-import { AnimatePresence } from "motion/react";
 import FileViewerLayout from "@/viewer/FileViewerLayout";
-import MobileAction from "@/components/navigation/MobileAction";
 import Link from "next/link";
 import { useContextMenu } from "@/components/context-menu/ContextMenu";
-import ActionNewFolder from "@/components/menu-actions/ActionNewFolder";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 
 export type DriveLayoutState = {
@@ -44,12 +41,7 @@ export default function layout({ children }: layoutProps) {
     const firstId = pId?.[0];
 
     useEffect(() => {
-        // const removeMenu = contextMenu.addMenu("addFolder", ActionNewFolder);
-        const removeState = contextMenu.addState({ userId })
-        return () => {
-            removeState();
-            // removeMenu();
-        };
+        return contextMenu.addState({ userId })
     }, [userId]);
 
     if (pId?.length > 0) {

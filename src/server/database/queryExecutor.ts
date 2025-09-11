@@ -7,8 +7,10 @@ import { applyConditions } from "./queryHelper";
 
 export class DatabaseService {
     /** Execute query for "get" (single) or "list" (many) */
-    async executeQuery<T>(config: QueryConfig): Promise<T | T[]> {
+    async executeQuery<T>(config: QueryConfig): Promise<T | { rows: T[]; total: number; }> {
+        
         try {
+            
             const repository = await this.getRepository(config.collection);
             const alias = config.collection;
 
@@ -73,12 +75,15 @@ export class DatabaseService {
             }
 
             if (config.type === "list") {
-                const rows = JSON.parse(JSON.stringify(await qb.getMany()));
+                const [rows, total] = await qb.getManyAndCount();
 
                 if (config.debug) {
                     console.log("RESULT LIST", rows);
                 }
-                return rows as T[];
+                return {
+                    rows: rows as T[],
+                    total
+                }
             }
 
             throw new Error(`Unsupported query type: ${config.type}`);
@@ -87,6 +92,70 @@ export class DatabaseService {
             throw new Error(`Database query failed: ${err.message}`);
         }
     }
+
+    // async executeAndCount<T>(config: QueryConfig): Promise<{ rows: T[], total: number }> {
+
+    //     try {
+
+    //         const repository = await this.getRepository(config.collection);
+    //         const alias = config.collection;
+
+    //         // Use QueryBuilder for both modes to keep logic consistent
+    //         const qb = repository.createQueryBuilder(alias);
+
+    //         if (config.relations?.length) {
+    //             config.relations.forEach(rel => {
+    //                 qb.leftJoinAndSelect(`${alias}.${rel}`, rel);
+    //             });
+    //         }
+
+    //         // WHERE
+    //         applyConditions(qb, alias, config.conditions || []);
+
+    //         // GROUP
+    //         if (config.group && config.group.length > 0) {
+    //             config.group.map(field => {
+    //                 qb.groupBy(
+    //                     field.startsWith("$")
+    //                         ? `${String(field.replace(/^\$/, ''))}`
+    //                         : `${alias}.${String(field)}`
+    //                 )
+    //             })
+    //         }
+
+    //         // ORDER
+    //         if (config.orderBy) {
+    //             const field = `${config.orderBy.field}`;
+    //             qb.orderBy(
+    //                 field.startsWith("$")
+    //                     ? `${String(field.replace(/^\$/, ''))}`
+    //                     : `${alias}.${String(field)}`,
+    //                 config.orderBy.direction || "DESC"
+    //             )
+    //         }
+
+    //         // PAGINATION
+    //         if (config.offset) qb.offset(config.offset);
+    //         if (config.limit) qb.limit(config.limit);
+
+    //         if (config.debug) {
+    //             console.log(qb.getQueryAndParameters())
+    //         }
+
+    //         const [rows, total] = await qb.getManyAndCount()
+    //         if (config.debug) {
+    //             console.log("RESULT LIST", rows);
+    //         }
+    //         return {
+    //             rows: rows as T[],
+    //             total
+    //         }
+
+    //     } catch (err: any) {
+    //         console.error("Query execution error:", err);
+    //         throw new Error(`Database query failed: ${err.message}`);
+    //     }
+    // }
 
     /** Get repository for a collection */
     private async getRepository(collection: EntityName): Promise<Repository<any>> {

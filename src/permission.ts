@@ -1,5 +1,4 @@
 
-import { TransferListItem } from "./components/ui/TransferList";
 import Role from "./entities/Role";
 
 export type TPermission = {
@@ -8,6 +7,7 @@ export type TPermission = {
 };
 
 export const PERMISSION_LIST = [
+    { label: "Edit Profile", value: "can-edit-profile" },
     // File operations
     { label: "Upload File", value: "can-upload-file" },
     { label: "Sunting File", value: "can-edit-file" },
@@ -25,18 +25,23 @@ export const PERMISSION_LIST = [
 
     // User management
     { label: "Lihat Daftar Pengguna", value: "can-list-user" },
-    { label: "Tambah Pengguna", value: "can-add-user" },
-    { label: "Edit Pengguna", value: "can-edit-user" },
-    { label: "Hapus Pengguna", value: "can-delete-user" },
+    { label: "Mengelola Pengguna", value: "can-manage-users" },
+    { label: "Tambah Pengguna", value: "can-add-user", parent: "can-manage-users" },
+    { label: "Edit Pengguna", value: "can-edit-user", parent: "can-manage-users" },
+    { label: "Hapus Pengguna", value: "can-delete-user", parent: "can-manage-users" },
 
     // System/admin
+    { label: "Mengubah Pengaturan Sistem", value: "can-change-system-settings" },
+    { label: "Melihat Pengaturan Sistem", value: "can-see-system-settings", parent: "can-change-system-settings" },
+
     { label: "Akses Laporan Aktivitas", value: "can-access-activity-report" },
 
     { label: "Melihat (Role & Permission)", value: "can-see-role", parent: "can-manage-role" },
-    { label: "Mengelola (Role & Permission)", value: "can-manage-role" },
+    { label: "Mengelola (Role & Permission)", value: "can-manage-role", parent: "can-change-system-settings" },
 
-    { label: "Melihat Pengaturan Sistem", value: "can-see-system-settings", parent: "can-change-system-settings" },
-    { label: "Mengubah Pengaturan Sistem", value: "can-change-system-settings" },
+    { label: "Melihat Database", value: "can-see-db", parent: "can-manage-db" },
+    { label: "Mengelola Database", value: "can-manage-db", parent: "can-change-system-settings" },
+
 
     { label: "Melihat Drive Root", value: "can-see-drive-root", parent: "can-manage-drive-root" },
     { label: "Mengelola Drive Root", value: "can-manage-drive-root" },

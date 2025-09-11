@@ -68,31 +68,13 @@ export default function ActivitiesCard({ sx, userId }: ActivityCardProps) {
         return onSnapshot(
             query,
             (data) => {
+
                 setLoading(false);
-                setActivities(data)
+                setActivities(data.rows);
+                setTotal(data.total)
             }
         )
     }, [userId]);
-
-    useEffect(() => {
-
-        setLoading(true);
-        const query = getCount("activity")
-            .relations(['user'])
-            .orderBy("createdAt", "DESC")
-
-        if (userId) {
-            query.where("userId", "==", userId)
-        }
-
-        return onSnapshot(
-            query,
-            (count) => {
-                console.log(count)
-                setTotal(count)
-            }
-        )
-    }, [userId])
 
     return (
         <Paper sx={{ borderRadius: 2, p: 3, flex: 1, minWidth: 300, ...sx }}>

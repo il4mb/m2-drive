@@ -27,13 +27,20 @@ import {
     Tab,
     Switch,
     FormControlLabel,
-    Stack
+    Stack,
+    Tooltip,
+    TextField
 } from '@mui/material';
 import { io, Socket } from 'socket.io-client';
-import { Ban, BarChart, Blocks, Info, RefreshCcw, Tv, Users2, X } from 'lucide-react';
+import { Ban, BarChart, Blocks, Info, RefreshCcw, Tv, Users2, X, Eye, EyeOff, Trash2 } from 'lucide-react';
 import StickyHeader from '@/components/navigation/StickyHeader';
-import MobileAction from '@/components/navigation/MobileAction';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
+import { useMyPermission } from '@/hooks/useMyPermission';
+import { socket } from '@/socket';
+import { enqueueSnackbar } from 'notistack';
+import CloseSnackbar from '@/components/ui/CloseSnackbar';
+import { useRouter } from 'next/navigation';
+import PermissionSuspense from '@/components/PermissionSuspense';
 
 interface ConnectionMetrics {
     totalConnections: number;
@@ -41,21 +48,8 @@ interface ConnectionMetrics {
     maxConcurrentConnections: number;
     functionInvocations: number;
     queryExecutions: number;
-    guestConnections: number;
-    activeUsers: number;
-    guestUsers: number;
-    rooms: number;
     subscriptions: number;
-}
-
-interface RoomInfo {
-    id: string;
-    users: Record<string, any>;
-    createdAt: number;
-    updatedAt?: number;
-    isPublic: boolean;
-    maxUsers: number;
-    createdBy?: string;
+    viewers: number;
 }
 
 interface ViewerInfo {
@@ -67,149 +61,198 @@ interface ViewerInfo {
 
 interface ActiveUser {
     socketId: string;
-    userId: string;
-    joinedAt: number;
-    isGuest: boolean;
+    userId: string | null;
     displayName: string;
+    isAuthenticated: boolean;
+    sessionId: string;
+}
+
+interface Subscription {
+    id: string;
+    collection: string;
+    conditions?: any;
+    relations: string[];
+    debug?: boolean;
+    createdAt: number;
+    socketId: string;
 }
 
 export default function SocketMetricsDashboard() {
 
-    const { addAction, updateActionProps } = useActionsProvider();
+    const router = useRouter();
+    const canManageSocket = useMyPermission("can-manage-socket-connection");
+    const canSeeSocket = useMyPermission("can-see-socket-connection");
 
-    const [socket, setSocket] = useState<Socket | null>(null);
+    const { addAction, updateActionProps } = useActionsProvider();
     const [metrics, setMetrics] = useState<ConnectionMetrics | null>(null);
-    const [rooms, setRooms] = useState<RoomInfo[]>([]);
     const [viewers, setViewers] = useState<ViewerInfo[]>([]);
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
-    const [selectedRoom, setSelectedRoom] = useState<RoomInfo | null>(null);
+    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [selectedTab, setSelectedTab] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(true);
+    const [kickDialogOpen, setKickDialogOpen] = useState(false);
+    const [userToKick, setUserToKick] = useState<string | null>(null);
+    const [subscriptionFilter, setSubscriptionFilter] = useState('');
 
     useEffect(() => {
-        // Initialize socket connection
-        const newSocket = io();
+        fetchAllData();
 
-        newSocket.on('connect', () => {
-            console.log('Connected to server');
-            setLoading(false);
-            fetchMetrics();
-        });
-
-        newSocket.on('disconnect', () => {
+        const onDisconnect = () => {
             console.log('Disconnected from server');
             setError('Disconnected from server');
-        });
-
-        newSocket.on('error', (err) => {
+        }
+        const onError = (err: any) => {
             console.error('Socket error:', err);
             setError(err.message || 'Socket connection error');
-        });
+        }
 
-        newSocket.on('metrics-update', (data: ConnectionMetrics) => {
+        const onMetricsUpdate = (data: ConnectionMetrics) => {
             setMetrics(data);
-        });
-
-        newSocket.on('rooms-update', (data: RoomInfo[]) => {
-            setRooms(data);
-        });
-
-        newSocket.on('viewers-update', (data: ViewerInfo[]) => {
+        }
+        const onViewerChange = (data: ViewerInfo[]) => {
             setViewers(data);
-        });
+        }
 
-        newSocket.on('active-users-update', (data: ActiveUser[]) => {
-            setActiveUsers(data);
-        });
-
-        setSocket(newSocket);
+        socket.on('disconnect', onDisconnect);
+        socket.on('error', onError);
+        socket.on('metrics-update', onMetricsUpdate);
+        socket.on('viewers-change', onViewerChange);
 
         return () => {
-            newSocket.disconnect();
+            socket.off('disconnect', onDisconnect);
+            socket.off('error', onError);
+            socket.off('metrics-update', onMetricsUpdate);
+            socket.off('viewers-change', onViewerChange);
         };
     }, []);
 
-    const fetchMetrics = () => {
-        if (socket) {
-            socket.emit('get-metrics', (response: any) => {
-                if (response.success) {
-                    setMetrics(response.data);
-                } else {
-                    setError(response.error);
-                }
-            });
+    const fetchAllData = () => {
 
-            socket.emit('get-rooms', (response: any) => {
-                if (response.success) {
-                    setRooms(response.data);
-                }
-            });
+        // Fetch metrics
+        socket.emit('get-metrics', (response: any) => {
+            if (response.success) {
+                setMetrics(response.data);
+                setLoading(false);
+            } else {
+                setError(response.error);
+            }
+        });
 
-            socket.emit('get-viewers', (response: any) => {
-                if (response.success) {
-                    setViewers(response.data);
-                }
-            });
+        // Fetch viewers
+        socket.emit('get-viewers', (response: any) => {
+            if (response.success) {
+                setViewers(response.data);
+            } else {
+                console.error('Failed to fetch viewers:', response.error);
+            }
+        });
 
-            socket.emit('get-active-users', (response: any) => {
-                if (response.success) {
-                    setActiveUsers(response.data);
-                }
-            });
-        }
+        // Fetch active users from clients map (simulated)
+        fetchActiveUsers();
+
+        // Fetch subscriptions
+        fetchSubscriptions();
+
+    };
+
+    const fetchActiveUsers = () => {
+        // In a real implementation, you would emit an event to get active users
+        // For now, we'll simulate this based on your server structure
+        // if (socket) {
+        socket.emit('admin-get-active-users', (response: any) => {
+            if (response.success) {
+                setActiveUsers(response.data);
+            } else {
+                console.error('Failed to fetch active users:', response.error);
+            }
+        });
+        // }
+    };
+
+    const fetchSubscriptions = () => {
+        socket.emit('admin-get-subscriptions', (response: any) => {
+            if (response.success) {
+                setSubscriptions(response.data);
+            } else {
+                console.error('Failed to fetch subscriptions:', response.error);
+            }
+        });
     };
 
     useEffect(() => {
         if (autoRefresh && socket) {
-            const interval = setInterval(fetchMetrics, 5000);
+            const interval = setInterval(fetchAllData, 5000);
             return () => clearInterval(interval);
         }
     }, [autoRefresh, socket]);
 
     const handleKickUser = (socketId: string) => {
-        if (socket) {
-            socket.emit('admin-kick-user', { socketId }, (response: any) => {
-                if (response.success) {
-                    fetchMetrics();
-                } else {
-                    setError(response.error);
-                }
-            });
+        if (!canManageSocket) {
+            return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                variant: "error",
+                action: CloseSnackbar
+            })
         }
-    };
-
-    const handleDeleteRoom = (roomId: string) => {
-        if (socket) {
-            socket.emit('admin-delete-room', { roomId }, (response: any) => {
-                if (response.success) {
-                    fetchMetrics();
-                    setSelectedRoom(null);
-                } else {
-                    setError(response.error);
-                }
-            });
-        }
+        socket.emit('admin-kick-user', { socketId }, (response: any) => {
+            if (response.success) {
+                fetchAllData();
+                setKickDialogOpen(false);
+                setUserToKick(null);
+            } else {
+                setError(response.error);
+            }
+        });
     };
 
     const handleClearSubscriptions = () => {
-        if (socket) {
-            socket.emit('admin-clear-subscriptions', (response: any) => {
-                if (response.success) {
-                    fetchMetrics();
-                } else {
-                    setError(response.error);
-                }
-            });
+        if (!canManageSocket) {
+            return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                variant: "error",
+                action: CloseSnackbar
+            })
         }
+        socket.emit('admin-clear-subscriptions', (response: any) => {
+            if (response.success) {
+                fetchSubscriptions();
+            } else {
+                setError(response.error);
+            }
+        })
     };
 
+    const handleRemoveSubscription = (id: string) => {
+        if (!canManageSocket) {
+            return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                variant: "error",
+                action: CloseSnackbar
+            })
+        }
+        socket.emit('admin-remove-subscription', { id }, (response: any) => {
+            if (response.success) {
+                fetchSubscriptions();
+            } else {
+                setError(response.error);
+            }
+        });
+
+    };
+
+    const openKickDialog = (socketId: string) => {
+        setUserToKick(socketId);
+        setKickDialogOpen(true);
+    };
+
+    const closeKickDialog = () => {
+        setKickDialogOpen(false);
+        setUserToKick(null);
+    };
 
     useEffect(() => {
         const removers = [
             addAction('toggle', {
-                component: ({ autoRefresh }) => (
+                component: ({ autoRefresh }: any) => (
                     <FormControlLabel
                         control={
                             <Switch
@@ -228,7 +271,7 @@ export default function SocketMetricsDashboard() {
                     <Button
                         variant="contained"
                         startIcon={<RefreshCcw />}
-                        onClick={fetchMetrics}
+                        onClick={fetchAllData}
                         sx={{ ml: 2 }}>
                         Refresh
                     </Button>
@@ -242,7 +285,13 @@ export default function SocketMetricsDashboard() {
 
     useEffect(() => {
         updateActionProps("toggle", { autoRefresh })
-    }, [autoRefresh])
+    }, [autoRefresh]);
+
+    const filteredSubscriptions = subscriptionFilter
+        ? subscriptions.filter(sub =>
+            sub.collection.toLowerCase().includes(subscriptionFilter.toLowerCase()) ||
+            sub.socketId.toLowerCase().includes(subscriptionFilter.toLowerCase()))
+        : subscriptions;
 
     if (loading) {
         return (
@@ -258,418 +307,453 @@ export default function SocketMetricsDashboard() {
     }
 
     return (
-        <Box sx={{ p: 3 }}>
-            <StickyHeader>
-                <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                    <Typography variant="h4" component="h1">
-                        Socket.io Metrics
-                    </Typography>
-                </Stack>
-            </StickyHeader>
+        <PermissionSuspense permission={"can-see-socket-connection"}>
+            <Box sx={{ p: 3 }}>
+                <StickyHeader>
+                    <Stack alignItems={"center"}>
+                        <Typography variant="h4" component="h1">
+                            Socket.io Metrics Dashboard
+                        </Typography>
+                    </Stack>
+                </StickyHeader>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                    {error}
-                </Alert>
-            )}
+                {!canManageSocket && (
+                    <Alert severity={'warning'} sx={{ mb: 2 }}>Kamu dalam mode <strong>Read Only.</strong></Alert>
+                )}
 
-            {/* Metrics Cards */}
-            {metrics && (
-                <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Users2} color="primary" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Connections
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {metrics.activeConnections}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Active / {metrics.totalConnections} Total
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Max: {metrics.maxConcurrentConnections}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                        {error}
+                    </Alert>
+                )}
 
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={BarChart} color="secondary" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Operations
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {metrics.functionInvocations + metrics.queryExecutions}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {metrics.functionInvocations} Functions
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {metrics.queryExecutions} Queries
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Blocks} color="success" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Rooms
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {metrics.rooms}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {metrics.activeUsers} Users
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {metrics.guestUsers} Guests
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Tv} color="warning" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Subscriptions
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {metrics.subscriptions}
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    color="warning"
-                                    onClick={handleClearSubscriptions}
-                                    sx={{ mt: 1 }}
-                                >
-                                    Clear All
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-            )}
-
-            {/* Tabs for different sections */}
-            <Paper sx={{ width: '100%' }}>
-                <Tabs
-                    value={selectedTab}
-                    onChange={(_, newValue) => setSelectedTab(newValue)}
-                    indicatorColor="primary"
-                    textColor="primary"
-                >
-                    <Tab label="Active Users" />
-                    <Tab label="Rooms" />
-                    <Tab label="Viewers" />
-                    <Tab label="Admin Actions" />
-                </Tabs>
-
-                <Box sx={{ p: 3 }}>
-                    {selectedTab === 0 && (
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>User ID</TableCell>
-                                        <TableCell>Display Name</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Joined At</TableCell>
-                                        <TableCell>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {activeUsers.map((user) => (
-                                        <TableRow key={user.socketId}>
-                                            <TableCell>{user.userId}</TableCell>
-                                            <TableCell>{user.displayName}</TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={user.isGuest ? 'Guest' : 'Authenticated'}
-                                                    color={user.isGuest ? 'default' : 'primary'}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                {new Date(user.joinedAt).toLocaleString()}
-                                            </TableCell>
-                                            <TableCell>
-                                                <IconButton
-                                                    color="error"
-                                                    onClick={() => handleKickUser(user.socketId)}
-                                                    size="small">
-                                                    <Box component={Ban} />
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )}
-
-                    {selectedTab === 1 && (
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Room ID</TableCell>
-                                        <TableCell>Users</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Created</TableCell>
-                                        <TableCell>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {rooms.map((room) => (
-                                        <TableRow key={room.id}>
-                                            <TableCell>{room.id}</TableCell>
-                                            <TableCell>{Object.keys(room.users || {}).length}</TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={room.isPublic ? 'Public' : 'Private'}
-                                                    color={room.isPublic ? 'success' : 'default'}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                {new Date(room.createdAt).toLocaleString()}
-                                            </TableCell>
-                                            <TableCell>
-                                                <IconButton
-                                                    color="info"
-                                                    onClick={() => setSelectedRoom(room)}
-                                                    size="small"
-                                                >
-                                                    <Box component={Info} />
-                                                </IconButton>
-                                                <IconButton
-                                                    color="error"
-                                                    onClick={() => handleDeleteRoom(room.id)}
-                                                    size="small"
-                                                    sx={{ ml: 1 }}
-                                                >
-                                                    <Box component={X} />
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )}
-
-                    {selectedTab === 2 && (
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>User ID</TableCell>
-                                        <TableCell>Display Name</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Paths</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {viewers.map((viewer, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{viewer.uid || 'N/A'}</TableCell>
-                                            <TableCell>{viewer.displayName}</TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={viewer.isGuest ? 'Guest' : 'Authenticated'}
-                                                    color={viewer.isGuest ? 'default' : 'primary'}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                {viewer.path.map((path, i) => (
-                                                    <Chip
-                                                        key={i}
-                                                        label={path.join(' > ')}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        sx={{ m: 0.5 }}
-                                                    />
-                                                ))}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )}
-
-                    {selectedTab === 3 && (
-                        <Box>
-                            <Typography variant="h6" gutterBottom>
-                                Administrative Actions
-                            </Typography>
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <Paper sx={{ p: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Connection Management
+                {/* Metrics Cards */}
+                {metrics && (
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box component={Users2} color="primary" sx={{ mr: 1 }} />
+                                        <Typography color="textSecondary" gutterBottom>
+                                            Connections
                                         </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="warning"
-                                            fullWidth
-                                            sx={{ mb: 1 }}
-                                            onClick={() => {
-                                                socket?.emit('admin-disconnect-guests');
-                                            }}
-                                        >
-                                            Disconnect All Guests
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            fullWidth
-                                            onClick={() => {
-                                                socket?.emit('admin-disconnect-all');
-                                            }}
-                                        >
-                                            Disconnect All Users
-                                        </Button>
-                                    </Paper>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <Paper sx={{ p: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            Room Management
-                                        </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            fullWidth
-                                            onClick={() => {
-                                                socket?.emit('admin-clear-rooms');
-                                            }}
-                                        >
-                                            Clear All Rooms
-                                        </Button>
-                                    </Paper>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <Paper sx={{ p: 2 }}>
-                                        <Typography variant="h6" gutterBottom>
-                                            System Control
-                                        </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="info"
-                                            fullWidth
-                                            sx={{ mb: 1 }}
-                                            onClick={() => {
-                                                socket?.emit('admin-reload-functions');
-                                            }}
-                                        >
-                                            Reload Functions
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            color="secondary"
-                                            fullWidth
-                                            onClick={() => {
-                                                socket?.emit('admin-clear-metrics');
-                                            }}
-                                        >
-                                            Reset Metrics
-                                        </Button>
-                                    </Paper>
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    )}
-                </Box>
-            </Paper>
+                                    </Box>
+                                    <Typography variant="h4" component="div">
+                                        {metrics.activeConnections}
+                                    </Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        Active / {metrics.totalConnections} Total
+                                    </Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        Max: {metrics.maxConcurrentConnections}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
 
-            {/* Room Detail Dialog */}
-            <Dialog
-                open={!!selectedRoom}
-                onClose={() => setSelectedRoom(null)}
-                maxWidth="md"
-                fullWidth
-            >
-                <DialogTitle>
-                    Room Details: {selectedRoom?.id}
-                </DialogTitle>
-                <DialogContent>
-                    {selectedRoom && (
-                        <Box>
-                            <Typography variant="body1" gutterBottom>
-                                <strong>Created:</strong> {new Date(selectedRoom.createdAt).toLocaleString()}
-                            </Typography>
-                            <Typography variant="body1" gutterBottom>
-                                <strong>Type:</strong> {selectedRoom.isPublic ? 'Public' : 'Private'}
-                            </Typography>
-                            <Typography variant="body1" gutterBottom>
-                                <strong>Capacity:</strong> {Object.keys(selectedRoom.users || {}).length} / {selectedRoom.maxUsers}
-                            </Typography>
-                            <Typography variant="h6" sx={{ mt: 2 }}>
-                                Users in Room:
-                            </Typography>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box component={BarChart} color="secondary" sx={{ mr: 1 }} />
+                                        <Typography color="textSecondary" gutterBottom>
+                                            Operations
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h4" component="div">
+                                        {metrics.functionInvocations + metrics.queryExecutions}
+                                    </Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        {metrics.functionInvocations} Functions
+                                    </Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        {metrics.queryExecutions} Queries
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box component={Tv} color="warning" sx={{ mr: 1 }} />
+                                        <Typography color="textSecondary" gutterBottom>
+                                            Subscriptions
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h4" component="div">
+                                        {metrics.subscriptions}
+                                    </Typography>
+                                    <Button
+                                        size="small"
+                                        color="warning"
+                                        onClick={handleClearSubscriptions}
+                                        sx={{ mt: 1 }}>
+                                        Clear All
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box component={Eye} color="info" sx={{ mr: 1 }} />
+                                        <Typography color="textSecondary" gutterBottom>
+                                            Viewers
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h4" component="div">
+                                        {metrics.viewers}
+                                    </Typography>
+                                    <Typography variant="body2" color="textSecondary">
+                                        Tracking {viewers.length} active viewers
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+                )}
+
+                {/* Tabs for different sections */}
+                <Paper sx={{ width: '100%' }}>
+                    <Tabs
+                        value={selectedTab}
+                        onChange={(_, newValue) => setSelectedTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary">
+                        <Tab label="Active Connections" />
+                        <Tab label="Viewers" />
+                        <Tab label="Subscriptions" />
+                        <Tab label="Admin Actions" />
+                    </Tabs>
+
+                    <Box sx={{ p: 3 }}>
+                        {selectedTab === 0 && (
                             <TableContainer>
-                                <Table size="small">
+                                <Table>
                                     <TableHead>
                                         <TableRow>
+                                            <TableCell>Socket ID</TableCell>
                                             <TableCell>User ID</TableCell>
                                             <TableCell>Display Name</TableCell>
-                                            <TableCell>Type</TableCell>
-                                            <TableCell>Joined</TableCell>
+                                            <TableCell>Session ID</TableCell>
+                                            <TableCell>Status</TableCell>
+                                            <TableCell>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {Object.entries(selectedRoom.users || {}).map(([socketId, user]) => (
-                                            <TableRow key={socketId}>
-                                                <TableCell>{user.userId}</TableCell>
+                                        {activeUsers.map((user) => (
+                                            <TableRow key={user.socketId}>
+                                                <TableCell>
+                                                    <Tooltip title={user.socketId}>
+                                                        <span>{user.socketId.substring(0, 8)}...</span>
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell>{user.userId || 'Guest'}</TableCell>
                                                 <TableCell>{user.displayName}</TableCell>
                                                 <TableCell>
+                                                    <Tooltip title={user.sessionId}>
+                                                        <span>{user.sessionId.substring(0, 8)}...</span>
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell>
                                                     <Chip
-                                                        label={user.isGuest ? 'Guest' : 'User'}
+                                                        label={user.isAuthenticated ? 'Authenticated' : 'Guest'}
+                                                        color={user.isAuthenticated ? 'primary' : 'default'}
                                                         size="small"
-                                                        color={user.isGuest ? 'default' : 'primary'}
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    {new Date(user.joinedAt).toLocaleTimeString()}
+                                                    <IconButton
+                                                        color="error"
+                                                        onClick={() => openKickDialog(user.socketId)}
+                                                        size="small">
+                                                        <Box component={Ban} />
+                                                    </IconButton>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                        </Box>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setSelectedRoom(null)}>Close</Button>
-                    <Button
-                        color="error"
-                        onClick={() => selectedRoom && handleDeleteRoom(selectedRoom.id)}
-                    >
-                        Delete Room
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+                        )}
+
+                        {selectedTab === 1 && (
+                            <TableContainer>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>User ID</TableCell>
+                                            <TableCell>Display Name</TableCell>
+                                            <TableCell>Type</TableCell>
+                                            <TableCell>Paths</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {viewers.map((viewer, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{viewer.uid || 'N/A'}</TableCell>
+                                                <TableCell>{viewer.displayName}</TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={viewer.isGuest ? 'Guest' : 'Authenticated'}
+                                                        color={viewer.isGuest ? 'default' : 'primary'}
+                                                        size="small"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    {viewer.path.map((path, i) => (
+                                                        <Chip
+                                                            key={i}
+                                                            label={path.join(' > ')}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ m: 0.5 }}
+                                                        />
+                                                    ))}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+
+                        {selectedTab === 2 && (
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    <Typography variant="h6">
+                                        Active Subscriptions ({subscriptions.length})
+                                    </Typography>
+                                    <TextField
+                                        placeholder="Filter subscriptions..."
+                                        size="small"
+                                        value={subscriptionFilter}
+                                        onChange={(e) => setSubscriptionFilter(e.target.value)}
+                                        sx={{ width: 250 }}
+                                    />
+                                </Box>
+                                <TableContainer>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>ID</TableCell>
+                                                <TableCell>Collection</TableCell>
+                                                <TableCell>Socket ID</TableCell>
+                                                <TableCell>Relations</TableCell>
+                                                <TableCell>Created</TableCell>
+                                                <TableCell>Actions</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredSubscriptions.map((sub) => (
+                                                <TableRow key={sub.id}>
+                                                    <TableCell>
+                                                        <Tooltip title={sub.id}>
+                                                            <span>{sub.id.substring(0, 8)}...</span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                    <TableCell>{sub.collection}</TableCell>
+                                                    <TableCell>
+                                                        <Tooltip title={sub.socketId}>
+                                                            <span>{sub.socketId.substring(0, 8)}...</span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {sub.relations.join(', ') || 'None'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Date(sub.createdAt).toLocaleString()}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <IconButton
+                                                            color="error"
+                                                            onClick={() => handleRemoveSubscription(sub.id)}
+                                                            size="small">
+                                                            <Box component={Trash2} />
+                                                        </IconButton>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
+                        )}
+
+                        {selectedTab === 3 && (
+                            <Box>
+                                <Typography variant="h6" gutterBottom>
+                                    Administrative Actions
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Paper sx={{ p: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                Connection Management
+                                            </Typography>
+                                            <Button
+                                                variant="outlined"
+                                                color="warning"
+                                                fullWidth
+                                                sx={{ mb: 1 }}
+                                                onClick={() => {
+                                                    if (!canManageSocket) {
+                                                        return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                                                            variant: "error",
+                                                            action: CloseSnackbar
+                                                        })
+                                                    }
+                                                    socket?.emit('admin-disconnect-guests', (response: any) => {
+                                                        if (response.success) {
+                                                            fetchAllData();
+                                                        } else {
+                                                            setError(response.error);
+                                                        }
+                                                    });
+                                                }}>
+                                                Disconnect All Guests
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                fullWidth
+                                                onClick={() => {
+                                                    if (!canManageSocket) {
+                                                        return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                                                            variant: "error",
+                                                            action: CloseSnackbar
+                                                        })
+                                                    }
+                                                    socket?.emit('admin-disconnect-all', (response: any) => {
+                                                        if (response.success) {
+                                                            fetchAllData();
+                                                        } else {
+                                                            setError(response.error);
+                                                        }
+                                                    });
+                                                }}>
+                                                Disconnect All Users
+                                            </Button>
+                                        </Paper>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Paper sx={{ p: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                Data Management
+                                            </Typography>
+                                            <Button
+                                                variant="outlined"
+                                                color="warning"
+                                                fullWidth
+                                                sx={{ mb: 1 }}
+                                                onClick={handleClearSubscriptions}>
+                                                Clear All Subscriptions
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="secondary"
+                                                fullWidth
+                                                onClick={() => {
+                                                    if (!canManageSocket) {
+                                                        return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                                                            variant: "error",
+                                                            action: CloseSnackbar
+                                                        })
+                                                    }
+                                                    socket?.emit('admin-clear-metrics', (response: any) => {
+                                                        if (response.success) {
+                                                            fetchAllData();
+                                                        } else {
+                                                            setError(response.error);
+                                                        }
+                                                    });
+                                                }}>
+                                                Reset Metrics
+                                            </Button>
+                                        </Paper>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Paper sx={{ p: 2 }}>
+                                            <Typography variant="h6" gutterBottom>
+                                                System Control
+                                            </Typography>
+                                            <Button
+                                                variant="outlined"
+                                                color="info"
+                                                fullWidth
+                                                sx={{ mb: 1 }}
+                                                onClick={() => {
+                                                    if (!canManageSocket) {
+                                                        return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                                                            variant: "error",
+                                                            action: CloseSnackbar
+                                                        })
+                                                    }
+                                                    socket?.emit('admin-reload-functions', (response: any) => {
+                                                        if (response.success) {
+                                                            setError(null);
+                                                            alert('Functions reloaded successfully');
+                                                        } else {
+                                                            setError(response.error);
+                                                        }
+                                                    });
+                                                }}>
+                                                Reload Functions
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="secondary"
+                                                fullWidth
+                                                onClick={() => {
+                                                    if (!canManageSocket) {
+                                                        return enqueueSnackbar("Kamu tidak dapat membuat tindakan!", {
+                                                            variant: "error",
+                                                            action: CloseSnackbar
+                                                        })
+                                                    }
+                                                    socket?.emit('admin-clear-rate-limits', (response: any) => {
+                                                        if (response.success) {
+                                                            setError(null);
+                                                            alert('Rate limits cleared successfully');
+                                                        } else {
+                                                            setError(response.error);
+                                                        }
+                                                    });
+                                                }}>
+                                                Clear Rate Limits
+                                            </Button>
+                                        </Paper>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                        )}
+                    </Box>
+                </Paper>
+
+                {/* Kick User Dialog */}
+                <Dialog open={kickDialogOpen} onClose={closeKickDialog}>
+                    <DialogTitle>Confirm Kick User</DialogTitle>
+                    <DialogContent>
+                        <Typography>
+                            Are you sure you want to kick this user? They will be disconnected immediately.
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={closeKickDialog}>Cancel</Button>
+                        <Button
+                            onClick={() => userToKick && handleKickUser(userToKick)}
+                            color="error"
+                            variant="contained">
+                            Kick User
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Box>
+        </PermissionSuspense>
     );
 }

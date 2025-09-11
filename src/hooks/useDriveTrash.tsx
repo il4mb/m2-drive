@@ -2,7 +2,7 @@
 
 import { File } from "@/entities/File";
 import { getMany, Json } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { useEffect, useState } from "react";
 
 export const useDriveTrash = (userId?: string) => {
@@ -19,7 +19,7 @@ export const useDriveTrash = (userId?: string) => {
 
         const unsubscribe = onSnapshot(query, (data) => {
             // @ts-ignore
-            setFiles(data.filter(e => e.meta?.trashed));
+            setFiles(data.rows.filter(e => e.meta?.trashed));
             setLoading(false);
         })
 

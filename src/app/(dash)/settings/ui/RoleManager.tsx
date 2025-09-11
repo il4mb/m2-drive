@@ -10,7 +10,12 @@ import {
     CardContent,
     Alert,
     Tooltip,
-    AlertTitle
+    AlertTitle,
+    Drawer,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from "@mui/material";
 import {
     CirclePlus,
@@ -27,11 +32,11 @@ import {
     KeyRound
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import TransferList from "../../../../components/ui/TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
 import Role from "@/entities/Role";
-import _ from "lodash";
+import _, { isEqual } from "lodash";
 import useRoles from "@/hooks/useRoles";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { enqueueSnackbar } from "notistack";
@@ -41,9 +46,12 @@ import ConfirmationDialog from "@/components/ui/dialog/ConfirmationDialog";
 import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import { useMyPermission } from "@/hooks/useMyPermission";
 import RoleItem from "./RoleItem";
+import ActionView from "@/components/navigation/ActionView";
+import { useActionsProvider } from "@/components/navigation/ActionsProvider";
 
 export default function RoleManager() {
 
+    const { addAction } = useActionsProvider();
     const canManageRole = useMyPermission("can-manage-role");
     const SYSTEM_ROLES_NAME = SYSTEM_ROLES.map(e => e.id);
     const [name, setName] = useState('');
@@ -55,8 +63,10 @@ export default function RoleManager() {
 
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [copiedRole, setCopiedRole] = useState<string | null>(null);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-    const isValid = Boolean(name.length > 3 && label.length > 3 && abilities.length > 0);
+    const isValid = Boolean(name.length > 3 && label.length > 3 && abilities.length > 0 && !isEqual(selectedRole?.abilities, abilities));
 
     const [loadingSave, handleSaveRole] = useActionPending(async () => {
         try {
@@ -98,6 +108,8 @@ export default function RoleManager() {
                     action: CloseSnackbar
                 }
             );
+            setDeleteConfirmOpen(false);
+            setRoleToDelete(null);
         } catch (error: any) {
             enqueueSnackbar(
                 error.message || "Terjadi kesalahan",
@@ -171,6 +183,37 @@ export default function RoleManager() {
         setName(value.trim().replace(/\s+/g, '-').replace(/[^a-z-]+/g, '').trim());
     };
 
+    const handleDeleteClick = (role: Role) => {
+        setRoleToDelete(role);
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (roleToDelete) {
+            handleDeleteRole(roleToDelete);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmOpen(false);
+        setRoleToDelete(null);
+    };
+
+
+    useEffect(() => {
+        return addAction("add-role", {
+            component: () => (
+                <Button
+                    onClick={handleToggle}
+                    size="large"
+                    startIcon={<Plus size={20} />}
+                    variant="contained">
+                    Tambah Role
+                </Button>
+            )
+        })
+    }, []);
+
     return (
         <Stack spacing={3}>
             {/* Header */}
@@ -202,13 +245,7 @@ export default function RoleManager() {
                                 </Typography>
                             </Stack>
                         </Stack>
-                        <Button
-                            onClick={handleToggle}
-                            size="large"
-                            startIcon={open ? <X size={20} /> : <Plus size={20} />}
-                            variant="contained">
-                            {open ? "Batal" : "Tambah Role"}
-                        </Button>
+                        <ActionView minWidth={"md"} id={"add-role"} />
                     </Stack>
                 </CardContent>
             </Card>
@@ -218,114 +255,6 @@ export default function RoleManager() {
                     Kamu dalam mode <strong>Read Only.</strong>
                 </Alert>
             )}
-
-            {/* Add/Edit Form */}
-            <AnimatePresence mode="wait">
-                {open && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}>
-                        <Card sx={{ borderRadius: 3, mb: 3 }}>
-                            <CardContent>
-                                <Stack spacing={3}>
-                                    <Stack direction={"row"} spacing={2} alignItems={"center"}>
-                                        <Box sx={{
-                                            p: 1,
-                                            bgcolor: 'primary.main',
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {editMode ? <Edit size={20} /> : <CirclePlus size={20} />}
-                                        </Box>
-                                        <Typography variant="h6" fontWeight={600}>
-                                            {editMode ? "Edit Role" : "Tambah Role Baru"}
-                                        </Typography>
-                                        {copiedRole && (
-                                            <Chip
-                                                icon={<CheckCircle size={16} />}
-                                                label="Disalin"
-                                                color="success"
-                                                size="small"
-                                                variant="outlined"
-                                            />
-                                        )}
-                                    </Stack>
-
-                                    <Stack spacing={2}>
-                                        <TextField
-                                            value={label}
-                                            onChange={handleSetLabel}
-                                            label="Nama Role"
-                                            placeholder="Contoh: Administrator Sekolah"
-                                            autoFocus
-                                            autoCapitalize="on"
-                                            disabled={isBusy}
-                                            fullWidth
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {label.length} / 3-50 karakter
-                                        </Typography>
-                                    </Stack>
-
-                                    <Stack spacing={2}>
-                                        <TextField
-                                            value={name}
-                                            onChange={handleSetName}
-                                            label="ID Role"
-                                            placeholder="Contoh: admin-sekolah"
-                                            disabled={editMode || isBusy}
-                                            fullWidth
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {name.length} / 3-50 karakter - ID tidak dapat diubah setelah dibuat
-                                        </Typography>
-                                    </Stack>
-
-                                    <Stack spacing={2}>
-                                        <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                                            <KeyRound size={20} />
-                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                Izin & Kemampuan
-                                            </Typography>
-                                        </Stack>
-                                        <TransferList
-                                            defineList={PERMISSION_LIST as any}
-                                            items={abilities}
-                                            onChange={setAbilities}
-                                            maxHeight={600}
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {abilities.length} izin dipilih
-                                        </Typography>
-                                    </Stack>
-
-                                    <Stack direction={"row"} spacing={2} justifyContent={"flex-end"}>
-                                        <Button
-                                            variant="outlined"
-                                            onClick={closeEdit}
-                                            disabled={isBusy}>
-                                            Batal
-                                        </Button>
-                                        <Button
-                                            disabled={!canManageRole || !isValid}
-                                            loading={isBusy}
-                                            onClick={handleSaveRole}
-                                            variant="contained"
-                                            startIcon={<Save size={18} />}
-                                            size="large">
-                                            {editMode ? "Update Role" : "Simpan Role"}
-                                        </Button>
-                                    </Stack>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Roles List */}
             <Stack spacing={2}>
@@ -352,11 +281,154 @@ export default function RoleManager() {
                                 loading={isBusy}
                                 onEdit={handleEdit}
                                 onDuplicate={handleDuplicateRole}
-                                onDelete={handleDeleteRole} />
+                                onDelete={handleDeleteClick} />
                         </motion.div>
                     ))}
                 </Stack>
             </Stack>
+
+            {/* Drawer for Add/Edit Form */}
+            <Drawer
+                anchor="right"
+                open={open}
+                onClose={closeEdit}
+                sx={{
+                    '& .MuiDrawer-paper': {
+                        width: { xs: '100%', sm: '80%', md: '60%' },
+                        overflowY: 'auto'
+                    }
+                }}>
+                <Stack height="100%">
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" p={2}>
+                        <Stack direction={"row"} spacing={2} alignItems={"center"}>
+                            <Box sx={{
+                                p: 1,
+                                bgcolor: 'primary.main',
+                                borderRadius: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                {editMode ? <Edit size={20} /> : <CirclePlus size={20} />}
+                            </Box>
+                            <Typography variant="h6" fontWeight={600}>
+                                {editMode ? "Edit Role" : "Tambah Role Baru"}
+                            </Typography>
+                            {copiedRole && (
+                                <Chip
+                                    icon={<CheckCircle size={16} />}
+                                    label="Disalin"
+                                    color="success"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        </Stack>
+                        <IconButton onClick={closeEdit}>
+                            <X size={20} />
+                        </IconButton>
+                    </Stack>
+
+                    <Stack flex={1} overflow="auto">
+                        <Stack p={2} spacing={3}>
+                            <Stack spacing={2} overflow={"visible"} pt={1}>
+                                <TextField
+                                    value={label}
+                                    onChange={handleSetLabel}
+                                    label="Nama Role"
+                                    placeholder="Contoh: Administrator Sekolah"
+                                    autoFocus
+                                    autoCapitalize="on"
+                                    disabled={isBusy}
+                                    fullWidth
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {label.length} / 3-50 karakter
+                                </Typography>
+                            </Stack>
+
+                            <Stack spacing={2}>
+                                <TextField
+                                    value={name}
+                                    onChange={handleSetName}
+                                    label="ID Role"
+                                    placeholder="Contoh: admin-sekolah"
+                                    disabled={editMode || isBusy}
+                                    fullWidth
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {name.length} / 3-50 karakter - ID tidak dapat diubah setelah dibuat
+                                </Typography>
+                            </Stack>
+
+                            <Stack spacing={2}>
+                                <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                    <KeyRound size={20} />
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        Izin & Kemampuan
+                                    </Typography>
+                                </Stack>
+                                <TransferList
+                                    defineList={PERMISSION_LIST as any}
+                                    items={abilities}
+                                    onChange={setAbilities}
+                                    maxHeight={450}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {abilities.length} izin dipilih
+                                </Typography>
+                            </Stack>
+                        </Stack>
+                    </Stack>
+
+                    <Stack direction={"row"} spacing={2} justifyContent={"flex-end"} mt="auto" p={2}>
+                        <Button
+                            variant="outlined"
+                            onClick={closeEdit}
+                            disabled={isBusy}>
+                            Batal
+                        </Button>
+                        <Button
+                            disabled={!canManageRole || !isValid}
+                            loading={isBusy}
+                            onClick={handleSaveRole}
+                            variant="contained"
+                            startIcon={<Save size={18} />}
+                            size="large">
+                            {editMode ? "Update Role" : "Simpan Role"}
+                        </Button>
+                    </Stack>
+                </Stack>
+            </Drawer>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteConfirmOpen}
+                onClose={handleDeleteCancel}
+                maxWidth="sm"
+                fullWidth>
+                <DialogTitle>
+                    Konfirmasi Hapus Role
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Apakah Anda yakin ingin menghapus role "{roleToDelete?.label}"?
+                        Tindakan ini tidak dapat dibatalkan.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel} disabled={loadingDelete}>
+                        Batal
+                    </Button>
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
+                        variant="contained"
+                        loading={loadingDelete}>
+                        Hapus
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Stack>
     );
 }

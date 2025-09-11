@@ -76,9 +76,9 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -10, opacity: 0 }}
                     spacing={3}>
-                    <Stack direction={"row"} flexWrap={'wrap'}>
+                    <Stack direction={["column", "column", "row"]} flexWrap={'wrap'} gap={1}>
                         {/* Statistics Cards */}
-                        <Stack sx={{ flexBasis: 300 }}>
+                        <Stack minWidth={240} maxWidth={380}>
                             <Card sx={{ p: 3, height: '100%', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
                                 <Stack spacing={2}>
                                     <Typography variant="h6" color="primary.main" fontWeight="bold">
@@ -138,7 +138,7 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                         </Stack>
 
                         {/* Pie Chart */}
-                        <Stack sx={{ flexBasis: 600 }}>
+                        <Stack flex={1}>
                             <Card sx={{ p: 3, height: '100%' }}>
                                 <Typography variant="h6" gutterBottom fontWeight="bold">
                                     File Type Distribution

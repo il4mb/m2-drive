@@ -6,7 +6,7 @@ import { emptyTrash, removeFile, restoreFile } from "./fileTrash";
 import { createFolder, updateFile } from "./fileUpdate";
 import { deleteOption, saveOption } from "./options";
 import { deleteRole, saveRole } from "./roles";
-import { executeSQL, getDatabaseSchema } from "./sql-runner";
+import { executeSQL } from "./sql-runner";
 import { bulkDeleteTask, deleteTask, updateTask } from "./task";
 import { addUser, updateUser, deleteUser } from "./users";
 import { getUserUssageSummary } from "./ussageSummary";
@@ -37,7 +37,6 @@ const functions = {
     saveOption,
     deleteOption,
     executeSQL,
-    getDatabaseSchema,
     backupDatabase,
     getDatabaseInfo
 } as const;

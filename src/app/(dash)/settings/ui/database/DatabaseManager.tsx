@@ -31,7 +31,7 @@ import {
     DatabaseBackup,
     DatabaseZap
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import QueryRunner from './QueryRunner';
 import { a11yProps, TabPanel } from "@/app/(dash)/settings/ui/TabPanel";
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
@@ -48,7 +48,7 @@ export default function DatabaseManager() {
 
     const { addAction } = useActionsProvider();
     const [info, setInfo] = useState<DatabaseInfo>();
-    const [schema, setSchema] = useState<Record<string, string[]>>({});
+    const schema = useMemo(() => Object.fromEntries(info?.schema.map(e => ([e.tableName, e.columns.map(c => c.name)])) || []), [info]);
     const [value, setValue] = useState(0);
     const [loading, setLoading] = useState(true);
     const theme = useTheme();

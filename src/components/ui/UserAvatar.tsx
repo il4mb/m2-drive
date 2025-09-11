@@ -1,6 +1,6 @@
 import User from '@/entities/User';
 import { getOne } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { getColor } from '@/theme/colors';
 import { Avatar, Box, Stack, SxProps, Tooltip } from '@mui/material';
 import { ReactNode, useEffect, useState } from 'react';

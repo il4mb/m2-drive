@@ -1,5 +1,5 @@
 import { getOne } from "@/libs/websocket/query"
-import { onSnapshot } from "@/libs/websocket/snapshot"
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { useEffect, useState } from "react"
 
 export const useOption = (id: string) => {

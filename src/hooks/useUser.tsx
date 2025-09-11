@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import User from "@/entities/User";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { getOne } from "@/libs/websocket/query";
 
 export default function useUser(uId?: string|null) {

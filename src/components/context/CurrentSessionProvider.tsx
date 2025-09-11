@@ -3,12 +3,8 @@
 import Token from '@/entities/Token';
 import User from '@/entities/User';
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import useRequest from '@/hooks/useRequest';
-import { getCurrentSession } from '@/actions/current-session';
 import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
-import useUser from '@/hooks/useUser';
-import { enqueueSnackbar } from 'notistack';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSessionManager } from './SessionManager';
 import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { getOne } from '@/libs/websocket/query';

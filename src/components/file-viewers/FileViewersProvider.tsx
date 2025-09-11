@@ -1,6 +1,6 @@
 import User from '@/entities/User';
 import { getMany } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { Viewer } from '@/server/socketHandlers';
 import { socket } from '@/socket';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -55,12 +55,12 @@ export default function FileViewersProvider({ children, path }: FileViewersProps
     useEffect(() => {
         if (!existUsersId.length) return;
         const query = getMany("user").where("id", "IN", existUsersId);
-        const unsubscribe = onSnapshot(query, (dbUsers: User[]) => {
+        const unsubscribe = onSnapshot(query, (data) => {
             setViewers(prev =>
                 prev.map(roomUser => {
                     if (!roomUser.uid) return roomUser;
 
-                    const matchedUser = dbUsers.find(u => u.id === roomUser.uid);
+                    const matchedUser = data.rows.find(u => u.id === roomUser.uid);
                     return {
                         ...roomUser,
                         avatar: matchedUser?.meta.avatar,

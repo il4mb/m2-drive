@@ -6,7 +6,7 @@ import User from '@/entities/User';
 // import { useRoom } from './RoomProvider';
 
 import { getMany } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/snapshot';
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { alpha, Box, Stack, useTheme } from '@mui/material';
 import { AnimatePresence } from 'motion/react';
 import Participant from './components/Participant';
@@ -219,10 +219,10 @@ export default function ParticipantsProvider({ children, container, containerPro
         }
 
         const query = getMany("user").where("id", "IN", userIds);
-        const unsubscribe = onSnapshot(query, (users: User[]) => {
+        const unsubscribe = onSnapshot(query, (data) => {
             const now = Date.now();
             setParticipants(prev => {
-                const updatedParticipants = users.map(user => {
+                const updatedParticipants = data.rows.map(user => {
                     const existing = prev.find(p => p.user?.id === user.id);
                     // @ts-ignore
                     const participantData = session?.user?.id ? (data[session.user.id] || {}) : {};

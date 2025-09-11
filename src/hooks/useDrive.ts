@@ -2,7 +2,7 @@
 
 import { File } from "@/entities/File";
 import { useEffect, useState } from "react";
-import { onSnapshot } from "@/libs/websocket/snapshot";
+import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { getMany, getOne, IsNull, Json } from "@/libs/websocket/query";
 
 export type Filter = {
@@ -63,14 +63,14 @@ export default function useUserDrive({
             unsubscribers = [
                 onSnapshot(
                     getOne("file").where("uId", "==", uId).where("id", "==", pId),
-                    (data: any) => {
+                    (data) => {
                         setParent(data || null);
                         setLoading(false);
                     }
                 ),
                 onSnapshot(query, (data) => {
-                    // @ts-ignore
-                    setFiles(data.filter(e => !e.meta?.trashed));
+        
+                    setFiles(data.rows.filter(e => !e.meta?.trashed));
                     setLoading(false);
                 })
             ];

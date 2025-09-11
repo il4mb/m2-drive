@@ -58,7 +58,7 @@ export const useContributors = (fileId: string) => {
                 .relations(["user"])
                 .where("fileId", "==", fileId),
             (data) => {
-                setContributors(data);
+                setContributors(data.rows);
                 setLoading(false);
             }
         );

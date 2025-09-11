@@ -1,28 +1,21 @@
 'use client'
 
-import { Folder, Video, Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Settings } from "lucide-react"
-import { useViewerManager, ViewerModule } from "@/viewer/ModuleViewerManager";
+import { Video, Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Settings } from "lucide-react"
+import { ViewerModule } from "@/viewer/ModuleViewerManager";
 import { File } from "@/entities/File";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { getMany } from "@/libs/websocket/query";
-import { onSnapshot } from "@/libs/websocket/snapshot";
 import { motion, AnimatePresence } from "motion/react"
-import FileView from "@/components/drive/FileView";
 import {
     Stack,
     IconButton,
     Slider,
     Typography,
     Box,
-    Paper,
     Menu,
     MenuItem,
     FormControl,
     InputLabel,
-    Select,
-    Chip
-} from "@mui/material";
-import usePresignUrl from "@/hooks/usePresignUrl";
+    Select} from "@mui/material";
 
 interface VideoPlayerProps {
     file: File<'file'>;

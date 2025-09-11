@@ -8,6 +8,8 @@ import FolderViewer from '@/viewer/modules/FolderViewer';
 import VideoPlayer from './modules/VideoPlayer';
 import DefaultViewer from './modules/DefaultViewer';
 import ImageViewer from './modules/ImageViewer';
+import { FileIcon } from '@untitledui/file-icons';
+import { Box } from '@mui/material';
 
 export type ViewerModuleComponentProps = {
     file: File;
@@ -47,17 +49,21 @@ const defaultViewerModules: ViewerModule[] = [
     {
         id: 'pdf-viewer',
         name: 'PDF Viewer',
-        icon: '📄',
+        icon: <FileIcon size={18} type={"pdf"} />,
         supports: ['application/pdf'],
-        component: ({ file, source }) => (
-            <iframe
-                src={source}
-                width="100%"
-                height="100%"
-                style={{ border: 'none' }}
-                title={file.name}
-            />
-        ),
+        component: ({ file }) => {
+
+            return (
+                <Box
+                    component={"iframe"}
+                    src={`/file/${file.id}`}
+                    width="100%"
+                    height="100%"
+                    sx={(theme) => ({ border: 'none', ...theme.applyStyles("dark", { background: '#000' }) })}
+                    title={file.name}
+                />
+            )
+        },
         priority: 10
     },
     // DocumentViewer,
@@ -68,9 +74,9 @@ const defaultViewerModules: ViewerModule[] = [
         name: 'Audio Player',
         icon: '🎵',
         supports: ['audio/*'],
-        component: ({ file, source }) => (
+        component: ({ file }) => (
             <audio controls style={{ width: '100%' }}>
-                <source src={source} type={(file.meta as any)?.mimeType} />
+                <source src={`/file/${file.id}`} type={(file.meta as any)?.mimeType} />
             </audio>
         ),
         priority: 10

@@ -65,28 +65,28 @@ const MENU: IMenu[] = [
         label: "Socket Metrics",
         icon: <ChartArea />,
         href: "/socket-metrics",
-        permission: 'can-manage-socket-connection'
+        permission: 'can-see-socket-connection'
     },
     {
         type: "link",
         label: "Drive Metrics",
         icon: <FolderRoot />,
-        href: "/drive-root",
-        permission: 'can-manage-drive-root'
+        href: "/drive-metrics",
+        permission: 'can-see-drive-root'
     },
     {
         type: "link",
         label: "Task Queue",
         icon: <Cpu />,
         href: "/task-queue",
-        permission: "can-manage-task-queue"
+        permission: 'can-see-task-queue'
     },
     {
         type: "link",
         label: "Pengaturan",
         icon: <Settings />,
         href: "/settings",
-        permission: 'can-change-system-settings'
+        permission: 'can-see-system-settings'
     },
     {
         type: "link",

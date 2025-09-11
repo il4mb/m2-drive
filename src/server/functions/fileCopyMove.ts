@@ -27,9 +27,9 @@ export const copyFile = createFunction(
         }
 
         const { user: actor } = getRequestContext();
-        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
+        const canManage = await checkPermissionSilent("can-manage-drive-root");
         if (!canManage) {
-            await checkPermission(actor, "can-edit-file");
+            await checkPermission("can-edit-file");
         }
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);
@@ -217,10 +217,8 @@ export const moveFile = createFunction(
         }
 
         const { user: actor } = getRequestContext();
-        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
-        if (!canManage) {
-            await checkPermission(actor, "can-edit-file");
-        }
+        const canManage = await checkPermissionSilent("can-manage-drive-root");
+
         const connection = await getConnection();
         const repository = connection.getRepository(File);
 
@@ -238,8 +236,8 @@ export const moveFile = createFunction(
         }
 
         // Check permission - user can only move their own files unless no userId is provided
-        if (!canManage && actor != "system" && actor?.meta.role != "admin" && userId && file.uId !== userId) {
-            throw new Error("403: No permission to move this file");
+        if (!canManage && actor != "system" && actor?.meta.role != "admin") {
+            await checkPermission("can-edit-file");
         }
 
         if (file.pId === targetId) {
@@ -424,12 +422,10 @@ type BulkCopyMoveProps = {
 }
 export const bulkCopyMove = createFunction(
     async ({ userId, sourceIds, targetId, operation, conflictResolution = "rename" }: BulkCopyMoveProps) => {
-
-
-        const { user: actor } = getRequestContext();
-        const canManage = await checkPermissionSilent(actor, "can-manage-drive-root");
+        
+        const canManage = await checkPermissionSilent("can-manage-drive-root");
         if (!canManage) {
-            await checkPermission(actor, "can-edit-file");
+            await checkPermission("can-edit-file");
         }
         const results = [];
         const errors = [];

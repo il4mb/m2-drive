@@ -13,10 +13,9 @@ type UpdateTask = {
 }
 
 export const updateTask = createFunction(async ({ taskId, data }: UpdateTask) => {
-    const { user: actor } = getRequestContext();
 
     // Permission check
-    await checkPermission(actor, "can-manage-task-queue");
+    await checkPermission("can-manage-task-queue");
 
     const connection = await getConnection();
     const taskRepository = connection.getRepository(Task);
@@ -42,10 +41,9 @@ export const updateTask = createFunction(async ({ taskId, data }: UpdateTask) =>
 
 
 export const deleteTask = createFunction(async ({ taskId }: { taskId: string }) => {
-    const { user: actor } = getRequestContext();
 
     // Permission check
-    await checkPermission(actor, "can-manage-task-queue");
+    await checkPermission("can-manage-task-queue");
 
     const connection = await getConnection();
     const taskRepository = connection.getRepository(Task);
@@ -66,7 +64,7 @@ export const deleteTask = createFunction(async ({ taskId }: { taskId: string }) 
 export const bulkDeleteTask = createFunction(async ({ tasksId }: { tasksId: string[] }) => {
 
     const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-manage-task-queue");
+    await checkPermission("can-manage-task-queue");
 
     const connection = await getConnection();
     const taskRepository = connection.getRepository(Task);

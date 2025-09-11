@@ -31,7 +31,11 @@ export default function page() {
         validator({ email, password }) {
             return Boolean(isEmailValid(email) && password.length >= 8);
         },
+        onError(error) {
+            console.log(error)
+        },
         onSuccess({ data }) {
+            // console.log(response)
             setTokenId(data?.tokenId || "");
         }
     });
@@ -77,7 +81,7 @@ export default function page() {
         setMounted(true)
     }, [])
 
-    if(!mounted) return null;
+    if (!mounted) return null;
 
     return (
         <Stack

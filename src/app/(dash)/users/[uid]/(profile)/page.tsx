@@ -3,6 +3,7 @@
 import ActivitiesCard from '@/components/activities/ActivitiesCard';
 import DriveSummary from '@/components/analistic/DriveSummary';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
+import { useMyPermission } from '@/hooks/useMyPermission';
 import useUser from '@/hooks/useUser';
 import { Button, Paper, Stack, Typography } from '@mui/material';
 import { Pen } from 'lucide-react';
@@ -12,11 +13,13 @@ import { useEffect } from 'react';
 
 export default function page() {
 
+    const canEditUser = useMyPermission("can-edit-user");
     const action = useActionsProvider();
     const { uid } = useParams<{ uid: string }>();
     const { user } = useUser(uid);
 
     useEffect(() => {
+        if(!canEditUser) return;
         return action.addAction("edit", {
             component: () => (
                 <Button
@@ -27,7 +30,7 @@ export default function page() {
                 </Button>
             )
         })
-    }, [uid]);
+    }, [uid, canEditUser]);
 
     return (
         <Stack direction={"row-reverse"} spacing={3} alignItems={"flex-start"}>

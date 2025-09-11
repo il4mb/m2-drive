@@ -40,13 +40,15 @@ interface MenuProps {
     children?: ReactElement;
     buttonProps?: Partial<IconButtonProps>;
     menuProps?: Partial<MuiMenuProps>;
+    disabled?: boolean;
 }
 
 const AnchorMenu: React.FC<MenuProps> = ({
     items: menuItems = [],
     children,
     buttonProps = {},
-    menuProps = {}
+    menuProps = {},
+    disabled= false
 }) => {
     const items = useMemo<AnchorMenuItem[]>(() => menuItems.filter(Boolean) as any, [menuItems]);
     const active = items.find(i => (i as MenuItemAction)?.active) as MenuItemAction | undefined;
@@ -103,6 +105,7 @@ const AnchorMenu: React.FC<MenuProps> = ({
 
                     return (
                         <MenuItem
+                            disabled={disabled}
                             key={label || `item-${index}`}
                             sx={(theme) => ({
                                 bgcolor: active ? getColor(activeColor)[400] : "",

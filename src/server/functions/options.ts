@@ -12,22 +12,20 @@ type OptionProps = {
 };
 
 export const saveOption = createFunction(async ({ id, value }: OptionProps) => {
-    const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-change-system-settings");
 
+    await checkPermission("can-change-system-settings");
     const connection = await getConnection();
     const optionRepository = connection.getRepository(Options);
 
     await optionRepository.upsert(
         { id, value },
-        ["id"] 
+        ["id"]
     );
 });
 
 export const deleteOption = createFunction(async ({ id }: { id: string }) => {
-    const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-change-system-settings");
 
+    await checkPermission("can-change-system-settings");
     const connection = await getConnection();
     const optionRepository = connection.getRepository(Options);
 

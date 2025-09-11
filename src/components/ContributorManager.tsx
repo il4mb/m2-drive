@@ -12,8 +12,9 @@ import UserAvatar from './ui/UserAvatar';
 
 type ContributorManagerProps = {
     file: File;
+    disabled?: boolean;
 }
-const ContributorManager = ({ file }: ContributorManagerProps) => {
+const ContributorManager = ({ file, disabled = false }: ContributorManagerProps) => {
 
     const [open, setOpen] = useState(false);
     const { contributors, loading: loading2, addContributor, updateContributor, removeContributor } = useContributors(file.id);
@@ -63,6 +64,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                 secondaryAction={
                                     <Stack direction={"row"} spacing={1} alignItems={"center"}>
                                         <TextField
+                                            disabled={disabled}
                                             select
                                             variant="standard"
                                             sx={{
@@ -82,7 +84,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                             <MenuItem value="editor">Mengedit</MenuItem>
                                         </TextField>
                                         {open && (
-                                            <IconButton onClick={() => removeContributor(c.id)}>
+                                            <IconButton disabled={disabled} onClick={() => removeContributor(c.id)}>
                                                 <X size={16} />
                                             </IconButton>
                                         )}
@@ -108,6 +110,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                         <Stack direction="column" gap={1} minHeight={200}>
                             <Stack direction="row" spacing={1} alignItems="flex-end">
                                 <TextField
+                                    disabled={disabled}
                                     label="Cari pengguna..."
                                     value={keyword}
                                     onChange={(e) => setKeyword(e.target.value)}
@@ -143,7 +146,7 @@ const ContributorManager = ({ file }: ContributorManagerProps) => {
                                                 transition={{ duration: 0.2, delay: 0.05 * i }}
                                                 onClick={() => handleAddContributor(u)}
                                                 secondaryAction={
-                                                    <IconButton edge="end" onClick={() => handleAddContributor(u)}>
+                                                    <IconButton disabled={disabled} edge="end" onClick={() => handleAddContributor(u)}>
                                                         <Plus size={16} />
                                                     </IconButton>
                                                 }>

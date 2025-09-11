@@ -1,7 +1,7 @@
 'use client';
 
 import Container from '@/components/Container';
-import { useCheckMyPermission } from '@/components/context/CurrentUserAbilitiesProvider';
+import { useCheckMyPermissionState } from '@/components/context/CurrentUserAbilitiesProvider';
 import useRoles from '@/hooks/useRoles';
 import AvatarPicker from '@/components/ui/AvatarPicker';
 import PasswordField from '@/components/ui/PasswordField';
@@ -35,7 +35,7 @@ import ConfirmationDialog from '@/components/ui/dialog/ConfirmationDialog';
 export default function Page() {
 
     const router = useRouter();
-    const checkPermission = useCheckMyPermission();
+    const checkPermission = useCheckMyPermissionState();
     const canEditUser = checkPermission('can-edit-user');
 
     const roles = useRoles();

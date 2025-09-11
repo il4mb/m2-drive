@@ -47,13 +47,10 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
             router.push("/login");
             return;
         }
-        const unsubscribe = onSnapshot(
+        return onSnapshot(
             getOne("user").where("id", "==", userId),
             setUser
-        )
-        return () => {
-            unsubscribe
-        }
+        );
     }, [userId, mounted]);
 
 

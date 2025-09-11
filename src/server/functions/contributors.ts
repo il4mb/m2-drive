@@ -4,8 +4,7 @@ import { getConnection } from "@/data-source"
 import Contributor from "@/entities/Contributor";
 import { currentTime } from "@/libs/utils";
 import { createFunction, writeActivity } from "../funcHelper";
-import { getRequestContext } from "@/libs/requestContext";
-import { checkPermission } from "../checkPermission";
+import { checkPermission, checkPermissionSilent } from "../checkPermission";
 import { File } from "@/entities/File";
 import User from "@/entities/User";
 
@@ -30,12 +29,9 @@ type AddContributors = {
 }
 export const addFileContributor = createFunction(async ({ fileId, userId, role }: AddContributors) => {
 
-
     if (!fileId || !userId) throw new Error("400: Request tidak valid!");
 
-    const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-manage-sharing");
-
+    const canManageShare = await checkPermissionSilent("can-manage-sharing");
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
     const fileRepository = source.getRepository(File);
@@ -51,6 +47,14 @@ export const addFileContributor = createFunction(async ({ fileId, userId, role }
 
     if (!user || !file) {
         throw new Error("Failed Add Contributor: User or File not found!");
+    }
+
+    if (!canManageShare) {
+        if (file.type == "file") {
+            await checkPermission("can-share-file");
+        } else {
+            await checkPermission("can-share-folder");
+        }
     }
 
     const contributor = contributorRepository.create({
@@ -75,8 +79,7 @@ type UpdateContributors = {
 }
 export const updateFileContributor = createFunction(async ({ contributorId: id, role }: UpdateContributors) => {
 
-    const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-manage-sharing");
+    const canManageShare = await checkPermissionSilent("can-manage-sharing");
 
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
@@ -87,6 +90,14 @@ export const updateFileContributor = createFunction(async ({ contributorId: id, 
     }
     const user = contributor.user;
     const file = contributor.file;
+
+    if (!canManageShare) {
+        if (file.type == "file") {
+            await checkPermission("can-share-file");
+        } else {
+            await checkPermission("can-share-folder");
+        }
+    }
 
     contributor.role = role;
     contributor.updatedAt = currentTime();
@@ -98,9 +109,7 @@ export const updateFileContributor = createFunction(async ({ contributorId: id, 
 
 export const removeFileContributor = createFunction(async ({ id }: { id: string }) => {
 
-    const { user: actor } = getRequestContext();
-    await checkPermission(actor, "can-manage-sharing");
-
+    const canManageShare = await checkPermissionSilent("can-manage-sharing");
     const source = await getConnection();
     const contributorRepository = source.getRepository(Contributor);
 
@@ -110,6 +119,14 @@ export const removeFileContributor = createFunction(async ({ id }: { id: string 
     }
     const user = contributor.user;
     const file = contributor.file;
+
+    if (!canManageShare) {
+        if (file.type == "file") {
+            await checkPermission("can-share-file");
+        } else {
+            await checkPermission("can-share-folder");
+        }
+    }
 
     await contributorRepository.remove(contributor);
 

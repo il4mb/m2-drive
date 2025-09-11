@@ -1,6 +1,6 @@
 'use client'
 
-import { Share2 } from "lucide-react";
+import { Key, Share2 } from "lucide-react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, MenuItem, LinearProgress, Alert, AlertTitle } from "@mui/material";
 import { ChangeEvent, useEffect, useState } from "react";
 import { enqueueSnackbar } from "notistack";
@@ -11,6 +11,7 @@ import { useFileUpdate } from "@/hooks/useFileUpdate";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useFileTags } from "@/hooks/useFileTag";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { useMyPermission } from "@/hooks/useMyPermission";
 
 type State = {
     file: File;
@@ -20,6 +21,8 @@ type GeneralPermit = "none" | "viewer" | "editor";
 export default createContextMenu<State>({
     state() {
         return {
+            canShareFile: useMyPermission("can-share-file"),
+            canShareFolder: useMyPermission("can-share-folder"),
             session: useCurrentSession()
         }
     },
@@ -31,12 +34,13 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
+        const isPermitted = file.type == "file" ? state.canShareFile : state.canShareFolder;
         const noShare = useFileTags(state.file, ['no-share']);
         const { update, loading, error } = useFileUpdate(file.id);
         const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(
             // @ts-ignore
             () => ["none", "viewer", "editor"].includes(file.meta?.generalPermit) ? file.meta?.generalPermit : "none");
-        const link = `${window.location.origin}/shared/${file.id}?p=${generalPermit}`;
+        const link = `${window.location.origin}/file/${file.id}`;
 
         const handleCopy = async () => {
             try {
@@ -88,9 +92,18 @@ export default createContextMenu<State>({
                                 <strong>Admin</strong> menandai file ini  <strong>{file.meta?.tags?.join(', ')}</strong>, <br />Membagikan file ini mungkin tidak berhasil!
                             </Alert>
                         )}
+                        {!isPermitted && (
+                            <Alert
+                                icon={<Key size={18} />}
+                                variant="outlined"
+                                severity="warning"
+                                sx={{ mb: 2 }}>
+                                Kamu tidak memiliki izin untuk membagikan {state.file.type}, kamu tidak dapat membagikan {state.file.type}.
+                            </Alert>
+                        )}
 
                         <Stack mb={1}>
-                            <ContributorManager file={file} />
+                            <ContributorManager file={file} disabled={!isPermitted||loading}/>
                         </Stack>
 
                         {loading && (
@@ -105,7 +118,7 @@ export default createContextMenu<State>({
                         )}
 
                         <TextField
-                            disabled={loading}
+                            disabled={!isPermitted || loading}
                             select
                             label="Pengaturan Akses"
                             value={generalPermit}
@@ -119,7 +132,7 @@ export default createContextMenu<State>({
                         {/* Tampilkan link hanya jika sudah dipilih izin */}
                         {["editor", "viewer"].includes(generalPermit) && (
                             <TextField
-                                disabled={loading}
+                                disabled={!isPermitted || loading}
                                 label="Link berbagi"
                                 value={link}
                                 fullWidth

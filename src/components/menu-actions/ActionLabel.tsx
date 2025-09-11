@@ -1,13 +1,15 @@
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { ChevronRight, Flag, Folder } from "lucide-react";
-import TransferList, { TransferListItem } from "@/app/(dash)/settings/ui/TransferList";
+import TransferList, { TransferListItem } from "@/components/ui/TransferList";
 import { useEffect, useMemo, useState } from "react";
 import { File, FileTags } from "@/entities/File";
 import { useFileUpdate } from "@/hooks/useFileUpdate";
 import { isEqual } from "lodash";
 import { FileIcon } from "@untitledui/file-icons";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { enqueueSnackbar } from "notistack";
+import CloseSnackbar from "../ui/CloseSnackbar";
 
 
 const FLAG_LIST: TransferListItem<FileTags>[] = [
@@ -43,7 +45,7 @@ export default createContextMenu<{ file: File }>({
         }
     },
     show({ session }) {
-        return Boolean(session?.user);
+        return Boolean(session?.user?.meta?.role == "admin");
     },
     icon: Flag,
     label: "Sunting Tags",
@@ -59,7 +61,18 @@ export default createContextMenu<{ file: File }>({
         const isValid = !isEqual(file.meta?.tags || [], tags);
 
         const handleSubmit = async () => {
-            await update({ meta: { tags } })
+            const success = await update({ meta: { tags } });
+            if (success) {
+                enqueueSnackbar('Berhasil memperbarui file tags', {
+                    variant: "success",
+                    action: CloseSnackbar
+                });
+            } else {
+                enqueueSnackbar('Gagal memperbarui file tags', {
+                    variant: "error",
+                    action: CloseSnackbar
+                });
+            }
         }
 
         useEffect(() => {

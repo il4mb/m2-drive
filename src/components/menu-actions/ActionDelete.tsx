@@ -1,12 +1,13 @@
 'use client'
 
 import { Alert, AlertTitle, alpha, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
-import { Trash } from "lucide-react";
+import { Key, Trash } from "lucide-react";
 import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entities/File";
 import { useRemoveFile } from "@/hooks/useFileRemove";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { useMyPermission } from "@/hooks/useMyPermission";
 
 type State = {
     file: File;
@@ -14,6 +15,8 @@ type State = {
 export default createContextMenu<State>({
     state() {
         return {
+            canDeleteFile: useMyPermission("can-delete-file"),
+            canDeleteFolder: useMyPermission("can-delete-folder"),
             session: useCurrentSession()
         }
     },
@@ -31,6 +34,7 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
+        const isPermitted = file.type == "file" ? state.canDeleteFile : state.canDeleteFolder;
         const { remove, loading, error } = useRemoveFile(file.uId);
         const handleSubmit = () => remove(file.id, true);
 
@@ -46,6 +50,16 @@ export default createContextMenu<State>({
                             {error}
                         </Alert>
                     )}
+                    {!isPermitted && (
+                        <Alert
+                            icon={<Key size={18} />}
+                            variant="outlined"
+                            severity="warning"
+                            sx={{ mb: 2 }}>
+                            Kamu tidak memiliki izin untuk menghapus {state.file.type}, kamu tidak dapat menghapus {state.file.type}.
+                        </Alert>
+                    )}
+
                     <Typography mb={2}>
                         Apakah kamu yakin ingin menghapus {file.type}{" "}
                         <strong>{file.name}</strong>?

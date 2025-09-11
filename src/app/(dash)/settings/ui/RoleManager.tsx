@@ -9,7 +9,9 @@ import {
     Card,
     CardContent,
     Alert,
-    Tooltip} from "@mui/material";
+    Tooltip,
+    AlertTitle
+} from "@mui/material";
 import {
     CirclePlus,
     Plus,
@@ -26,7 +28,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChangeEvent, useState } from "react";
-import TransferList from "./TransferList";
+import TransferList from "../../../../components/ui/TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
 import Role from "@/entities/Role";
 import _ from "lodash";
@@ -36,9 +38,13 @@ import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import { useActionPending } from "@/hooks/useActionPending";
 import ConfirmationDialog from "@/components/ui/dialog/ConfirmationDialog";
+import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
+import { useMyPermission } from "@/hooks/useMyPermission";
+import RoleItem from "./RoleItem";
 
 export default function RoleManager() {
 
+    const canManageRole = useMyPermission("can-manage-role");
     const SYSTEM_ROLES_NAME = SYSTEM_ROLES.map(e => e.id);
     const [name, setName] = useState('');
     const [label, setLabel] = useState('');
@@ -54,6 +60,8 @@ export default function RoleManager() {
 
     const [loadingSave, handleSaveRole] = useActionPending(async () => {
         try {
+
+            if (!canManageRole) throw new Error("Kamu tidak punya izin untuk memodifikasi role!");
             const result = await invokeFunction("saveRole", { name, label, abilities });
             if (!result.success) throw new Error(result.error);
 
@@ -76,9 +84,11 @@ export default function RoleManager() {
         }
     });
 
-    const [loadingDelete, handleDeleteRole] = useActionPending(async (id: string) => {
+    const [loadingDelete, handleDeleteRole] = useActionPending(async (role: Role) => {
         try {
-            const result = await invokeFunction("deleteRole", { name: id });
+
+            if (!canManageRole) throw new Error("Kamu tidak punya izin untuk memodifikasi role!");
+            const result = await invokeFunction("deleteRole", { name: role.id });
             if (!result.success) throw new Error(result.error);
 
             enqueueSnackbar(
@@ -161,11 +171,6 @@ export default function RoleManager() {
         setName(value.trim().replace(/\s+/g, '-').replace(/[^a-z-]+/g, '').trim());
     };
 
-    const getRoleUsageCount = (roleId: string) => {
-        // Mock usage count - replace with actual data
-        return Math.floor(Math.random() * 50);
-    };
-
     return (
         <Stack spacing={3}>
             {/* Header */}
@@ -208,6 +213,12 @@ export default function RoleManager() {
                 </CardContent>
             </Card>
 
+            {!canManageRole && (
+                <Alert severity="warning" variant="outlined">
+                    Kamu dalam mode <strong>Read Only.</strong>
+                </Alert>
+            )}
+
             {/* Add/Edit Form */}
             <AnimatePresence mode="wait">
                 {open && (
@@ -215,8 +226,7 @@ export default function RoleManager() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
+                        transition={{ duration: 0.3 }}>
                         <Card sx={{ borderRadius: 3, mb: 3 }}>
                             <CardContent>
                                 <Stack spacing={3}>
@@ -286,6 +296,7 @@ export default function RoleManager() {
                                             defineList={PERMISSION_LIST as any}
                                             items={abilities}
                                             onChange={setAbilities}
+                                            maxHeight={600}
                                         />
                                         <Typography variant="caption" color="text.secondary">
                                             {abilities.length} izin dipilih
@@ -296,18 +307,16 @@ export default function RoleManager() {
                                         <Button
                                             variant="outlined"
                                             onClick={closeEdit}
-                                            disabled={isBusy}
-                                        >
+                                            disabled={isBusy}>
                                             Batal
                                         </Button>
                                         <Button
-                                            disabled={!isValid}
+                                            disabled={!canManageRole || !isValid}
                                             loading={isBusy}
                                             onClick={handleSaveRole}
                                             variant="contained"
                                             startIcon={<Save size={18} />}
-                                            size="large"
-                                        >
+                                            size="large">
                                             {editMode ? "Update Role" : "Simpan Role"}
                                         </Button>
                                     </Stack>
@@ -337,135 +346,13 @@ export default function RoleManager() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}>
-                            <Card
-                                sx={{
-                                    borderRadius: 3,
-                                    border: selectedRole?.id === role.id ? '2px solid' : '1px solid',
-                                    borderColor: selectedRole?.id === role.id ? 'primary.main' : 'divider',
-                                    transition: 'all 0.2s ease'
-                                }}>
-                                <CardContent>
-                                    <Stack
-                                        direction={{ xs: 'column', md: 'row' }}
-                                        spacing={3}
-                                        alignItems={{ md: 'center' }}
-                                        justifyContent="space-between">
-                                        {/* Role Info */}
-                                        <Stack spacing={1} flex={1}>
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="h6" fontWeight="bold">
-                                                    {role.label}
-                                                </Typography>
-                                                {SYSTEM_ROLES_NAME.includes(role.id) && (
-                                                    <Chip
-                                                        color="primary"
-                                                        label="System"
-                                                        size="small"
-                                                        variant="filled"
-                                                    />
-                                                )}
-                                                {/* <Chip
-                                                    color="info"
-                                                    label={`${getRoleUsageCount(role.id)} pengguna`}
-                                                    size="small"
-                                                    variant="outlined"
-                                                /> */}
-                                            </Stack>
-
-                                            <Typography variant="body2" color="text.secondary">
-                                                ID: {role.id}
-                                            </Typography>
-
-                                            {/* Abilities */}
-                                            <Stack spacing={1} mt={1}>
-                                                <Typography variant="caption" fontWeight="medium">
-                                                    Izin ({role.abilities.length}):
-                                                </Typography>
-                                                <Stack direction="row" gap={1} flexWrap="wrap">
-                                                    {role.abilities.slice(0, 5).map(ability => (
-                                                        <Chip
-                                                            key={ability}
-                                                            label={ability}
-                                                            size="small"
-                                                            variant="outlined"
-                                                            sx={{ fontSize: 11, height: 24 }}
-                                                        />
-                                                    ))}
-                                                    {role.abilities.length > 5 && (
-                                                        <Chip
-                                                            label={`+${role.abilities.length - 5} lebih`}
-                                                            size="small"
-                                                            variant="filled"
-                                                            sx={{ fontSize: 11, height: 24 }}
-                                                        />
-                                                    )}
-                                                </Stack>
-                                            </Stack>
-                                        </Stack>
-
-                                        {/* Actions */}
-                                        <Stack
-                                            direction={{ xs: 'row', md: 'column' }}
-                                            spacing={1}
-                                            alignItems={{ xs: 'center', md: 'flex-end' }}>
-                                            {!SYSTEM_ROLES_NAME.includes(role.id) ? (
-                                                <>
-                                                    <Tooltip title="Edit role">
-                                                        <IconButton
-                                                            onClick={() => handleEdit(role)}
-                                                            disabled={isBusy}
-                                                            color="primary">
-                                                            <Edit size={18} />
-                                                        </IconButton>
-                                                    </Tooltip>
-
-                                                    <Tooltip title="Duplikat role">
-                                                        <IconButton
-                                                            onClick={() => handleDuplicateRole(role)}
-                                                            disabled={isBusy}
-                                                            color="info">
-                                                            <Copy size={18} />
-                                                        </IconButton>
-                                                    </Tooltip>
-
-                                                    <ConfirmationDialog
-                                                        triggerElement={
-                                                            <Tooltip title="Hapus role">
-                                                                <IconButton
-                                                                    disabled={isBusy}
-                                                                    color="error">
-                                                                    <Trash2 size={18} />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        }
-                                                        onConfirm={async () => handleDeleteRole(role.id)}
-                                                        title="Hapus Role?"
-                                                        message={
-                                                            <Stack spacing={1}>
-                                                                <Typography>
-                                                                    Apakah Anda yakin ingin menghapus role <strong>{role.label}</strong>?
-                                                                </Typography>
-                                                                <Alert severity="warning" icon={<AlertCircle size={18} />}>
-                                                                    Tindakan ini akan mempengaruhi pengguna dan tidak dapat dibatalkan.
-                                                                </Alert>
-                                                            </Stack>
-                                                        }
-                                                    />
-                                                </>
-                                            ) : (role as any).editable && (
-                                                <Tooltip title="Edit role system">
-                                                    <IconButton
-                                                        onClick={() => handleEdit(role)}
-                                                        disabled={isBusy}
-                                                        color="primary">
-                                                        <Edit size={18} />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            )}
-                                        </Stack>
-                                    </Stack>
-                                </CardContent>
-                            </Card>
+                            <RoleItem
+                                role={role}
+                                selected={selectedRole}
+                                loading={isBusy}
+                                onEdit={handleEdit}
+                                onDuplicate={handleDuplicateRole}
+                                onDelete={handleDeleteRole} />
                         </motion.div>
                     ))}
                 </Stack>

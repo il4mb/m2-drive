@@ -47,7 +47,7 @@ export const updateUser = createFunction(
         const usersRepository = source.getRepository(User);
         if (actor != "system" && actor?.meta.role != "admin" && userId != actor?.id) {
             // Permission check
-            await checkPermission(actor, "can-edit-user");
+            await checkPermission("can-edit-user");
         }
 
         const user = await usersRepository.findOneBy({ id: userId });

@@ -20,7 +20,7 @@ import {
 import { FolderOpenDot, FolderRoot } from "lucide-react";
 
 import Container from "@/components/Container";
-import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
+import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/hooks/useRequest";
 import { getDriveRoot, UserDriveSummary } from "@/actions/dive-root";
 import { useEffect, useState } from "react";
@@ -32,7 +32,7 @@ import { formatFileSize } from "@/libs/utils";
 
 export default function Page() {
     const theme = useTheme();
-    const checkPermission = useCheckMyPermission();
+    const checkPermission = useCheckMyPermissionState();
     const isPermitted = checkPermission("can-manage-drive-root");
 
     const [summaries, setSummaries] = useState<UserDriveSummary[]>();

@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Folder, FolderPlus, HardDrive } from "lucide-react";
+import { ChevronRight, Folder, FolderPlus, HardDrive, Key } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { Alert, AlertTitle, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import { ChangeEvent, useMemo, useState } from "react";
@@ -9,10 +9,12 @@ import { useCreateFolder } from "@/hooks/useFolderCreate";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
 import useUser from "@/hooks/useUser";
 import { useFileTags } from "@/hooks/useFileTag";
+import { useMyPermission } from "@/hooks/useMyPermission";
 
 export default createContextMenu<{ folder: File | null, userId: string }>({
     state() {
         return {
+            canCreateFolder: useMyPermission("can-create-folder"),
             session: useCurrentSession()
         }
     },
@@ -23,6 +25,7 @@ export default createContextMenu<{ folder: File | null, userId: string }>({
     label: "Buat Folder",
     component({ state, resolve }) {
 
+        const isPermitted = state.canCreateFolder;
         const auth = useCurrentSession();
         const { user } = useUser(state.userId);
 
@@ -59,6 +62,15 @@ export default createContextMenu<{ folder: File | null, userId: string }>({
                         </Alert>
                     )}
 
+                    {!isPermitted && (
+                        <Alert
+                            icon={<Key size={18} />}
+                            variant="outlined"
+                            severity="warning"
+                            sx={{ mb: 2 }}>
+                            Kamu tidak memiliki izin untuk membuat folder, kamu tidak dapat membuat folder baru.
+                        </Alert>
+                    )}
 
                     {createFolder.error && (
                         <Alert severity="error" sx={{ mb: 2 }}>

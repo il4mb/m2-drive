@@ -6,11 +6,15 @@ import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
 import { withApi } from "@/libs/withApi";
 import { getUserByToken } from "@/server/auth";
+import { writeActivity } from "@/server/funcHelper";
 import { addTaskQueue } from "@/server/taskQueue";
 import { CompleteMultipartUploadCommand } from "@aws-sdk/client-s3";
 import { IsNull, Repository } from "typeorm";
 
 export const POST = withApi(async (req) => {
+
+    const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || undefined;
+    const userAgent = req.headers.get("user-agent") || undefined;
 
     const token = await getCurrentToken();
     const user = await getUserByToken(token);
@@ -26,6 +30,9 @@ export const POST = withApi(async (req) => {
         || !json.etags.length
     ) throw new Error("400: Invalid request!");
 
+    const connection = getConnection();
+    let folder: File | null = await (json.fId ? (await connection).getRepository(File).findOneBy({ id: json.fId }) : null);
+
     const uId = user.id as string;
     const fileName = json.fileName as string;
     const fileType = json.fileType as string;
@@ -36,6 +43,7 @@ export const POST = withApi(async (req) => {
     const Key = json.Key;
 
     try {
+
         await s3Client.send(
             new CompleteMultipartUploadCommand({
                 Bucket: bucketName,
@@ -46,6 +54,7 @@ export const POST = withApi(async (req) => {
                 },
             })
         )
+
     } catch (err: any) {
 
         console.log(err)
@@ -57,7 +66,7 @@ export const POST = withApi(async (req) => {
     }
 
 
-    await requestContext.run({ user }, async () => {
+    await requestContext.run({ user, ipAddress, userAgent }, async () => {
 
         const source = await getConnection();
         const repository = source.getRepository(File);
@@ -75,6 +84,8 @@ export const POST = withApi(async (req) => {
             Key
         }
         await repository.save(file);
+
+        writeActivity("UPLOAD_FILE", `Mengupload ${file.type} ${file.name} ke ${folder?.name || 'My Drive'}`);
 
         if (fileType.startsWith("image/") || fileType.startsWith("video/")) {
             addTaskQueue("generate-thumbnail", {

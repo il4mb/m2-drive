@@ -1,7 +1,7 @@
 'use client'
 
 import { Alert, AlertTitle, alpha, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Typography } from "@mui/material";
-import { Trash } from "lucide-react";
+import { Key, Trash } from "lucide-react";
 import { getColor } from "@/theme/colors";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entities/File";
@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useRemoveFile } from "@/hooks/useFileRemove";
 import { useFileTags } from "@/hooks/useFileTag";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { useMyPermission } from "@/hooks/useMyPermission";
 
 type State = {
     file: File
@@ -16,6 +17,8 @@ type State = {
 export default createContextMenu<State>({
     state() {
         return {
+            canDeleteFile: useMyPermission("can-delete-file"),
+            canDeleteFolder: useMyPermission("can-delete-folder"),
             session: useCurrentSession()
         }
     },
@@ -33,7 +36,7 @@ export default createContextMenu<State>({
     component({ state, resolve }) {
 
         const { file } = state;
-
+        const isPermitted = file.type == "file" ? state.canDeleteFile : state.canDeleteFolder;
         const noTrash = useFileTags(state.file, ['no-remove', 'no-edit']);
         //@ts-ignore
         const [permanen, setPermanen] = useState(file.type == "folder" && file.meta.itemCount == 0 ? true : false);
@@ -50,6 +53,15 @@ export default createContextMenu<State>({
                         <Alert severity="warning" sx={{ mb: 2 }}>
                             <AlertTitle>Peringatan!</AlertTitle>
                             <strong>Admin</strong> menandai file ini <strong>{file.meta?.tags?.join(', ')}</strong>, <br />Menghapus file ini mungkin tidak berhasil!
+                        </Alert>
+                    )}
+                    {!isPermitted && (
+                        <Alert
+                            icon={<Key size={18} />}
+                            variant="outlined"
+                            severity="warning"
+                            sx={{ mb: 2 }}>
+                            Kamu tidak memiliki izin untuk menghapus {state.file.type}, kamu tidak dapat menghapus {state.file.type}.
                         </Alert>
                     )}
 
@@ -89,7 +101,7 @@ export default createContextMenu<State>({
                         size="small"
                         color="error"
                         variant="contained"
-                        disabled={loading}
+                        disabled={!isPermitted || loading}
                         onClick={handleSubmit}>
                         Hapus
                     </Button>

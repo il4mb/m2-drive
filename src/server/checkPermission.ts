@@ -1,29 +1,20 @@
 import { getConnection } from "@/data-source";
 import Role from "@/entities/Role";
-import User from "@/entities/User";
+import { getRequestContext } from "@/libs/requestContext";
 import { PERMISSION_NAMES } from "@/permission";
 
-export const checkPermission = async (userId: User | string | undefined | null, permission: PERMISSION_NAMES | PERMISSION_NAMES[]) => {
+export const checkPermission = async (permission: PERMISSION_NAMES | PERMISSION_NAMES[]): Promise<boolean> => {
 
-    if (!userId) throw new Error("Failed validate permission: Authentification required!");
-    if (userId == "system") return true;
+    const { user } = getRequestContext();
+    if (!user) throw new Error("Failed validate permission: Authentification required!");
+    if (user == "system") return true;
 
     const connection = await getConnection();
     const roleRepository = connection.getRepository(Role);
-    const userRepository = connection.getRepository(User);
-
-    // Ensure we have a User object
-    const user = typeof userId === "object"
-        ? userId
-        : await userRepository.findOneBy({ id: userId });
-
-    if (!user) throw new Error("Failed validate permission: User not found!");
-
-    // Ensure user has a role assigned
     const roleId = user.meta?.role;
     if (!roleId) throw new Error("Failed validate permission: Member role doesn't exist!");
 
-    if(roleId == "admin") return true;
+    if (roleId == "admin") return true;
 
     const role = await roleRepository.findOneBy({ id: roleId });
     if (!role) throw new Error("Failed validate permission: Role not found!");
@@ -41,14 +32,10 @@ export const checkPermission = async (userId: User | string | undefined | null, 
 };
 
 
-export const checkPermissionSilent = async (userId: User | string | undefined | null, permission: PERMISSION_NAMES | PERMISSION_NAMES[]) => {
+export const checkPermissionSilent = async (permission: PERMISSION_NAMES | PERMISSION_NAMES[]): Promise<boolean> => {
     try {
-
-        return await checkPermission(userId, permission);
-
+        return await checkPermission(permission);
     } catch (error: any) {
-
         return false;
-        
     }
 }

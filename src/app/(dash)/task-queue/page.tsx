@@ -6,6 +6,7 @@ import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { Task } from '@/entities/Task';
+import { useMyPermission } from '@/hooks/useMyPermission';
 import { epochTime, formatLocaleDate } from '@/libs/utils';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { getMany } from '@/libs/websocket/query';
@@ -13,7 +14,8 @@ import { onSnapshot } from '@/libs/websocket/snapshot';
 import {
     Box, Chip, Paper, Stack, Typography, LinearProgress, IconButton,
     alpha, useTheme, Switch, FormControlLabel, Tooltip,
-    Badge, Checkbox
+    Badge, Checkbox,
+    Alert
 } from '@mui/material';
 import {
     Cpu, MoreVertical, Clock, CheckCircle, XCircle, Play,
@@ -61,6 +63,7 @@ const formatDuration = (ms: number) => {
 
 // Components
 interface TaskItemProps {
+    disabled: boolean;
     task: Task;
     isSelected: boolean;
     selectEnabled: boolean;
@@ -70,6 +73,7 @@ interface TaskItemProps {
 }
 
 const TaskItem = ({
+    disabled,
     task,
     isSelected,
     selectEnabled,
@@ -109,8 +113,7 @@ const TaskItem = ({
                     backgroundColor: alpha(theme.palette.action.hover, 0.05)
                 },
                 backgroundColor: isSelected ? alpha(theme.palette.info.main, 0.1) : 'transparent'
-            }}
-        >
+            }}>
             <Stack direction="row" spacing={2} alignItems="center">
                 {/* Selection Checkbox */}
                 {selectEnabled && (
@@ -193,7 +196,7 @@ const TaskItem = ({
 
                 {/* Actions */}
                 <Box sx={{ width: 40, display: 'flex', justifyContent: 'center' }}>
-                    <AnchorMenu items={menuItems}>
+                    <AnchorMenu items={menuItems} disabled={disabled} >
                         <IconButton size="small">
                             <MoreVertical size={16} />
                         </IconButton>
@@ -231,6 +234,7 @@ const EmptyState = () => {
 };
 
 const SelectionHeader = ({
+    disabled = false,
     selectedCount,
     totalCount,
     onSelectAll,
@@ -238,6 +242,7 @@ const SelectionHeader = ({
     onBulkRetry,
     canBulkRetry
 }: {
+    disabled?: boolean;
     selectedCount: number;
     totalCount: number;
     onSelectAll: (select: boolean) => void;
@@ -261,13 +266,13 @@ const SelectionHeader = ({
             {selectedCount > 0 && (
                 <>
                     <Tooltip title="Delete selected">
-                        <IconButton size='small' onClick={onBulkDelete}>
+                        <IconButton disabled={disabled} size='small' onClick={onBulkDelete}>
                             <Trash2 size={18} />
                         </IconButton>
                     </Tooltip>
                     {canBulkRetry && (
                         <Tooltip title="Retry selected">
-                            <IconButton size='small' onClick={onBulkRetry}>
+                            <IconButton disabled={disabled} size='small' onClick={onBulkRetry}>
                                 <RotateCcw size={18} />
                             </IconButton>
                         </Tooltip>
@@ -279,6 +284,8 @@ const SelectionHeader = ({
 };
 
 export default function TaskQueuePage() {
+
+    const canManageTask = useMyPermission("can-manage-task-queue");
     const { addAction } = useActionsProvider();
     const theme = useTheme();
 
@@ -473,8 +480,14 @@ export default function TaskQueuePage() {
                     backdropFilter: 'blur(10px)',
                     border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
                 }}>
+                {!canManageTask && (
+                    <Alert severity='warning'>
+                        Kamu dalam mode <strong>Read Only.</strong>
+                    </Alert>
+                )}
                 {selectEnabled && (
                     <SelectionHeader
+                        disabled={!canManageTask}
                         selectedCount={selected.length}
                         totalCount={filteredTasks.length}
                         onSelectAll={handleSelectAll}
@@ -488,6 +501,7 @@ export default function TaskQueuePage() {
                     <AnimatePresence mode='popLayout'>
                         {filteredTasks.map((task) => (
                             <TaskItem
+                                disabled={!canManageTask}
                                 key={task.id}
                                 task={task}
                                 isSelected={selected.includes(task.id)}

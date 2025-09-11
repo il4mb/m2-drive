@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy } from "lucide-react";
+import { Copy, Key } from "lucide-react";
 import { createContextMenu } from "../context-menu/ContextMenuItem";
 import { File } from "@/entities/File";
 import FolderPicker from "@/components/drive/FolderPicker";
@@ -11,6 +11,7 @@ import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "../ui/CloseSnackbar";
 import { useFileTags } from "@/hooks/useFileTag";
 import { useCurrentSession } from "../context/CurrentSessionProvider";
+import { useMyPermission } from "@/hooks/useMyPermission";
 
 type State = {
     file: File;
@@ -19,6 +20,8 @@ type State = {
 export default createContextMenu<State>({
     state() {
         return {
+            canEditFile: useMyPermission('can-edit-file'),
+            canEditFolder: useMyPermission('can-edit-folder'),
             session: useCurrentSession()
         }
     },
@@ -29,6 +32,7 @@ export default createContextMenu<State>({
     label: "Salin ke...",
     component({ state, resolve }) {
 
+        const isPermitted = state.file.type == "file" ? state.canEditFile : state.canEditFolder;
         const noClone = useFileTags(state.file, ['no-clone', 'no-edit']);
         const [target, setTarget] = useState<File | null>();
         const [loading, setLoading] = useState(false);
@@ -61,6 +65,15 @@ export default createContextMenu<State>({
                         <Alert severity="warning" sx={{ mb: 2 }}>
                             <AlertTitle>Peringatan!</AlertTitle>
                             <strong>Admin</strong> menandai file ini  <strong>{state.file.meta?.tags?.join(', ')}</strong>,<br />Menyalin file ini mungkin tidak berhasil!
+                        </Alert>
+                    )}
+                    {!isPermitted && (
+                        <Alert
+                            icon={<Key size={18} />}
+                            variant="outlined"
+                            severity="warning"
+                            sx={{ mb: 2 }}>
+                            Kamu tidak memiliki izin untuk mengedit {state.file.type}, kamu tidak dapat mengcopy {state.file.type}.
                         </Alert>
                     )}
                     <FolderPicker

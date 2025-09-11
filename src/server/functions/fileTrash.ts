@@ -16,15 +16,11 @@ type RemoveRestoreProps = {
 };
 export const removeFile = createFunction(
     async ({ fileId, permanen = false }: RemoveRestoreProps & { permanen?: boolean }) => {
+
         if (!fileId) {
             throw new Error("400: Request tidak valid!");
         }
-
-        const { user: actor } = getRequestContext();
-        const isRoot = await checkPermission(actor, 'can-manage-drive-root');
-        if (!isRoot) {
-            checkPermission(actor, 'can-delete-file');
-        }
+        const isRoot = await checkPermissionSilent('can-manage-drive-root');
         const source = await getConnection();
         const repository = source.getRepository(File);
         const contributorRepository = source.getRepository(Contributor);
@@ -39,8 +35,12 @@ export const removeFile = createFunction(
             throw new Error("403: Menghapus tidak diperbolehkan!");
         }
 
-        if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != file.uId) {
-            throw new Error("403: Not allowed to delete this " + file.type);
+        if (!isRoot) {
+            if (file.type == "file") {
+                await checkPermission('can-delete-file');
+            } else {
+                await checkPermission("can-delete-folder");
+            }
         }
 
         // recursive finder for children
@@ -113,6 +113,7 @@ export const removeFile = createFunction(
             await repository.save(updatedFiles);
             await Promise.all(removeContributor);
         }
+        writeActivity(`DELETE_FILE`, `Menghapus ${file.type} ${file.name}`);
     }
 );
 
@@ -122,10 +123,9 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
     if (!fileId?.trim()) {
         throw new Error("400: Request tidak valid!");
     }
-
-
+    
     const { user: actor } = getRequestContext();
-    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
+    const isRoot = await checkPermissionSilent("can-manage-drive-root");
     const source = await getConnection();
     const repository = source.getRepository(File);
 
@@ -161,7 +161,7 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
 
     await repository.save(file);
 
-    writeActivity("DELETE_FILE", `Menghapus ${file.type} ${file.name}`);
+    writeActivity("RESTORE_FILE", `Merestore ${file.type} ${file.name}`);
 });
 
 
@@ -176,7 +176,7 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
     }
 
     const { user: actor } = getRequestContext();
-    const isRoot = await checkPermission(actor, "can-manage-drive-root");
+    const isRoot = await checkPermissionSilent("can-manage-drive-root");
     const source = await getConnection();
     const repository = source.getRepository(File);
 

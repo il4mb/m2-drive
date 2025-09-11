@@ -4,7 +4,7 @@ import { ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { IMenu } from '@/types';
 import Link from 'next/link';
 import { getColor } from '@/theme/colors';
-import { useCheckMyPermission } from '../context/CurrentUserAbilitiesProvider';
+import { useCheckMyPermissionState } from '../context/CurrentUserAbilitiesProvider';
 
 export interface MenuItemProps {
     menu: IMenu<"link">;
@@ -13,7 +13,7 @@ export interface MenuItemProps {
 }
 export default function MenuItem({ menu, shouldExpand, active }: MenuItemProps) {
 
-    const checkedPermission = useCheckMyPermission();
+    const checkedPermission = useCheckMyPermissionState();
 
     if (menu.permission && !checkedPermission(menu.permission)) {
         return null;

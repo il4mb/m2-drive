@@ -1,7 +1,7 @@
 'use client'
 
 import Container from "@/components/Container";
-import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
+import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import User from "@/entities/User";
 import { Alert, AlertTitle, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Calendar, CaseSensitive, Clock, Pen, Users2 } from "lucide-react";
@@ -17,7 +17,7 @@ import { useActionsProvider } from "@/components/navigation/ActionsProvider";
 export default function page() {
 
     const actionProvider = useActionsProvider();
-    const checkPermission = useCheckMyPermission();
+    const checkPermission = useCheckMyPermissionState();
     const canListuser = checkPermission('can-list-user');
     const canAddUser = checkPermission('can-add-user');
     const canEdituser = checkPermission('can-edit-user');

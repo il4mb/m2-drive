@@ -19,18 +19,13 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
 
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("401: Unauthenticated");
-
-    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
-    if (!isRoot) {
-        await checkPermission(actor, "can-create-folder");
-    }
+    const isRoot = await checkPermissionSilent("can-manage-drive-root");
 
     if (!userId) {
         throw new Error("Failed Create Folder: userId tidak boleh kosong!");
     }
-
-    if (!isRoot && actor != "system" && actor?.meta.role != "admin" && actor?.id != userId) {
-        throw new Error("Gagal Membuat Folder: Permision complicated!");
+    if (!isRoot && actor != "system") {
+        await checkPermission("can-create-folder");
     }
 
     if (name.length < 1 || name.length > 34) {
@@ -50,8 +45,9 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
         throw new Error("Failed Create Folder: Folder dengan nama yang sama sudah ada!");
     }
 
+    let folder: File | null = null;
     if (pId) {
-        const folder = await fileRepository.findOneBy({ id: pId });
+        folder = await fileRepository.findOneBy({ id: pId });
         if (!folder) {
             throw new Error("Failed Create Folder: Folder tujuan tidak ditemukan!");
         }
@@ -74,7 +70,7 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
     });
 
     await fileRepository.save(file);
-    writeActivity("CREATE_FOLDER", `Membuat ${file.type} ${file.name}`);
+    writeActivity("CREATE_FOLDER", `Membuat ${file.type} ${file.name}${folder ? ` dalam ${folder.name}` : ""}`);
 })
 
 export type UpdateFilePart = Partial<Omit<File, "meta">> & {
@@ -92,12 +88,7 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     const { user: actor } = getRequestContext();
     if (!actor) throw new Error("Failed Update File: Unauthenticated");
 
-    const isRoot = await checkPermissionSilent(actor, "can-manage-drive-root");
-    if (!isRoot) {
-        await checkPermission(actor, "can-edit-file");
-    }
-
-
+    const isRoot = await checkPermissionSilent("can-manage-drive-root");
     const source = await getConnection();
     const fileRepository = source.getRepository(File);
     const oldFile = await fileRepository.findOneBy({ id });
@@ -110,7 +101,12 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
 
     // Check permissions
     if (!isRoot && !isSystem && !isAdmin && !isOwner) {
-        throw new Error("Gagal: Permision complicated!");
+        if (file.type == "file") {
+            checkPermission("can-edit-file");
+        } else {
+            checkPermission("can-edit-folder");
+        }
+
     }
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
@@ -152,7 +148,11 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     }
 
     if (!isRoot && data.meta?.generalPermit) {
-        await checkPermission(actor, "can-share-file");
+        if (file.type == "file") {
+            await checkPermission("can-share-file");
+        } else {
+            await checkPermission("can-share-folder");
+        }
     }
 
     // Check for unknown top-level keys for regular users

@@ -316,9 +316,20 @@ export default function useRequest<
             let responseData: any;
 
             if (isActionMode) {
+                // const secure = await secureSocketManager.encrypt(props.params);
+                // .then(e => {
+
+                // }).catch((err: any) => {
+                //     enqueueSnackbar(`Secure Failed: ${err.message}`, {
+                //         variant: 'error',
+                //         action: CloseSnackbar
+                //     })
+                // })
                 // Handle server action
                 responseData = await props.action(props.params || {} as P);
+                // responseData = await props.action((secure as unknown as any) || {} as P);
                 if (!responseData.status) throw new Error(responseData.message || "Unknown Error");
+
             } else if (isHttpMode) {
                 // Handle fetch request
                 const url = buildUrl(props.endpoint, props.queryParams);

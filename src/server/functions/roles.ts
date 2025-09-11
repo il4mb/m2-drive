@@ -29,7 +29,7 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
 
     const { user: actor } = getRequestContext();
     // Permission check
-    await checkPermission(actor, "can-manage-roles");
+    await checkPermission("can-manage-roles");
 
     const parsed = SaveRoleSchema.parse({
         ...data,
@@ -81,10 +81,8 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
 export const deleteRole = createFunction(async ({ name }: { name: string }) => {
 
     if (name == "admin") throw new Error(`Failed Remove Role: Role admin tidak bisa dihapus.`);
-
-    const { user: actor } = getRequestContext();
     // Permission check
-    await checkPermission(actor, "can-manage-roles");
+    await checkPermission("can-manage-roles");
 
     const source = await getConnection();
     const repo = source.getRepository(Role);

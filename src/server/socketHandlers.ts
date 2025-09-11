@@ -10,37 +10,7 @@ import { generateIndonesianAnimalName } from './animal-names';
 import functions from "./functions";
 import { getConnection } from '@/data-source';
 import User from '@/entities/User';
-import { Activity } from '@/entities/Activity';
-import { Between } from 'typeorm';
 import { writeActivity } from './funcHelper';
-
-
-// Define types for better type safety
-interface UserMeta {
-    isActive?: boolean;
-    activeAt?: number;
-    lastSeen?: number;
-    connectionCount?: number;
-    [key: string]: any;
-}
-
-export interface RoomUser<T = Record<string, any>> {
-    isGuest: boolean;
-    userId: string | null;
-    joinedAt: number;
-    lastActivity: number;
-    metadata?: Record<string, any>;
-    displayName?: string;
-}
-
-export interface Room<T = Record<string, any>> {
-    users: Map<string, RoomUser<T>>;
-    createdAt: number;
-    updatedAt?: number;
-    isPublic: boolean;
-    maxUsers: number;
-    createdBy?: string;
-}
 
 interface Subscription {
     socket: CustomSocket;
@@ -58,6 +28,22 @@ export interface Viewer {
     path: string[][];
 }
 
+export interface Client {
+    sessionId: string;
+    displayName: string;
+    userId: string | null;
+    isAuthenticated: boolean;
+    token: Token | null;
+}
+
+// Constants
+const RATE_LIMIT_WINDOW = 20000; // 20 seconds
+const MAX_REQUESTS_PER_MINUTE_AUTH = 10000;
+const MAX_REQUESTS_PER_MINUTE_GUEST = 1000;
+const HEARTBEAT_INTERVAL = 30000;
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
+const SUBSCRIPTION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
 // Track metrics for monitoring
 const connectionMetrics = {
     totalConnections: 0,
@@ -65,33 +51,19 @@ const connectionMetrics = {
     maxConcurrentConnections: 0,
     functionInvocations: 0,
     queryExecutions: 0,
-    guestConnections: 0,
-};
-
-// Guest user management
-const guestUsers = new Map<string, {
-    socket: Socket;
-    createdAt: number;
-    lastActivity: number;
-    displayName?: string;
-}>();
+}
 
 export const subscribers = new Map<string, Subscription>();
-export const rooms = new Map<string, Room>();
-export const activeUsers = new Map<string, { socket: CustomSocket; joinedAt: number }>();
 export const viewers = new Map<string, Viewer>();
+export const clients = new Map<string, Client>();
 
-// Rate limiting - different limits for authenticated users and guests
+// Rate limiting
 const rateLimits = new Map<string, { count: number; lastReset: number; isGuest: boolean }>();
-const RATE_LIMIT_WINDOW = 20000; // 1 minute
-const MAX_REQUESTS_PER_MINUTE_AUTH = 10000;
-const MAX_REQUESTS_PER_MINUTE_GUEST = 1000;
 
+// Utility functions
 const checkRateLimit = (id: string, isGuest: boolean = false): { allowed: boolean; remaining: number } => {
-
     const now = Date.now();
     const userRateLimit = rateLimits.get(id) || { count: 0, lastReset: now, isGuest };
-
     const maxRequests = isGuest ? MAX_REQUESTS_PER_MINUTE_GUEST : MAX_REQUESTS_PER_MINUTE_AUTH;
 
     // Reset counter if window has passed
@@ -109,13 +81,22 @@ const checkRateLimit = (id: string, isGuest: boolean = false): { allowed: boolea
     };
 };
 
-
-function isChildPathOf(parent: string[], child: string[]) {
+const isChildPathOf = (parent: string[], child: string[]): boolean => {
     if (child.length < parent.length) return false;
     return parent.every((id, idx) => id === child[idx]);
-}
+};
 
-function broadcastViewers(io: Server, affectedPaths?: string[][]) {
+const normalizePaths = (path: string | string[] | string[][]): string[][] => {
+    if (Array.isArray(path)) {
+        if (Array.isArray(path[0])) {
+            return path as string[][];
+        }
+        return [path as string[]];
+    }
+    return [[path]];
+};
+
+const broadcastViewers = (io: Server, affectedPaths?: string[][]) => {
     for (const [socketId, viewer] of viewers.entries()) {
         const socketInstance = io.sockets.sockets.get(socketId);
         if (!socketInstance) continue;
@@ -123,14 +104,12 @@ function broadcastViewers(io: Server, affectedPaths?: string[][]) {
         if (affectedPaths && !viewer.path.some(vp =>
             affectedPaths.some(ap => isChildPathOf(ap, vp) || isChildPathOf(vp, ap))
         )) {
-            continue; // skip if no overlap
+            continue;
         }
 
         const visibleViewers = [...viewers.values()]
-            .filter(v =>
-                viewer.path.some(parentPath =>
-                    v.path.some(childPath => isChildPathOf(parentPath, childPath))
-                )
+            .filter(v => viewer.path.some(parentPath =>
+                v.path.some(childPath => isChildPathOf(parentPath, childPath)))
             )
             .map(v => ({
                 uid: v.uid,
@@ -141,171 +120,104 @@ function broadcastViewers(io: Server, affectedPaths?: string[][]) {
 
         socketInstance.emit("viewers-change", visibleViewers);
     }
-}
+};
 
-
-
-function normalizePaths(path: string | string[] | string[][]): string[][] {
-    if (Array.isArray(path)) {
-        if (Array.isArray(path[0])) {
-            return path as string[][];
-        }
-        return [path as string[]];
-    }
-    return [[path]];
-}
-
-export type SocketResult = {
+// Types
+export type SocketResult<R = any> = {
     success: boolean;
     error?: string;
     code?: string;
     retryAfter?: number;
-    data?: any;
-}
-type CustomSocket = Omit<Socket, 'data'> & {
-    data: {
-        displayName: string;
-        isGuest: boolean;
-        uid: string;
-        token: Token | null;
-    }
+    data?: R;
 }
 
+type CustomSocket = Omit<Socket, 'data'> & {
+    data: Client;
+}
 
 export async function setupSocketHandlers(io: Server) {
-
     const connection = await getConnection();
     const userRepository = connection.getRepository(User);
 
-    const markAsActive = async (uid: string) => {
+    const markUserActiveStatus = async (uid: string, isActive: boolean) => {
         await requestContext.run({ user: "system" }, async () => {
             const user = await userRepository.findOneBy({ id: uid });
             if (user) {
                 const meta = user.meta;
-                meta.isActive = true;
-                meta.activeAt = currentTime();
-                user.meta = meta;
-                await userRepository.save(user);
-            }
-        })
-    }
-
-    const markAsInactive = async (uid: string) => {
-        await requestContext.run({ user: "system" }, async () => {
-            const user = await userRepository.findOneBy({ id: uid });
-            if (user) {
-                const meta = user.meta;
-                meta.isActive = false;
-                delete meta.activeAt;
-                user.meta = meta;
-                await userRepository.save(user);
-            }
-        })
-    }
-
-
-
-    console.log("LOADED FUNCTIONS", functions)
-
-    io.use(async (socket: CustomSocket, next) => {
-
-        socket.data.displayName = generateIndonesianAnimalName();
-        socket.data.isGuest = true;
-        socket.data.uid = generateKey(18);
-        socket.data.token = null;
-
-        try {
-
-            const cookies = parse(socket.handshake.headers.cookie || '');
-            const tokenId = cookies['token-id'];
-
-            if (tokenId) {
-                // Authenticated user
-                const token = await getTokenById(tokenId);
-                if (!token) {
-                    throw new Error('Invalid token');
+                meta.isActive = isActive;
+                if (isActive) {
+                    meta.activeAt = currentTime();
+                } else {
+                    delete meta.activeAt;
                 }
+                user.meta = meta;
+                await userRepository.save(user);
+            }
+        });
+    };
+
+    const handleWriteActivity = async (socket: CustomSocket, type: string, description: string) => {
+        if (!socket.data.isAuthenticated) return;
+
+        const user = await getUserByToken(socket.data.token!);
+        const ipAddress = socket.handshake.headers["x-forwarded-for"]?.toString().split(",")[0] || socket.handshake.address;
+        const userAgent = socket.handshake.headers["user-agent"] || "Unknown";
+
+        await requestContext.run({ user, userAgent, ipAddress }, async () => {
+            await writeActivity(type, description);
+        });
+    };
+
+    console.log("LOADED FUNCTIONS", Object.keys(functions));
+
+    // Authentication middleware
+    io.use(async (socket: CustomSocket, next) => {
+        try {
+            const cookies = parse(socket.handshake.headers.cookie || '');
+            const sessionId = cookies['session-id'];
+
+            if (!sessionId) {
+                return next(new Error("Missing sessionId"));
+            }
+
+            socket.data = {
+                sessionId,
+                displayName: generateIndonesianAnimalName(),
+                isAuthenticated: false,
+                token: null,
+                userId: null
+            };
+
+            const tokenId = cookies['token-id'];
+            if (tokenId) {
+                const token = await getTokenById(tokenId);
+                if (!token) throw new Error('Invalid token');
 
                 const user = await getUserByToken(token);
-                if (!user) {
-                    throw new Error('User not found');
-                }
+                if (!user) throw new Error('User not found');
 
                 socket.data.token = token;
-                socket.data.uid = user.id;
+                socket.data.userId = user.id;
                 socket.data.displayName = user.name;
-                socket.data.isGuest = false;
+                socket.data.isAuthenticated = true;
             }
 
             next();
         } catch (error) {
             console.error('Authentication error:', error);
-            connectionMetrics.guestConnections++;
             next();
         }
     });
 
+    // Connection handler
     io.on('connection', (socket: CustomSocket) => {
-
+        const sessionId = socket.data.sessionId;
         const ipAddress = socket.handshake.headers["x-forwarded-for"]?.toString().split(",")[0] || socket.handshake.address;
         const userAgent = socket.handshake.headers["user-agent"] || "Unknown";
 
-        const handlWriteActivity = async (type: string, description: string) => {
-            if (socket.data.isGuest) return;
-            const user = await getUserByToken(socket.data.token!);
-            await requestContext.run({ user, userAgent, ipAddress }, async () => writeActivity(type, description));
-        }
+        console.log(`Client connected: ${ipAddress}, ${sessionId}, ${socket.data.displayName}`);
 
-        if (socket.data.isGuest == false && socket.data.uid) {
-            markAsActive(socket.data.uid).then(() => {
-                handlWriteActivity("CONNECT", "Berhasil terhubung/masuk ke sistem");
-            });
-        }
-
-
-        socket.on("viewer-join", (path: string | string[] | string[][]) => {
-            if (!viewers.has(socket.id)) {
-                viewers.set(socket.id, {
-                    isGuest: socket.data.isGuest,
-                    displayName: socket.data.displayName,
-                    uid: socket.data.uid,
-                    path: []
-                });
-            }
-
-            const viewer = viewers.get(socket.id)!;
-            const newPaths = normalizePaths(path);
-
-            viewer.path = [
-                ...viewer.path,
-                ...newPaths.filter(np => !viewer.path.some(p => JSON.stringify(p) === JSON.stringify(np)))
-            ];
-
-            broadcastViewers(io);
-        });
-
-        socket.on("viewer-leave", (path: string | string[] | string[][]) => {
-            if (!viewers.has(socket.id)) return;
-
-            const leavePaths = normalizePaths(path);
-            const viewer = viewers.get(socket.id)!;
-
-            viewer.path = viewer.path.filter(vp =>
-                // Keep vp only if it's NOT equal to or a child of any leave path
-                !leavePaths.some(lp =>
-                    JSON.stringify(lp) === JSON.stringify(vp) || isChildPathOf(lp, vp)
-                )
-            );
-
-            if (viewer.path.length === 0) {
-                viewers.delete(socket.id);
-            }
-
-            broadcastViewers(io);
-        });
-
-
-        console.log(`Client connected: ${ipAddress}, ${userAgent} and ${socket.id}, Name: ${socket.data.displayName}`);
+        // Update metrics
         connectionMetrics.totalConnections++;
         connectionMetrics.activeConnections++;
         connectionMetrics.maxConcurrentConnections = Math.max(
@@ -313,194 +225,193 @@ export async function setupSocketHandlers(io: Server) {
             connectionMetrics.activeConnections
         );
 
+        // Mark user as active if authenticated
+        if (socket.data.isAuthenticated && socket.data.userId) {
+            markUserActiveStatus(socket.data.userId, true)
+                .then(() => handleWriteActivity(socket, "CONNECT", "Berhasil terhubung/masuk ke sistem"));
+        }
+
         // Heartbeat for connection monitoring
         const heartbeatInterval = setInterval(() => {
             socket.emit('heartbeat');
-        }, 30000);
+        }, HEARTBEAT_INTERVAL);
 
-        socket.on("session-validate", async () => {
-            try {
-                const cookies = parse(socket.handshake.headers.cookie || '');
-                const tokenId = cookies['token-id'];
+        // Event handlers
+        const setupEventHandlers = () => {
+            socket.on("session-validate", async (callback) => {
+                try {
 
-                if (!tokenId) {
-                    socket.emit("session-change", null);
+                    const payload = {
+                        success: socket.data.isAuthenticated && !!socket.data.userId,
+                        data: socket.data.isAuthenticated ? { userId: socket.data.userId } : undefined
+                    }
+                    if (typeof callback == "function") {
+                        callback(payload);
+                    }
+                    socket.emit("session-validate-result", payload);
+                } catch (error: any) {
+                    console.error("Session validation error:", error);
+                    callback({ success: false, error: error.message });
+                }
+            });
+
+            socket.on("viewer-join", (path: string | string[] | string[][]) => {
+                const newPaths = normalizePaths(path);
+
+                if (!viewers.has(sessionId)) {
+                    viewers.set(sessionId, {
+                        isGuest: !socket.data.isAuthenticated,
+                        displayName: socket.data.displayName,
+                        uid: socket.data.sessionId,
+                        path: []
+                    });
+                }
+
+                const viewer = viewers.get(sessionId)!;
+                viewer.path = [
+                    ...viewer.path,
+                    ...newPaths.filter(np => !viewer.path.some(p => JSON.stringify(p) === JSON.stringify(np)))
+                ];
+
+                broadcastViewers(io);
+            });
+
+            socket.on("viewer-leave", (path: string | string[] | string[][]) => {
+                if (!viewers.has(socket.id)) return;
+
+                const leavePaths = normalizePaths(path);
+                const viewer = viewers.get(socket.id)!;
+
+                viewer.path = viewer.path.filter(vp =>
+                    !leavePaths.some(lp =>
+                        JSON.stringify(lp) === JSON.stringify(vp) || isChildPathOf(lp, vp)
+                    )
+                );
+
+                if (viewer.path.length === 0) {
+                    viewers.delete(socket.id);
+                }
+
+                broadcastViewers(io, leavePaths);
+            });
+
+            socket.on('subscribe', (data: QueryConfig, callback: (data: SocketResult) => void) => {
+                const isGuest = !socket.data.isAuthenticated;
+                const rateLimit = checkRateLimit(socket.id, isGuest);
+
+                if (!rateLimit.allowed) {
+                    callback({
+                        success: false,
+                        error: 'Rate limit exceeded',
+                        code: 'RATE_LIMIT_EXCEEDED',
+                        retryAfter: RATE_LIMIT_WINDOW,
+                    });
                     return;
                 }
 
-                const token = await getTokenById(tokenId);
-                const user = await getUserByToken(token);
-
-                socket.data.token = token;
-                socket.data.uid = user.id;
-                socket.data.isGuest = false;
-
-                activeUsers.set(user.id, { socket, joinedAt: currentTime() });
-                socket.emit("session-change", user.id);
-
-                // Send active users list to the newly authenticated user
-                const activeUserIds = Array.from(activeUsers.keys());
-                socket.emit("active-users-change", activeUserIds);
-
-                // Notify all users about the new active user
-                io.emit("active-users-change", activeUserIds);
-
-            } catch (error: any) {
-                console.error("Session validation error:", error);
-                socket.data.isGuest = true;
-                socket.emit("session-change", null);
-            }
-        });
-
-
-        socket.on('subscribe', (data: QueryConfig, callback: (data: SocketResult) => void) => {
-            const isGuest = socket.data.isGuest;
-            const rateLimit = checkRateLimit(socket.id, isGuest);
-
-            if (!rateLimit.allowed) {
-                callback({
-                    success: false,
-                    error: 'Rate limit exceeded',
-                    code: 'RATE_LIMIT_EXCEEDED',
-                    retryAfter: RATE_LIMIT_WINDOW,
-                });
-                return;
-            }
-
-            // Guests have limited subscription capabilities
-            if (isGuest) {
-                callback({
-                    success: false,
-                    error: 'Guests cannot subscribe to collections',
-                    code: 'UNAUTHORIZED',
-                });
-                return;
-            }
-
-            try {
-                const id = generateKey();
-                subscribers.set(id, {
-                    socket,
-                    collection: data.collection,
-                    conditions: data.conditions,
-                    relations: data.relations || [],
-                    debug: data.debug,
-                    createdAt: currentTime()
-                });
-
-                callback({ success: true, data: { id } });
-            } catch (error) {
-                console.error('Subscription error:', error);
-                callback({
-                    success: false,
-                    error: 'Failed to create subscription',
-                    code: 'SUBSCRIPTION_ERROR',
-                });
-            }
-        });
-
-        socket.on('invoke-function', async (data: { function: string; args?: any }, callback) => {
-            const isGuest = socket.data.isGuest;
-            const rateLimit = checkRateLimit(socket.id, isGuest);
-
-            if (!rateLimit.allowed) {
-                callback({
-                    success: false,
-                    error: 'Rate limit exceeded',
-                    code: 'RATE_LIMIT_EXCEEDED',
-                    retryAfter: RATE_LIMIT_WINDOW,
-                });
-                return;
-            }
-
-            connectionMetrics.functionInvocations++;
-
-            // Check if guest is allowed to call this function
-            if (isGuest) {
-                const functionName = data.function;
-                // Define which functions guests can call
-                const allowedGuestFunctions = ['filePreflight'];
-
-                if (!allowedGuestFunctions.includes(functionName)) {
+                if (isGuest) {
                     callback({
                         success: false,
-                        error: 'Guests are not allowed to call this function',
+                        error: 'Guests cannot subscribe to collections',
                         code: 'UNAUTHORIZED',
                     });
                     return;
                 }
-            }
 
-            try {
+                try {
+                    const id = generateKey();
+                    subscribers.set(id, {
+                        socket,
+                        collection: data.collection,
+                        conditions: data.conditions,
+                        relations: data.relations || [],
+                        debug: data.debug,
+                        createdAt: currentTime()
+                    });
 
-                const user = isGuest ? undefined : await getUserByToken(socket.data.token!);
+                    callback({ success: true, data: { id } });
+                } catch (error) {
+                    console.error('Subscription error:', error);
+                    callback({
+                        success: false,
+                        error: 'Failed to create subscription',
+                        code: 'SUBSCRIPTION_ERROR',
+                    });
+                }
+            });
 
-                await requestContext.run({ user, userAgent, ipAddress }, async () => {
+            socket.on('invoke-function', async (data: { function: string; args?: any }, callback) => {
+                const isGuest = !socket.data.isAuthenticated;
+                const rateLimit = checkRateLimit(socket.id, isGuest);
 
-                    try {
+                if (!rateLimit.allowed) {
+                    callback({
+                        success: false,
+                        error: 'Rate limit exceeded',
+                        code: 'RATE_LIMIT_EXCEEDED',
+                        retryAfter: RATE_LIMIT_WINDOW,
+                    });
+                    return;
+                }
 
+                connectionMetrics.functionInvocations++;
+
+                if (isGuest) {
+                    const allowedGuestFunctions = ['filePreflight'];
+                    if (!allowedGuestFunctions.includes(data.function)) {
+                        callback({
+                            success: false,
+                            error: 'Guests are not allowed to call this function',
+                            code: 'UNAUTHORIZED',
+                        });
+                        return;
+                    }
+                }
+
+                try {
+                    const user = socket.data.isAuthenticated ? await getUserByToken(socket.data.token!) : undefined;
+
+                    await requestContext.run({ user, userAgent, ipAddress }, async () => {
                         const fnName = data.function as keyof typeof functions;
-                        const fn = functions[fnName] as any;
+                        const fn = functions[fnName];
 
-                        if (!fn) {
+                        if (!fn || typeof fn !== 'function') {
                             throw new Error(`Function "${data.function}" not found`);
-                        }
-                        if (typeof data?.function !== 'string') {
-                            throw new Error('Invalid function name');
                         }
 
                         const result = await fn(data.args || {});
-
                         callback({ success: true, data: result });
-                    } catch (error) {
-                        console.error('Function invocation error:', error);
-                        callback({
-                            success: false,
-                            error: error instanceof Error ? error.message : String(error),
-                            code: 'EXECUTION_ERROR',
-                        });
-                    }
-                });
-            } catch (error: any) {
-                console.error('Error getting user for function invocation:', error);
-                callback({
-                    success: false,
-                    error: error.message || 'Authentication error',
-                    code: 'AUTH_ERROR',
-                });
-            }
-        });
+                    });
+                } catch (error: any) {
+                    console.error('Function invocation error:', error);
+                    callback({
+                        success: false,
+                        error: error.message || 'Execution error',
+                        code: 'EXECUTION_ERROR',
+                    });
+                }
+            });
 
-        socket.on('execute-query', async (queryData: QueryConfig, callback) => {
-            const isGuest = socket.data.isGuest;
-            const rateLimit = checkRateLimit(socket.id, isGuest);
+            socket.on('execute-query', async (queryData: QueryConfig, callback) => {
+                const isGuest = !socket.data.isAuthenticated;
+                const rateLimit = checkRateLimit(socket.id, isGuest);
 
-            if (!rateLimit.allowed) {
-                callback({
-                    success: false,
-                    error: 'Rate limit exceeded',
-                    code: 'RATE_LIMIT_EXCEEDED',
-                    retryAfter: RATE_LIMIT_WINDOW,
-                });
-                return;
-            }
+                if (!rateLimit.allowed) {
+                    callback({
+                        success: false,
+                        error: 'Rate limit exceeded',
+                        code: 'RATE_LIMIT_EXCEEDED',
+                        retryAfter: RATE_LIMIT_WINDOW,
+                    });
+                    return;
+                }
 
-            connectionMetrics.queryExecutions++;
+                connectionMetrics.queryExecutions++;
 
-            // // Guests can only execute public queries
-            // if (isGuest) {
-            //     callback({
-            //         success: false,
-            //         error: 'Guests cannot execute queries',
-            //         code: 'UNAUTHORIZED',
-            //     });
-            //     return;
-            // }
+                try {
+                    const user = socket.data.isAuthenticated ? await getUserByToken(socket.data.token!) : undefined;
 
-            try {
-                const user = socket.data.token ? await getUserByToken(socket.data.token) : undefined;
-                await requestContext.run({ user, ipAddress, userAgent }, async () => {
-                    try {
+                    await requestContext.run({ user, ipAddress, userAgent }, async () => {
                         const result = await executeQuery(queryData);
                         const response: any = {
                             success: true,
@@ -512,385 +423,93 @@ export async function setupSocketHandlers(io: Server) {
                         }
 
                         callback(response);
-                    } catch (error) {
-                        console.error('Query execution error:', error);
-                        callback({
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Query execution failed',
-                            code: 'EXECUTION_ERROR',
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error('Error getting user for query execution:', error);
-                callback({
-                    success: false,
-                    error: 'Authentication error',
-                    code: 'AUTH_ERROR',
-                });
-            }
-        });
-
-        socket.on('unsubscribe', (id: string) => {
-            subscribers.delete(id);
-        });
-
-
-
-
-
-        type RoomPayload = {
-            id: string,
-            isPublic: boolean,
-            maxUsers: number;
-            createdBy?: string;
-        }
-
-        socket.on('room-join', (data: string | RoomPayload, userData: Partial<RoomUser> = {}) => {
-
-            const isGuest = socket.data.isGuest;
-            const userId = socket.data.uid;
-            const roomId = typeof data === "string" ? data : data.id;
-            const isPublic = typeof data === "string" ? true : data.isPublic;
-            const maxUsers = typeof data === "string" ? 100 : data.maxUsers;
-            const createdBy = typeof data !== "string" ? data.createdBy : userId || undefined;
-
-            try {
-
-                if (!rooms.has(roomId)) {
-
-                    rooms.set(roomId, {
-                        createdAt: currentTime(),
-                        users: new Map(),
-                        isPublic,
-                        maxUsers,
-                        createdBy
+                    });
+                } catch (error: any) {
+                    console.error('Query execution error:', error);
+                    callback({
+                        success: false,
+                        error: error.message || 'Query execution failed',
+                        code: 'EXECUTION_ERROR',
                     });
                 }
-
-                const room = rooms.get(roomId)!;
-
-                // Check if room is private and user is guest
-                if (!room.isPublic && isGuest) {
-                    socket.emit('room-error', {
-                        error: 'This room is private',
-                        roomId,
-                    });
-                    return;
-                }
-
-                const socketId = socket.id;
-                const roomUsers = room.users;
-                const alreadyJoined = roomUsers.has(socketId);
-
-                if (!alreadyJoined) {
-                    if (roomUsers.size >= room.maxUsers) {
-                        socket.emit('room-error', {
-                            error: 'Room is full',
-                            roomId,
-                        });
-                        return;
-                    }
-
-                    roomUsers.set(socketId, {
-                        isGuest,
-                        userId,
-                        joinedAt: currentTime(),
-                        lastActivity: currentTime(),
-                        metadata: userData.metadata || {},
-                        displayName: isGuest ?
-                            (guestUsers.get(socketId)?.displayName || `Guest_${socketId.slice(-4)}`) :
-                            undefined
-                    });
-
-                    room.updatedAt = currentTime();
-                }
-
-                socket.join(roomId);
-
-                // Convert Map to object for emitting
-                const roomUsersObj = Object.fromEntries(room.users);
-                io.to(roomId).emit('room-change', {
-                    id: roomId,
-                    users: roomUsersObj,
-                    createdAt: room.createdAt,
-                    updatedAt: room.updatedAt,
-                    isPublic: room.isPublic,
-                    maxUsers: room.maxUsers,
-                    createdBy: room.createdBy
-                });
-            } catch (error) {
-                console.error('Room join error:', error);
-                socket.emit('room-error', {
-                    error: 'Failed to join room',
-                    roomId,
-                });
-            }
-        });
-
-        socket.on('room-update', (roomId: string, newData: Partial<RoomUser>) => {
-            const room = rooms.get(roomId);
-            if (room) {
-                const userEntry = room.users.get(socket.id);
-                if (userEntry) {
-                    room.users.set(socket.id, {
-                        ...userEntry,
-                        ...newData,
-                        lastActivity: currentTime(),
-                    });
-
-                    room.updatedAt = currentTime();
-
-                    // Convert Map to object for emitting
-                    const roomUsersObj = Object.fromEntries(room.users);
-                    io.to(roomId).emit('room-change', {
-                        id: roomId,
-                        users: roomUsersObj,
-                        createdAt: room.createdAt,
-                        updatedAt: room.updatedAt,
-                        isPublic: room.isPublic,
-                        maxUsers: room.maxUsers,
-                        createdBy: room.createdBy
-                    });
-                }
-            }
-        });
-
-        socket.on('room-leave', (roomId: string) => {
-            const room = rooms.get(roomId);
-            if (room) {
-                room.users.delete(socket.id);
-                room.updatedAt = currentTime();
-
-                socket.leave(roomId);
-
-                if (room.users.size === 0) {
-                    // Remove empty rooms
-                    rooms.delete(roomId);
-                } else {
-                    // Convert Map to object for emitting
-                    const roomUsersObj = Object.fromEntries(room.users);
-                    io.to(roomId).emit('room-change', {
-                        id: roomId,
-                        users: roomUsersObj,
-                        createdAt: room.createdAt,
-                        updatedAt: room.updatedAt,
-                        isPublic: room.isPublic,
-                        maxUsers: room.maxUsers,
-                        createdBy: room.createdBy
-                    });
-                }
-            }
-        });
-
-        socket.on('get-metrics', (callback) => {
-            // Only authenticated admin users can access metrics
-            if (socket.data.isGuest || !socket.data.token) {
-                callback({
-                    success: false,
-                    error: 'Unauthorized',
-                    code: 'UNAUTHORIZED',
-                });
-                return;
-            }
-
-            // In a real implementation, you would check if the user is an admin
-            callback({
-                success: true,
-                data: {
-                    ...connectionMetrics,
-                    activeUsers: activeUsers.size,
-                    guestUsers: guestUsers.size,
-                    rooms: rooms.size,
-                    subscriptions: subscribers.size,
-                },
             });
-        });
 
+            socket.on('unsubscribe', (id: string) => {
+                subscribers.delete(id);
+            });
 
+            socket.on('get-metrics', (callback) => {
+                callback({ success: true, data: getConnectionMetrics() });
+            });
 
-        socket.on('get-metrics', (callback) => {
-            callback({ success: true, data: getConnectionMetrics() });
-        });
+            socket.on('get-viewers', (callback) => {
+                callback({ success: true, data: Array.from(viewers.values()) });
+            });
 
-        socket.on('get-rooms', (callback) => {
-            const roomsData = Array.from(rooms.entries()).map(([id, room]) => ({
-                id,
-                users: Object.fromEntries(room.users),
-                createdAt: room.createdAt,
-                updatedAt: room.updatedAt,
-                isPublic: room.isPublic,
-                maxUsers: room.maxUsers,
-                createdBy: room.createdBy
-            }));
-            callback({ success: true, data: roomsData });
-        });
-
-        socket.on('get-viewers', (callback) => {
-            const viewersData = Array.from(viewers.values());
-            callback({ success: true, data: viewersData });
-        });
-
-        socket.on('get-active-users', (callback) => {
-            const activeUsersData = Array.from(activeUsers.entries()).map(([userId, data]) => ({
-                socketId: data.socket.id,
-                userId,
-                joinedAt: data.joinedAt,
-                isGuest: data.socket.data.isGuest,
-                displayName: data.socket.data.displayName
-            }));
-            callback({ success: true, data: activeUsersData });
-        });
-
-        // Admin actions
-        socket.on('admin-kick-user', ({ socketId }, callback) => {
-            const targetSocket = io.sockets.sockets.get(socketId);
-            if (targetSocket) {
-                targetSocket.disconnect(true);
-                callback({ success: true });
-            } else {
-                callback({ success: false, error: 'User not found' });
-            }
-        });
-
-        socket.on('admin-delete-room', ({ roomId }, callback) => {
-            if (rooms.has(roomId)) {
-                // Notify all users in the room
-                io.to(roomId).emit('room-closed', { reason: 'admin_action' });
-                // Disconnect all users from the room
-                io.in(roomId).socketsLeave(roomId);
-                // Remove the room
-                rooms.delete(roomId);
-                callback({ success: true });
-            } else {
-                callback({ success: false, error: 'Room not found' });
-            }
-        });
-
-
-
-
-
-        socket.on('disconnect', (reason) => {
-
-            if (socket.data.isGuest == false && socket.data.uid) {
-                markAsInactive(socket.data.uid).then(() => {
-                    handlWriteActivity("DISCONNECT", "Koneksi terputus atau keluar dari sistem.");
-                });
-            }
-            console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Guest: ${socket.data.isGuest}`);
-
-            // Clean up intervals
-            clearInterval(heartbeatInterval);
-
-            // Remove from active users or guest users
-            if (socket.data.isGuest) {
-                guestUsers.delete(socket.id);
-            } else if (socket.data.uid) {
-                activeUsers.delete(socket.data.uid);
-
-                // Notify all users about the user leaving
-                const activeUserIds = Array.from(activeUsers.keys());
-                io.emit("active-users-change", activeUserIds);
-            }
-
-            // Clean up subscriptions
-            for (const [id, sub] of subscribers) {
-                if (sub.socket.id === socket.id) {
-                    subscribers.delete(id);
+            socket.on('admin-kick-user', ({ socketId }, callback) => {
+                const targetSocket = io.sockets.sockets.get(socketId);
+                if (targetSocket) {
+                    targetSocket.disconnect(true);
+                    callback({ success: true });
+                } else {
+                    callback({ success: false, error: 'User not found' });
                 }
-            }
+            });
 
-            // Clean up rooms
-            for (const [roomId, room] of rooms) {
-                if (room.users.has(socket.id)) {
-                    room.users.delete(socket.id);
-                    room.updatedAt = currentTime();
+            socket.on('disconnect', async (reason) => {
+                console.log(`Client disconnected: ${socket.id}, Reason: ${reason}, Authenticated: ${socket.data.isAuthenticated}`);
 
-                    if (room.users.size === 0) {
-                        rooms.delete(roomId);
-                    } else {
-                        // Convert Map to object for emitting
-                        const roomUsersObj = Object.fromEntries(room.users);
-                        io.to(roomId).emit('room-change', {
-                            id: roomId,
-                            users: roomUsersObj,
-                            createdAt: room.createdAt,
-                            updatedAt: room.updatedAt,
-                            isPublic: room.isPublic,
-                            maxUsers: room.maxUsers,
-                            createdBy: room.createdBy
-                        });
+                // Clean up
+                clearInterval(heartbeatInterval);
+
+                // Remove subscriptions
+                for (const [id, sub] of subscribers) {
+                    if (sub.socket.id === socket.id) {
+                        subscribers.delete(id);
                     }
                 }
-            }
 
-            if (viewers.has(socket.id)) {
-                const viewer = viewers.get(socket.id)!;
-                const leavePaths = viewer.path; // all paths they were viewing
-                viewers.delete(socket.id); // remove from map
-                broadcastViewers(io, leavePaths); // notify relevant clients
-            }
+                // Handle viewer cleanup
+                if (viewers.has(socket.id)) {
+                    const viewer = viewers.get(socket.id)!;
+                    const leavePaths = viewer.path;
+                    viewers.delete(socket.id);
+                    broadcastViewers(io, leavePaths);
+                }
 
-            connectionMetrics.activeConnections--;
-        });
+                // Mark user as inactive if authenticated
+                if (socket.data.isAuthenticated && socket.data.userId) {
+                    await markUserActiveStatus(socket.data.userId, false);
+                    await handleWriteActivity(socket, "DISCONNECT", "Koneksi terputus atau keluar dari sistem.");
+                }
 
-        socket.on('error', (error) => {
-            console.error('Socket error:', error);
-        });
+                connectionMetrics.activeConnections--;
+            });
+
+            socket.on('error', (error) => {
+                console.error('Socket error:', error);
+            });
+        };
+
+        setupEventHandlers();
     });
 
-    // Clean up old subscriptions and inactive guests periodically
+    // Cleanup interval for old subscriptions
     setInterval(() => {
         const now = currentTime();
-
-        // Remove subscriptions older than 24 hours
         for (const [id, sub] of subscribers) {
-            if (now - sub.createdAt > 24 * 60 * 60 * 1000) {
+            if (now - sub.createdAt > SUBSCRIPTION_MAX_AGE) {
                 subscribers.delete(id);
             }
         }
-
-        // Remove inactive guests (no activity for 1 hour)
-        for (const [guestId, guestData] of guestUsers) {
-            if (now - guestData.lastActivity > 60 * 60 * 1000) {
-                guestUsers.delete(guestId);
-
-                // Remove from rooms
-                for (const [roomId, room] of rooms) {
-                    if (room.users.has(guestId)) {
-                        room.users.delete(guestId);
-                        room.updatedAt = currentTime();
-
-                        if (room.users.size === 0) {
-                            rooms.delete(roomId);
-                        } else {
-                            // Convert Map to object for emitting
-                            const roomUsersObj = Object.fromEntries(room.users);
-                            io.to(roomId).emit('room-change', {
-                                id: roomId,
-                                users: roomUsersObj,
-                                createdAt: room.createdAt,
-                                updatedAt: room.updatedAt,
-                                isPublic: room.isPublic,
-                                maxUsers: room.maxUsers,
-                                createdBy: room.createdBy
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    }, 60 * 60 * 1000); // Every hour
+    }, CLEANUP_INTERVAL);
 }
 
 // Export metrics for monitoring
 export function getConnectionMetrics() {
     return {
         ...connectionMetrics,
-        activeUsers: activeUsers.size,
-        guestUsers: guestUsers.size,
-        rooms: rooms.size,
-        subscriptions: subscribers.size
+        subscriptions: subscribers.size,
+        viewers: viewers.size
     };
 }

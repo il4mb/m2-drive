@@ -1,11 +1,10 @@
 'use client'
 
 import { Activity } from '@/entities/Activity';
-import { formatLocaleDate, toRelativeTime } from '@/libs/utils';
 import { getCount, getMany } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/SnapshotManager';
-import { Avatar, Badge, Box, Chip, Paper, Stack, SxProps, Typography } from '@mui/material';
-import { FilePen, GitFork, ScanEye, Share2, Users, Wifi, WifiOff } from 'lucide-react';
+import { Avatar, Badge, Box, Paper, Stack, SxProps, Typography } from '@mui/material';
+import { ActivityIcon, CloudUpload, Copy, CopyX, FilePen, FolderOpen, FolderPlus, GitFork, ScanEye, Share2, Users, Wifi, WifiOff } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { createElement, ReactNode, useEffect, useState } from 'react';
 import RelativeTime from '../RelativeTime';
@@ -15,16 +14,20 @@ import { Skeleton } from '@mui/material';
 const getTypeIcon = (status: string) => {
     if (status.endsWith("CONTRIBUTOR")) {
         return GitFork;
-    }   
+    }
     switch (status) {
         case 'CONNECT': return Wifi;
         case 'DISCONNECT': return WifiOff;
         case 'SHARE_FILE': return Share2;
         case 'EDIT_FILE': return FilePen;
         case 'VIEW_FILE': return ScanEye;
-        case 'CREATE_FOLDER': return 'primary';
-        case 'DELETE_FILE': return 'default';
-        default: return 'default';
+        case 'VIEW_FOLDER': return FolderOpen;
+        case 'UPLOAD_FILE': return CloudUpload;
+        case 'COPY_FILE': return Copy;
+        case 'MOVE_FILE': return CopyX;
+        case 'DELETE_FILE': return CloudUpload;
+        case 'CREATE_FOLDER': return FolderPlus;
+        default: return ActivityIcon;
     }
 };
 
@@ -33,7 +36,9 @@ const getTypeColor = (status: string) => {
         case 'CONNECT': return 'success';
         case 'DISCONNECT': return 'error';
         case 'EDIT_FILE': return 'primary';
-        case 'DELETE_FILE': return 'default';
+        case 'DELETE_FILE': return 'error';
+        case 'COPY_FILE': return 'warning';
+        case 'MOVE_FILE': return 'warning';
         default: return 'default';
     }
 };

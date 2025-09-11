@@ -1,7 +1,7 @@
 'use client'
 
 import Container from "@/components/Container";
-import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
+import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import useRequest from "@/hooks/useRequest";
 import useRoles from "@/hooks/useRoles";
 import RequestError from "@/components/RequestError";
@@ -20,7 +20,7 @@ import { addUser } from "@/actions/user";
 
 export default function page() {
 
-    const checkPermission = useCheckMyPermission();
+    const checkPermission = useCheckMyPermissionState();
     const canAddUser = checkPermission("can-add-user");
     const roles = useRoles();
     const [enterPw, setEnterPw] = useState(false);

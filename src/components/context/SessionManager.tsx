@@ -1,5 +1,6 @@
 'use client'
 
+import { SocketResult } from '@/server/socketHandlers';
 import { socket } from '@/socket';
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
@@ -17,15 +18,14 @@ export const SessionManager = ({ children }: SessionManagerProps) => {
     const [userId, setUserId] = useState<string | null>(null);
 
     useEffect(() => {
-
-        const onLogedIn = (userId: string | null) => {
-            setUserId(userId);
+        const onLogedIn = (result: SocketResult<{ userId: string }>) => {
+            setUserId(result.data?.userId || null);
         }
         socket.emit("session-validate");
-        socket.on('session-change', onLogedIn);
+        socket.on('session-validate-result', onLogedIn);
 
         return () => {
-            socket.off('session-change', onLogedIn);
+            socket.off('session-validate-result', onLogedIn);
         }
     }, []);
 

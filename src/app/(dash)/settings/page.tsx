@@ -4,14 +4,14 @@ import { Alert, AlertTitle, Paper, Stack, Typography } from "@mui/material";
 import { Settings } from "lucide-react";
 import RoleManager from "./ui/RoleManager";
 import Container from "@/components/Container";
-import { useCheckMyPermission } from "@/components/context/CurrentUserAbilitiesProvider";
+import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import UploadSizeManager from "./ui/UploadSizeManager";
 import DriveSizeManager from "./ui/DriveSizeManager";
 
 export default function page() {
 
-    const checkPermission = useCheckMyPermission();
-    const canChangeSetting = checkPermission("can-change-system-settings");
+    const checkPermission = useCheckMyPermissionState();
+    const canSeeSettings = checkPermission("can-see-system-settings");
 
     return (
         <Container maxWidth="lg" scrollable>
@@ -29,13 +29,13 @@ export default function page() {
 
             <Stack component={Paper} p={2} pt={4} pb={7} borderRadius={2}>
 
-                {!canChangeSetting && (
+                {!canSeeSettings && (
                     <Alert severity="warning" sx={{ mb: 4 }} variant="outlined">
                         <AlertTitle>Kesalahan Wewenang</AlertTitle>
                         Kamu tidak memiliki wewenang untuk memodifikasi pengaturan sistem!
                     </Alert>
                 )}
-                {canChangeSetting && (
+                {canSeeSettings && (
                     <>
                         <Stack mx={'auto'} maxWidth={800} width={'100%'} mb={8}>
                             <RoleManager />

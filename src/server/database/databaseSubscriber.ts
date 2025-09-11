@@ -198,7 +198,7 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 continue;
             }
             const uid = socket.data?.uid;
-            const isGuest = socket.data?.isGuest || true;
+            const isGuest = socket.data?.isAuthenticated || true;
 
             let data = payload.data;
             const previousData = payload.previousData;

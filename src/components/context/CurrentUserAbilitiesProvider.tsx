@@ -6,6 +6,8 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import useRequest from '@/hooks/useRequest';
 import { getCurrentUserAbilities } from '@/actions/current-session';
 import Role from '@/entities/Role';
+import { useCurrentSession } from './CurrentSessionProvider';
+import useUser from '@/hooks/useUser';
 
 interface CurrentUserAbilityProviderState {
     permissions: TPermission[];
@@ -49,7 +51,7 @@ export const useMyAbilities = () => {
     return context;
 };
 
-export const useCheckMyPermission = (): ((n: PERMISSION_NAMES) => boolean) => {
+export const useCheckMyPermissionState = (): ((n: PERMISSION_NAMES) => boolean) => {
     const context = useContext(CurrentUserAbilityProviderContext);
     if (!context) throw new Error('useCurrentUserAbilityProvider must be used within a CurrentUserAbilitiesProvider');
 

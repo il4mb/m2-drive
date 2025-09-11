@@ -4,6 +4,7 @@ import { getConnection } from "@/data-source";
 import Token from "@/entities/Token";
 import User from "@/entities/User";
 import { currentTime, generateKey } from "@/libs/utils";
+import { withAction } from "@/libs/withApi";
 import bcrypt from "bcrypt";
 import { cookies } from "next/headers";
 
@@ -12,7 +13,7 @@ type LoginProps = {
     password: string;
 };
 
-export async function handleLoginAsync({ email, password }: LoginProps) {
+export const handleLoginAsync = withAction<LoginProps>(async ({ email, password }) => {
 
     try {
 
@@ -58,7 +59,7 @@ export async function handleLoginAsync({ email, password }: LoginProps) {
             message: e.message || "Unknown Error"
         };
     }
-}
+})
 
 export async function handleStartSession({ tokenId }: { tokenId: string }) {
     try {

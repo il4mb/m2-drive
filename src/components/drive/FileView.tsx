@@ -19,6 +19,7 @@ import UserAvatar from '../ui/UserAvatar';
 import ActionDetails from '../menu-actions/ActionDetails';
 import ActionOpenWith from '../menu-actions/ActionOpenWith';
 import { useFileViewersByFile } from '../file-viewers/FileViewersProvider';
+import ActionLabel from '../menu-actions/ActionLabel';
 
 export type FileMenuState = {
     file: File;
@@ -74,6 +75,7 @@ export default function FileView<T = any>({
         ActionCopy,
         ActionMove,
         ActionRename,
+        ActionLabel,
         ActionTrash,
     });
 

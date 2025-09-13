@@ -70,7 +70,11 @@ export const createFolder = createFunction(async ({ userId, name, pId }: CreateF
     });
 
     await fileRepository.save(file);
-    writeActivity("CREATE_FOLDER", `Membuat ${file.type} ${file.name}${folder ? ` dalam ${folder.name}` : ""}`);
+    writeActivity(
+        "CREATE_FOLDER",
+        `Membuat ${file.type} ${file.name}${folder ? ` dalam ${folder.name}` : ""}`,
+        { fileId: file.id }
+    );
 })
 
 export type UpdateFilePart = Partial<Omit<File, "meta">> & {
@@ -107,7 +111,7 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
             await checkPermission("can-edit-folder");
         }
     }
-    
+
 
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
     const folderMetaFields = [
@@ -155,7 +159,7 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         }
     }
 
-     if (data.name && (data.name.length < 1 || data.name.length > 112)) {
+    if (data.name && (data.name.length < 1 || data.name.length > 112)) {
         throw new Error(`Failed: Nama ${file.type} tidak boleh lebih kecil dari 1 dan lebih dari 112 karakter!`);
     }
 
@@ -231,11 +235,23 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
     await fileRepository.save(file);
 
     if (data.meta?.generalPermit) {
-        writeActivity("SHARE_FILE", `${data.meta?.generalPermit != 'none' ? `Membagikan general akses sebagai ${data.meta?.generalPermit}` : 'Tidak membagikan'} pada ${file.type} ${file.name}`);
+        writeActivity(
+            "SHARE_FILE",
+            `${data.meta?.generalPermit != 'none' ? `Membagikan general akses sebagai ${data.meta?.generalPermit}` : 'Tidak membagikan'} pada ${file.type} ${file.name}`,
+            { fileId: file.id }
+        );
     } if (data.name) {
-        writeActivity("EDIT_FILE", `Mengganti nama ${file.type} ${oldFile.name} menjadi ${file.name}`);
+        writeActivity(
+            "EDIT_FILE",
+            `Mengganti nama ${file.type} ${oldFile.name} menjadi ${file.name}`,
+            { fileId: file.id }
+        );
     } else {
-        writeActivity("EDIT_FILE", `Memperbarui ${file.type} ${file.name}`);
+        writeActivity(
+            "EDIT_FILE",
+            `Memperbarui ${file.type} ${file.name}`,
+            { fileId: file.id }
+        );
     }
 
     return file;

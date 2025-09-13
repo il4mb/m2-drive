@@ -5,132 +5,301 @@ import {
     Stack,
     Typography,
     Paper,
+    Chip,
+    Button,
+    Box,
+    Divider,
+    IconButton,
+    Skeleton
 } from "@mui/material";
-import { History, Clock, Upload, Folder } from "lucide-react";
+import { History, MoreVertical, Eye, Edit, Download, Share, FolderOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
-import { useMyHistory } from "@/hooks/useMyHistory";
 import StickyHeader from "@/components/navigation/StickyHeader";
-
-
+import { useEffect, useMemo, useState } from "react";
+import { Activity } from "@/entities/Activity";
+import { onSnapshot } from "@/libs/websocket/SnapshotManager";
+import { getMany, Json } from "@/libs/websocket/query";
+import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
+import { formatLocaleDate } from "@/libs/utils";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 type SectionProps = {
     title: string;
     icon: React.ReactNode;
-    files: File[];
+    data: Rows;
+    activityType: "view" | "edit";
+    loading: boolean;
+}
+
+type FileActivity = Activity & {
+    file: File | null;
+    users?: Array<{ id: string; name: string; avatar?: string }>;
+}
+
+type Rows = {
+    rows: FileActivity[];
+    total: number;
 }
 
 export default function Page() {
+    const session = useCurrentSession();
+    const userId = useMemo(() => session.userId, [session.userId]);
+    const [openLoading, setOpenLoading] = useState(true);
+    const [editLoading, setEditLoading] = useState(true);
+    const [open, setOpen] = useState<Rows>({ rows: [], total: 0 });
+    const [edit, setEdit] = useState<Rows>({ rows: [], total: 0 });
 
-    const { files, loading } = useMyHistory();
+    useEffect(() => {
+        setOpenLoading(true);
+        return onSnapshot(
+            getMany("activity")
+                .where("type", "IN", ["VIEW_FILE", "VIEW_FOLDER"])
+                .where(Json("metadata", "fileId"), "IS NOT NULL")
+                .where("userId", "==", userId)
+                .join("file", "file.id = metadata->>'fileId'")
+                .orderBy("createdAt", "DESC")
+                .groupBy("$file.id")
+                .limit(5),
+            (data) => {
+                setOpenLoading(false);
+                setOpen(data as any);
+                setOpenLoading(false);
+            }
+        );
+    }, [userId]);
 
-    const FileCard = ({ file }: { file: File }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{
-                maxWidth: 200,
-                width: "100%"
+    useEffect(() => {
+        setEditLoading(true);
+        return onSnapshot(
+            getMany("activity")
+                .where("type", "IN", ["EDIT_FILE", "EDIT_FOLDER", "CREATE_FOLDER", "MOVE_FILE", "MOVE_FOLDER", "COPY_FILE", "COPY_FOLDER"])
+                .where(Json("metadata", "fileId"), "IS NOT NULL")
+                .where("userId", "==", userId)
+                .join("file", "file.id = metadata->>'fileId'")
+                .orderBy("createdAt", "DESC")
+                .groupBy("$file.id")
+                .limit(5),
+            (data) => {
+                setEditLoading(false);
+                setEdit(data as any);
+                setEditLoading(false);
+            }
+        );
+    }, [userId]);
+
+    const ActivityItem = ({ activity, type, index }: { activity: FileActivity, type: "view" | "edit", index: number }) => {
+        const file = activity.file;
+        const getActionText = () => {
+            if (type === "view") return "Melihat";
+            if (type === "edit") return "Mengedit";
+            return "Berinteraksi dengan";
+        }
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: 0.1 * index }}>
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        mb: 1,
+                        "&:hover": {
+                            backgroundColor: "action.hover",
+                        },
+                    }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <Box
+                            sx={{
+                                p: 1.5,
+                                borderRadius: 2,
+                                bgcolor: type === "view" ? "primary.50" : "secondary.50",
+                                color: type === "view" ? "primary.main" : "secondary.main",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                position: 'relative'
+                            }}>
+                            {file?.type == "folder"
+                                ? <FolderOpen size={20} />
+                                : <FileIcon
+                                    size={20}
+                                    variant="solid"
+                                    // @ts-ignore
+                                    type={file?.meta?.mimeType || "empty"} />}
+
+                            {userId !== file?.uId && (
+                                <Box sx={{
+                                    position: 'absolute',
+                                    bottom: -4,
+                                    right: -4,
+                                    border: '2px solid white',
+                                    borderRadius: '50%'
+                                }}>
+                                    <UserAvatar
+                                        size={16}
+                                        userId={file?.uId}
+                                    />
+                                </Box>
+                            )}
+                        </Box>
+
+                        <Stack flex={1}>
+                            <Typography variant="body2" color="text.secondary">
+                                {activity.description?.substring(0, 40)} • {formatLocaleDate(activity.createdAt)}
+                            </Typography>
+                            <Typography fontWeight={500} noWrap>
+                                {activity.file?.name}
+                            </Typography>
+                        </Stack>
+
+                        <Stack direction="row" spacing={1}>
+                            <IconButton size="small">
+                                <Download size={16} />
+                            </IconButton>
+                            <IconButton size="small">
+                                <Share size={16} />
+                            </IconButton>
+                            <IconButton size="small">
+                                <MoreVertical size={16} />
+                            </IconButton>
+                        </Stack>
+                    </Stack>
+                </Paper>
+            </motion.div>
+        );
+    };
+
+    const ActivityItemSkeleton = () => (
+        <Paper
+            elevation={0}
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                mb: 1,
             }}>
-            <Paper
-                elevation={2}
-                sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    textAlign: "center",
-                    gap: 1,
-                    width: "100%",
-                }}>
-                {file.type == "folder"
-                    ? <Folder
-                        size={28}
-                        strokeWidth={1} />
-                    : <FileIcon
-                        variant="solid"
-                        size={28}
-                        strokeWidth={3}
-                        // @ts-ignore
-                        type={file.meta?.mimeType || file.type} />}
-
-                <Stack flex={1} minWidth={0}>
-                    <Typography
-                        fontSize={14}
-                        fontWeight={500}
-                        noWrap
-                        title={file.name}>
-                        {file.name}
-                    </Typography>
-
+            <Stack direction="row" spacing={2} alignItems="center">
+                <Skeleton variant="rounded" width={44} height={44} />
+                <Stack flex={1} spacing={1}>
+                    <Skeleton variant="text" width="40%" height={16} />
+                    <Skeleton variant="text" width="60%" height={20} />
                 </Stack>
-            </Paper>
-        </motion.div>
+                <Stack direction="row" spacing={1}>
+                    <Skeleton variant="circular" width={32} height={32} />
+                    <Skeleton variant="circular" width={32} height={32} />
+                    <Skeleton variant="circular" width={32} height={32} />
+                </Stack>
+            </Stack>
+        </Paper>
     );
 
-    const Section = ({ title, icon, files }: SectionProps) => (
-        <Stack spacing={1.5} mb={8}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-                {icon}
-                <Typography fontSize={16} fontWeight={600}>
-                    {title}
-                </Typography>
-            </Stack>
-            <Stack gap={1.8} direction={"row"} flexWrap={"wrap"}>
-                {files.length === 0 ? (
-                    <Typography fontSize={14} color="text.secondary" ml={4}>
-                        Belum ada data
-                    </Typography>
-                ) : (
-                    files.map((file) => <FileCard key={file.id} file={file} />)
+    const Section = ({ title, icon, data, activityType, loading }: SectionProps) => (
+        <Stack spacing={2} mb={4}>
+            <Stack direction="row" alignItems="center" spacing={1} justifyContent="space-between">
+                <Stack direction="row" spacing={1} alignItems="center">
+                    {icon}
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography fontSize={16} fontWeight={600}>
+                            {title}
+                        </Typography>
+                        {!loading && <Chip label={data.total} size="small" />}
+                        {loading && <Skeleton variant="rounded" width={32} height={24} />}
+                    </Stack>
+                </Stack>
+                {!loading && data.rows.length > 0 && (
+                    <Button size="small" variant="text">
+                        Lihat Semua
+                    </Button>
                 )}
+                {loading && <Skeleton variant="rounded" width={100} height={32} />}
             </Stack>
+
+            {loading ? (
+                <Box>
+                    {[1, 2, 3].map((i) => (
+                        <ActivityItemSkeleton key={i} />
+                    ))}
+                </Box>
+            ) : data.rows.length === 0 ? (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 4,
+                        borderRadius: 2,
+                        border: "1px dashed",
+                        borderColor: "divider",
+                        textAlign: "center",
+                    }}>
+                    <Stack alignItems="center" spacing={1}>
+                        <History size={32} color="#ddd" />
+                        <Typography color="text.secondary">
+                            Belum ada aktivitas {activityType === "view" ? "dilihat" : "diedit"}
+                        </Typography>
+                    </Stack>
+                </Paper>
+            ) : (
+                <Box>
+                    {data.rows.map((activity, index) => (
+                        <ActivityItem
+                            index={index}
+                            key={activity.id}
+                            activity={activity}
+                            type={activityType}
+                        />
+                    ))}
+                </Box>
+            )}
         </Stack>
     );
 
     return (
-        <Container maxWidth="lg" scrollable>
-
-            <StickyHeader loading={loading}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-                    <Stack alignItems="center" spacing={1} direction="row">
-                        <History size={20} />
-                        <Typography fontWeight={600} fontSize={18}>
-                            Riwayat
-                        </Typography>
-                    </Stack>
-                    {/* {isLoading && (
-                        <LinearProgress
-                            sx={{
-                                position: 'absolute',
-                                bottom: -10,
-                                left: 0,
-                                width: '100%',
-                                height: 2
-                            }}
-                        />
-                    )} */}
+        <Container maxWidth={"lg"} scrollable>
+            <StickyHeader loading={openLoading || editLoading}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <History size={20} />
+                    <Typography fontWeight={600} fontSize={18}>
+                        Riwayat
+                    </Typography>
                 </Stack>
             </StickyHeader>
 
-            <Stack mb={3} component={Paper} p={2} borderRadius={2} sx={{ minHeight: 'max(600px, 85vh)' }}>
-                <Stack direction={"row"} spacing={1} alignItems={"center"} mb={3}>
-                    <History size={20} />
-                    <Typography fontSize={18} fontWeight={600}>
-                        Histori
-                    </Typography>
-                </Stack>
+            <Stack spacing={3} sx={{ minHeight: 'max(600px, 85vh)', pb: 4 }}>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                    <Stack spacing={1} mb={3}>
+                        <Typography variant="h5" fontWeight={600}>
+                            Aktivitas Terbaru
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Melacak file dan folder yang baru saja Anda akses atau edit
+                        </Typography>
+                    </Stack>
 
-                <Stack px={2}>
+                    <Divider sx={{ mb: 3 }} />
 
+                    <Section
+                        title="Baru Saja Dibuka"
+                        icon={<Eye size={16} />}
+                        data={open}
+                        activityType="view"
+                        loading={openLoading}
+                    />
 
-                    <Section title="Terakhir Dibuka" icon={<Clock size={16} />} files={[]} />
-                    <Section title="Terakhir Diperbarui" icon={<History size={16} />} files={[]} />
-                    <Section title="Baru Ditambahkan" icon={<Upload size={16} />} files={[]} />
-                </Stack>
+                    <Section
+                        title="Baru Saja Diedit"
+                        icon={<Edit size={16} />}
+                        data={edit}
+                        activityType="edit"
+                        loading={editLoading}
+                    />
+                </Paper>
             </Stack>
         </Container>
     );

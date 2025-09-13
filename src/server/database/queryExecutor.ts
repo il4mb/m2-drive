@@ -8,9 +8,9 @@ import { applyConditions } from "./queryHelper";
 export class DatabaseService {
     /** Execute query for "get" (single) or "list" (many) */
     async executeQuery<T>(config: QueryConfig): Promise<T | { rows: T[]; total: number; }> {
-        
+
         try {
-            
+
             const repository = await this.getRepository(config.collection);
             const alias = config.collection;
 
@@ -21,6 +21,19 @@ export class DatabaseService {
                 config.relations.forEach(rel => {
                     qb.leftJoinAndSelect(`${alias}.${rel}`, rel);
                 });
+            }
+
+            if (config.joins?.length) {
+                const joinPromise = config.joins.map(async (join) => {
+                    const tableName = (await this.getRepository(join.entity)).metadata.tableName;
+                    qb.leftJoinAndMapOne(
+                        `${alias}.${join.alias || join.entity}`,
+                        `${tableName}`,
+                        join.alias || join.entity,
+                        join.on
+                    );
+                });
+                await Promise.all(joinPromise);
             }
 
             // WHERE

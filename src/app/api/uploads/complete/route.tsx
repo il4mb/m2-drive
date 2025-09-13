@@ -11,6 +11,15 @@ import { addTaskQueue } from "@/server/taskQueue";
 import { CompleteMultipartUploadCommand } from "@aws-sdk/client-s3";
 import { IsNull, Repository } from "typeorm";
 
+type CompleteRequestProps = {
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    fId: string | null;
+    Key: string;
+    UploadId: string;
+    etags: Array<{ ETag: string, PartNumber: number }>;
+}
 export const POST = withApi(async (req) => {
 
     const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || undefined;
@@ -18,7 +27,7 @@ export const POST = withApi(async (req) => {
 
     const token = await getCurrentToken();
     const user = await getUserByToken(token);
-    const json = await req.json();
+    const json = await req.json() as CompleteRequestProps;
 
     if (
         !json.fileName
@@ -34,7 +43,8 @@ export const POST = withApi(async (req) => {
     let folder: File | null = await (json.fId ? (await connection).getRepository(File).findOneBy({ id: json.fId }) : null);
 
     const uId = user.id as string;
-    const fileName = json.fileName as string;
+    const fileName = json.fileName.replace(/\.[^.]+$/, '');
+    const fileExt = json.fileName.match(/\.([^.]+)$/)?.[1] || '';
     const fileType = json.fileType as string;
     const fileSize = json.fileSize as number;
     const fId = json.fId || null;
@@ -81,6 +91,8 @@ export const POST = withApi(async (req) => {
         file.meta = {
             size: fileSize,
             mimeType: fileType,
+            ext: fileExt,
+            generalPermit: 'none',
             Key
         }
         await repository.save(file);

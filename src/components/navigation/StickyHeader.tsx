@@ -11,10 +11,10 @@ export interface StickyHeaderProps {
     sx?: SxProps;
     loading?: boolean;
     actions?: ReactNode;
-    canGoback?: boolean;
+    canGoBack?: boolean;
 }
 
-export default function StickyHeader({ children, sx, loading = false, actions, canGoback = false }: StickyHeaderProps) {
+export default function StickyHeader({ children, sx, loading = false, actions, canGoBack = false }: StickyHeaderProps) {
 
     const router = useRouter();
     const manager = useStickyHeaderManager();
@@ -42,7 +42,7 @@ export default function StickyHeader({ children, sx, loading = false, actions, c
                 }}>
                 <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
                     <Stack flex={1} direction={"row"} spacing={1} alignItems={"center"}>
-                        {canGoback && (
+                        {canGoBack && (
                             <Tooltip title="Kembali" onClick={handleGoback} sx={{ mr: 1 }} arrow>
                                 <IconButton>
                                     <ChevronLeft size={18} />
@@ -63,7 +63,7 @@ export default function StickyHeader({ children, sx, loading = false, actions, c
                 )}
             </Paper>
         );
-    }, [children, sx, canGoback, loading, actions]);
+    }, [children, sx, canGoBack, loading, actions]);
 
     // If inside a manager, register and return null
     useEffect(() => {

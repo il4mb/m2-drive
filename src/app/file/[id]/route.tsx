@@ -6,14 +6,12 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 const SMALL_FILE_THRESHOLD = 2 * 1024 * 1024; // 2 MB
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
     const { id } = await params;
     const secFetchMode = req.headers.get('sec-fetch-mode');
-    if (secFetchMode === 'navigate') {
+    const secFetchDest = req.headers.get("sec-fetch-dest")
+    if (secFetchMode === 'navigate' && !(["iframe"].includes(secFetchDest || ""))) {
         return NextResponse.redirect(new URL(`/opener/${id}`, req.url));
     }
 

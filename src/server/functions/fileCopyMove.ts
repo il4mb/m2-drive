@@ -107,8 +107,8 @@ export const copyFile = createFunction(
         const sourceFile = await fileRepository.findOneBy({ id: sourceId });
         if (!sourceFile) throw new Error("Failed Copy File: Source file not found!");
 
-         if (!canManage) {
-            if(sourceFile.type == "file") {
+        if (!canManage) {
+            if (sourceFile.type == "file") {
                 await checkPermission("can-edit-file");
             } else {
                 await checkPermission("can-edit-folder");
@@ -200,7 +200,11 @@ export const copyFile = createFunction(
             await updateFolderItemCount(targetId, fileRepository);
         }
 
-        writeActivity("COPY_FILE", `Mengcopy ${sourceFile.type} dari ${sourceFile.name} ke ${targetFolder?.name || 'My Drive'}`);
+        writeActivity(
+            "COPY_FILE",
+            `Mengcopy ${sourceFile.type} dari ${sourceFile.name} ke ${targetFolder?.name || 'My Drive'}`,
+            { fileId: sourceId }
+        );
 
         return {
             success: true,
@@ -366,7 +370,11 @@ export const moveFile = createFunction(
             await updateFolderItemCount(targetId, repository);
         }
 
-        writeActivity("MOVE_FILE", `Memindahkan ${file.type} dari ${file.name} ke ${targetFolder?.name || 'My Drive'}`);
+        writeActivity(
+            "MOVE_FILE",
+            `Memindahkan ${file.type} dari ${file.name} ke ${targetFolder?.name || 'My Drive'}`,
+            { fileId: sourceId }
+        );
 
         return {
             success: true,

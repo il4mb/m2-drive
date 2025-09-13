@@ -111,7 +111,11 @@ export const removeFile = createFunction(
             await repository.save(updatedFiles);
             await Promise.all(removeContributor);
         }
-        writeActivity(`DELETE_FILE`, `Menghapus ${file.type} ${file.name}`);
+        writeActivity(
+            `DELETE_FILE`,
+            `Menghapus ${file.type} ${file.name}`,
+            { fileId }
+        );
     }
 );
 
@@ -163,7 +167,11 @@ export const restoreFile = createFunction(async ({ fileId }: RemoveRestoreProps)
 
     await repository.save(file);
 
-    writeActivity("RESTORE_FILE", `Merestore ${file.type} ${file.name}`);
+    writeActivity(
+        "RESTORE_FILE",
+        `Merestore ${file.type} ${file.name}`,
+        { fileId }
+    );
 });
 
 
@@ -215,6 +223,9 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
     // Permanently remove them from the DB
     await repository.delete(trashedFiles.map(f => f.id));
 
-    writeActivity("DELETE_FILE", `Menghapus banyak file/folder jumlah ${trashedFiles.length || 0}`);
+    writeActivity(
+        "DELETE_FILE", 
+        `Menghapus banyak file/folder jumlah ${trashedFiles.length || 0}`
+    );
 
 });

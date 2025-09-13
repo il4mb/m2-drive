@@ -17,6 +17,7 @@ interface Subscription {
     collection: QueryConfig['collection'];
     relations: string[];
     conditions?: QueryConfig['conditions'];
+    joins: QueryConfig['joins'];
     debug?: boolean;
     createdAt: number;
 }
@@ -325,6 +326,7 @@ export async function setupSocketHandlers(io: Server) {
                         collection: data.collection,
                         conditions: data.conditions,
                         relations: data.relations || [],
+                        joins: data.joins || [],
                         debug: data.debug,
                         createdAt: currentTime()
                     });

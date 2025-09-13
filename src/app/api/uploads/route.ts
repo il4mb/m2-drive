@@ -73,11 +73,18 @@ const CheckCORS = async (domain: string) => {
 };
 
 
+type InitialRequestProps = {
+    Key?: string;
+    UploadId?: string;
+    fileType: string;
+    fileName: string;
+    fileSize: number;
+}
 
 
 export const POST = withApi(async (req) => {
 
-    const json = await req.json();
+    const json: InitialRequestProps = await req.json();
     if (!json.fileType) throw new Error("400: Invalid request!");
 
 

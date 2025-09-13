@@ -35,7 +35,7 @@ export const writeActivity = async (type: string, description: string, metadata:
         const connection = await getConnection();
         const activityRepository = connection.getRepository(Activity);
         const now = currentTime();
-        const oneMinuteAgo = now - 60;
+        const threetyMinuteAgo = now - (["CONNECT", "DISCONNECT"].includes(type) ? 30 * 60 : 60);
 
         // Try to find existing activity in last 1 minute
         const existing = await activityRepository.findOne({
@@ -43,7 +43,7 @@ export const writeActivity = async (type: string, description: string, metadata:
                 userId: user.id,
                 type,
                 description,
-                createdAt: Between(oneMinuteAgo, now),
+                createdAt: Between(threetyMinuteAgo, now),
             },
         });
 

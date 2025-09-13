@@ -35,6 +35,7 @@ export const PERMISSION_LIST = [
     { label: "Melihat Pengaturan Sistem", value: "can-see-system-settings", parent: "can-change-system-settings" },
 
     { label: "Akses Laporan Aktivitas", value: "can-access-activity-report" },
+    { label: "Mengelola Laporan Aktivitas", value: "can-manage-activity-report" },
 
     { label: "Melihat (Role & Permission)", value: "can-see-role", parent: "can-manage-role" },
     { label: "Mengelola (Role & Permission)", value: "can-manage-role", parent: "can-change-system-settings" },

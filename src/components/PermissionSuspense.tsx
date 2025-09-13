@@ -14,8 +14,9 @@ export interface PermissionSuspenseProps {
     fallback?: ReactNode;
     message?: string;
     redirect?: string;
+    onAllowed?: () => void;
 }
-export default function PermissionSuspense({ children, permission, redirect, fallback, message }: PermissionSuspenseProps) {
+export default function PermissionSuspense({ children, permission, redirect, fallback, message, onAllowed }: PermissionSuspenseProps) {
 
     const router = useRouter();
     const allowed = useMyPermission(permission);
@@ -29,6 +30,9 @@ export default function PermissionSuspense({ children, permission, redirect, fal
         if (!mounted) return;
         if (redirect && !allowed) {
             router.push(redirect);
+        }
+        if (allowed) {
+            setTimeout(() => onAllowed?.(), 0);
         }
     }, [mounted, redirect, allowed]);
 

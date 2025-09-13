@@ -7,7 +7,6 @@ import Token from "@/entities/Token";
 import { Task } from "@/entities/Task";
 import { Activity } from "@/entities/Activity";
 
-
 export const entityMap = {
     activity: Activity,
     file: File,

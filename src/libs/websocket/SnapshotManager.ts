@@ -5,6 +5,7 @@ import { Query } from "./query";
 import { SocketResult } from "@/server/socketHandlers";
 import { Socket } from "socket.io-client";
 import { isSpecialValue } from "@/server/objectHelper";
+import { merge } from "lodash";
 
 export type ListData<T> = {
     rows: T[];
@@ -47,6 +48,7 @@ export class SnapshotManager {
             type: queryConfig.type,
             conditions: queryConfig.conditions,
             relations: queryConfig.relations,
+            joins: queryConfig.joins,
             orderBy: queryConfig.orderBy,
             limit: queryConfig.limit,
             offset: queryConfig.offset,
@@ -58,6 +60,7 @@ export class SnapshotManager {
         callback: Q extends "one" ? (data: E | null) => void : (data: ListData<E>) => void,
         options?: SnapshotOptions
     ): Unsubscribe {
+
         const queryConfig = query.toJSON();
         const queryKey = this.getQueryKey(queryConfig);
         const isCount = queryConfig.type == "count";
@@ -138,9 +141,9 @@ export class SnapshotManager {
                 callbacks.forEach(({ options }) => {
                     options?.onMetadata?.({
                         lastUpdate: new Date(),
-                        count: isCount ? currentData as number : 
-                               isSingle ? (currentData ? 1 : 0) : 
-                               (currentData as ListData<E>).rows.length,
+                        count: isCount ? currentData as number :
+                            isSingle ? (currentData ? 1 : 0) :
+                                (currentData as ListData<E>).rows.length,
                         source: 'initial'
                     });
                 });
@@ -159,7 +162,7 @@ export class SnapshotManager {
 
             try {
                 if (payload.collection !== queryConfig.collection) return;
-                
+
                 if (isCount) {
                     if (payload.eventName == "DELETE") {
                         currentData = parseInt(`${currentData || 0}`) - 1;
@@ -230,10 +233,63 @@ export class SnapshotManager {
             }
         };
 
+
+        const handleDatabaseJoinChange = (payload: DatabaseChangePayload) => {
+            try {
+                const collection = payload.collection;
+                const data = payload.data;
+                const event = payload.eventName;
+
+                if (isSingle && typeof currentData != "number") {
+                    const oldData = (currentData as any)?.[collection] || {}
+                    currentData = {
+                        ...((currentData as any) || {}),
+                        [collection]: merge({}, oldData, data)
+                    }
+                    if (currentData && event == "DELETE") {
+                        // @ts-ignore
+                        delete currentData[collection];
+                    }
+                } else if (!isCount && typeof currentData != "number") {
+                    const listCurrentData = currentData as ListData<any>;
+                    currentData = {
+                        ...(currentData as any),
+                        rows: listCurrentData.rows.map(e => ({
+                            ...e,
+                            ...(e[collection].id === data.id && {
+                                [collection]: event == "DELETE" ? null : merge({}, e[collection], data)
+                            })
+                        })) as any,
+                    }
+                }
+
+                console.log(currentData)
+
+                // Update subscription data and notify
+                const currentSubscription = this.subscriptions.get(queryKey);
+                if (currentSubscription) {
+                    currentSubscription.currentData = currentData;
+                    notifyAllCallbacks(currentData);
+                }
+
+                // Notify metadata
+                callbacks.forEach(({ options }) => {
+                    options?.onMetadata?.({
+                        lastUpdate: new Date(),
+                        count: isSingle ? (currentData ? 1 : 0) : (currentData as ListData<E>).rows.length,
+                        source: 'change'
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
         // Socket subscription logic
         this.socket?.emit('subscribe', {
             collection: queryConfig.collection,
             conditions: queryConfig.conditions,
+            joins: queryConfig.joins,
             relations: queryConfig.relations
         }, (result: SocketResult) => {
             if (!result.success) {
@@ -260,6 +316,7 @@ export class SnapshotManager {
 
             runExecuteQuery()
             this.socket?.on(`change-${subscribeId}`, handleDatabaseChange);
+            this.socket?.on(`change-join-${subscribeId}`, handleDatabaseJoinChange);
         });
 
         return () => {

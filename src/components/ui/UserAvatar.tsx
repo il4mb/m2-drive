@@ -7,7 +7,7 @@ import { ReactNode, useEffect, useState } from 'react';
 
 export interface UserAvatarProps {
     userId?: string;
-    user?: User|null;
+    user?: User | null;
     size?: number;
     sx?: SxProps;
     tooltip?: ReactNode;
@@ -31,11 +31,11 @@ export default function UserAvatar({ userId, user: initialUser, size = 45, disab
     }, [userId, initialUser]);
 
     return (
-        <Tooltip title={tooltip || `${(user || initialUser)?.name}`} arrow>
+        <Tooltip title={tooltip || `${(user || initialUser)?.name || "Unknown"}`} arrow>
             <Stack sx={{ position: 'relative', }}>
                 <Avatar
                     src={(user || initialUser)?.meta.avatar}
-                    sx={{ width: size, height: size, ...sx }}>
+                    sx={{ width: size, height: size, fontSize: size - indicatorSize, ...sx }}>
                     {user?.name?.[0] || "?"}
                 </Avatar>
                 {(!disableIndicator && (user || initialUser)?.meta.isActive) && (

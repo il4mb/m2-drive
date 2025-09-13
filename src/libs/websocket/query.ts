@@ -12,9 +12,11 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
     private collection: T;
     private conditions: QueryCondition[] = [];
     private limitValue?: number;
+    private offsetValue?: number;
     private orderByField?: string;
     private orderDirection: "ASC" | "DESC" = "ASC";
-    private joinTable: EntityName[] = [];
+    private relationsTable: EntityName[] = [];
+    private joinsTable: QueryConfig['joins'] = [];
     private isDebug: boolean = false;
     private group: any[] = [];
 
@@ -86,8 +88,18 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
         return this;
     }
 
+    offset(offset: number): this {
+        this.offsetValue = offset;
+        return this;
+    }
+
     relations(entities: EntityName[]) {
-        this.joinTable = entities;
+        this.relationsTable = entities;
+        return this;
+    }
+
+    join(entity: EntityName, on: string, alias?: string,) {
+        this.joinsTable = [...this.joinsTable, { entity, alias, on }]
         return this;
     }
 
@@ -97,15 +109,15 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
     }
 
     static createFrom<T extends EntityName, Q extends QueryType, E>(source: Query<T, Q, E>): Query<T, Q, E> {
-        
+
         const clone = new Query<T, Q, E>(source.collection, source.type);
 
-        // Copy over private state
         clone.conditions = [...source.conditions];
         clone.limitValue = source.limitValue;
         clone.orderByField = source.orderByField;
         clone.orderDirection = source.orderDirection;
-        clone.joinTable = [...source.joinTable];
+        clone.joinsTable = source.joinsTable;
+        clone.relationsTable = [...source.relationsTable];
         clone.isDebug = source.isDebug;
         clone.group = [...source.group];
 
@@ -119,8 +131,10 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
             type: this.type,
             conditions: this.conditions,
             limit: this.limitValue,
+            offset: this.offsetValue,
             group: this.group,
-            relations: this.joinTable,
+            joins: this.joinsTable,
+            relations: this.relationsTable,
             orderBy: this.orderByField ? {
                 field: this.orderByField,
                 direction: this.orderDirection

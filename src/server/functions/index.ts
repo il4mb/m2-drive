@@ -7,6 +7,7 @@ import { createFolder, updateFile } from "./fileUpdate";
 import { deleteOption, saveOption } from "./options";
 import { deleteRole, saveRole } from "./roles";
 import { executeSQL } from "./sql-runner";
+import { getActivitySummary } from "./summary";
 import { bulkDeleteTask, deleteTask, updateTask } from "./task";
 import { addUser, updateUser, deleteUser } from "./users";
 import { getUserUssageSummary } from "./ussageSummary";
@@ -26,6 +27,7 @@ const functions = {
     createFolder,
     updateFile,
     getUserUssageSummary,
+    getActivitySummary,
     addUser,
     updateUser,
     deleteUser,
@@ -38,7 +40,8 @@ const functions = {
     deleteOption,
     executeSQL,
     backupDatabase,
-    getDatabaseInfo
+    getDatabaseInfo,
+
 } as const;
 
 export type FunctionName = keyof typeof functions;

@@ -3,17 +3,18 @@ import { Column, Entity, PrimaryColumn, Unique, Index } from "typeorm";
 export type FileTags = "no-append" | "no-edit" | "no-remove" | "no-clone" | "no-share";
 export type FileType = "file" | "folder";
 export interface FileMeta {
-    size?: number;                 // bytes
-    mimeType?: string;             // application/pdf, image/png, etc.
+    size: number;                 // bytes
+    mimeType: string;             // application/pdf, image/png, etc.
+    ext: string;
     description?: string;          // optional description
     trashed?: boolean;             // soft-deleted flag
     trashedAt?: number;            // deletion timestamp
     shared?: boolean;              // is this file shared
-    generalPermit?: 'viewer' | 'editor' | 'none'; // access level
+    generalPermit: 'viewer' | 'editor' | 'none'; // access level
     thumbnail?: string;            // preview image URL
-    tags?: FileTags[];               // labels/categories
+    tags: FileTags[];               // labels/categories
     lastOpened?: number;           // last opened timestamp
-    Key?: string;                  //  s3 Key
+    Key: string;                  //  s3 Key
 }
 
 export interface FolderMeta {

@@ -189,10 +189,16 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
         payload: DatabaseChangePayload & { event: UpdateEvent<any> | InsertEvent<any> | RemoveEvent<any> },
         dataId?: string | number
     ) {
+        // remove typeorm Event entity to prevent unexpected error
+        const { event, ...safe } = payload;
 
-        for (const [id, { socket, collection, relations, conditions, debug }] of subscribers) {
+        for (const [id, { socket, collection, relations, joins, conditions, debug }] of subscribers) {
 
-            if (collection != payload.collection) {
+            const isJoin = joins.some(e => e.entity == payload.collection);
+            const isCollection = collection == payload.collection;
+            const shouldSkip = !isCollection && !isJoin;
+
+            if (shouldSkip) {
                 if (debug) {
                     console.log("SKIPED", payload.eventName, collection, payload.collection);
                 }
@@ -200,34 +206,41 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
             }
             const uid = socket.data?.userId;
             const isGuest = socket.data?.isAuthenticated || false;
-
             let data = payload.data;
+
             const previousData = payload.previousData;
-            if (["INSERT", "UPDATE"].includes(payload.eventName) && relations?.length > 0) {
-                const relationFields = payload.event.metadata.relations.map(rel => rel.propertyName);
-                if (relationFields.length <= 0 || relationFields.some(e => !relationFields.includes(e))) {
-                    if (debug) {
-                        console.log("RELATION NOT VALID OR NOT EXIST");
+            if (["INSERT", "UPDATE"].includes(payload.eventName)) {
+                if (relations?.length > 0) {
+                    const relationFields = payload.event.metadata.relations.map(rel => rel.propertyName);
+                    if (relationFields.length <= 0 || relationFields.some(e => !relationFields.includes(e))) {
+                        if (debug) {
+                            console.log("RELATION NOT VALID OR NOT EXIST");
+                        }
+                        continue;
                     }
-                    continue;
-                }
 
-                try {
+                    try {
 
-                    const repo = payload.event.manager.getRepository(payload.event.metadata.target as any);
-                    const entityWithRelations = await repo.findOne({
-                        where: { id: dataId },
-                        relations
-                    });
+                        const repo = payload.event.manager.getRepository(payload.event.metadata.target as any);
+                        const entityWithRelations = await repo.findOne({
+                            where: { id: dataId },
+                            relations
+                        });
 
-                    if (entityWithRelations) {
-                        data = { ...data, ...entityWithRelations };
+                        if (entityWithRelations) {
+                            data = { ...data, ...entityWithRelations };
+                        }
+                    } catch (err) {
+                        console.warn(`Failed to load relations for ${collection}:`, err);
                     }
-                } catch (err) {
-                    console.warn(`Failed to load relations for ${collection}:`, err);
                 }
             }
 
+
+            if (isJoin && ['DELETE', "UPDATE"].includes(payload.eventName)) {
+                socket.emit(`change-join-${id}`, { ...safe, data });
+                continue;
+            }
             const isValid = validateByConditions(data || {}, conditions);
             const isValid2 = validateByConditions(previousData || {}, conditions);
 
@@ -238,21 +251,10 @@ export class DatabaseSubscriber implements EntitySubscriberInterface {
                 continue;
             }
 
-            try {
-
-                // remove typeorm Event entity to prevent unexpected error
-                const { event, ...safe } = payload;
-                if (debug) {
-                    console.log("EMIT EVENT TO", uid);
-                }
-                socket.emit(`change-${id}`, { ...safe, data });
-
-            } catch (error) {
-                console.error(
-                    `Error applying broadcast rule for socket ${socket.id}:`,
-                    error
-                );
+            if (debug) {
+                console.log("EMIT EVENT TO", uid);
             }
+            socket.emit(`change-${id}`, { ...safe, data });
         }
     }
 

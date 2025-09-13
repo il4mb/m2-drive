@@ -4,7 +4,7 @@ import Token from '@/entities/Token';
 import User from '@/entities/User';
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { CurrentUserAbilitiesProvider } from './CurrentUserAbilitiesProvider';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useSessionManager } from './SessionManager';
 import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import { getOne } from '@/libs/websocket/query';
@@ -26,6 +26,7 @@ type CurrentSessionProviderProps = {
 }
 export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps) => {
 
+    const pathname = usePathname();
     const [mounted, setMounted] = useState(false);
     const { userId } = useSessionManager();
     const [token, setToken] = useState<Token>();
@@ -40,7 +41,7 @@ export const CurrentSessionProvider = ({ children }: CurrentSessionProviderProps
         if (!mounted) return;
         if (!userId) {
             setUser(null);
-            router.push("/login");
+            router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
             return;
         }
         return onSnapshot(

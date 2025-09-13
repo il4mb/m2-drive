@@ -32,7 +32,11 @@ export const filePreflight = createFunction(async ({ fileId, subsId }: FilePrefl
     const targetFile = await validateTreeAndGetTarget(subsId, fileRepository, rootFile);
 
     const handleWriteActivity = () => {
-        writeActivity(`VIEW_${targetFile.type.toUpperCase()}`, `Membuka ${targetFile.type} ${targetFile.name}`, { fileId });
+        writeActivity(
+            `VIEW_${targetFile.type.toUpperCase()}`,
+            `Membuka ${targetFile.type} ${targetFile.name}`,
+            { fileId }
+        );
     }
 
 

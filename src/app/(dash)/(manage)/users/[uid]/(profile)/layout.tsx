@@ -22,7 +22,7 @@ export default function Layout({ children }: layoutProps) {
 
     return (
         <Container maxWidth={"xl"} scrollable>
-            <StickyHeader loading={loading} canGoback>
+            <StickyHeader loading={loading} canGoBack>
                 <Stack direction={"row"} spacing={1} alignItems={"center"}>
                     <UserAvatar user={user} />
                     <Stack>

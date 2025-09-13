@@ -71,6 +71,7 @@ export interface QueryConfig {
     orderBy?: OrderBy;
     limit?: number;
     offset?: number;
+    joins: { entity: EntityName; alias?: string; on: string }[];
     relations: EntityName[];
     debug?: boolean;
     group?: string[];

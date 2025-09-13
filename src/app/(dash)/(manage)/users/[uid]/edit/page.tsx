@@ -156,7 +156,7 @@ export default function Page() {
                             }
                         />
                     }
-                    canGoback>
+                    canGoBack>
                     <Stack direction="row" gap={1} alignItems="center">
                         <UserPen size={28} />
                         <Typography fontSize={22} fontWeight={600}>

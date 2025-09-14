@@ -1,11 +1,9 @@
 'use server'
 
-import { databasePath, getConnection } from "@/data-source";
-import { createFunction } from "../funcHelper";
+import { getConnection } from "@/data-source";
+import { createFunction, writeActivity } from "../funcHelper";
 import { Options } from "@/entities/Options";
 import { checkPermission } from "../checkPermission";
-import { addTaskQueue } from "../taskQueue";
-import { stat, statSync } from "fs";
 
 type OptionProps = {
     id: string;
@@ -22,6 +20,8 @@ export const saveOption = createFunction(async ({ id, value }: OptionProps) => {
         { id, value },
         ["id"]
     );
+
+    writeActivity("CHANGE_SETTING", "Memperbarui pengaturan sistem", { id });
 });
 
 export const deleteOption = createFunction(async ({ id }: { id: string }) => {
@@ -31,4 +31,5 @@ export const deleteOption = createFunction(async ({ id }: { id: string }) => {
     const optionRepository = connection.getRepository(Options);
 
     await optionRepository.delete({ id });
+    writeActivity("CHANGE_SETTING", "Memperbarui pengaturan sistem", { id });
 });

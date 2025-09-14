@@ -1,7 +1,7 @@
 'use client'
 
 import { Task } from '@/entities/Task';
-import { formatLocaleDate } from '@/libs/utils';
+import { formatDateFromEpoch } from '@/libs/utils';
 import { getMany } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import {
@@ -217,7 +217,7 @@ export default function BackupDatabase({ }: BackupDatabaseProps) {
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Calendar size={14} />
                                                             <Typography variant="body2" color="text.secondary">
-                                                                {formatLocaleDate(backup.createdAt)}
+                                                                {formatDateFromEpoch(backup.createdAt)}
                                                             </Typography>
                                                         </Stack>
                                                     </Stack>
@@ -300,7 +300,7 @@ export default function BackupDatabase({ }: BackupDatabaseProps) {
                                         Created
                                     </Typography>
                                     <Typography variant="body2" fontWeight={600}>
-                                        {formatLocaleDate(selectedBackup.createdAt)}
+                                        {formatDateFromEpoch(selectedBackup.createdAt)}
                                     </Typography>
                                 </Grid>
                             </Grid>

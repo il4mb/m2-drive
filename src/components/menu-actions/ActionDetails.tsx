@@ -5,7 +5,7 @@ import { File } from "@/entities/File";
 import useUser from "@/hooks/useUser";
 import { useContributors } from "@/hooks/useContributors";
 import { useTheme } from "@mui/material/styles";
-import { formatFileSize, formatLocaleDate } from "@/libs/utils";
+import { formatFileSize, formatDateFromEpoch } from "@/libs/utils";
 import useDarkMode from "@/hooks/useDarkMode";
 import UserAvatar from "../ui/UserAvatar";
 
@@ -159,8 +159,8 @@ export default createContextMenu<{ file: File }>({
                                 <ListItemText
                                     primary="Dibuat"
                                     secondary={
-                                        <Tooltip title={formatLocaleDate(file.createdAt)}>
-                                            <span>{formatLocaleDate(file.createdAt)}</span>
+                                        <Tooltip title={formatDateFromEpoch(file.createdAt)}>
+                                            <span>{formatDateFromEpoch(file.createdAt)}</span>
                                         </Tooltip>
                                     }
                                     secondaryTypographyProps={{
@@ -177,8 +177,8 @@ export default createContextMenu<{ file: File }>({
                                     <ListItemText
                                         primary="Diperbarui"
                                         secondary={
-                                            <Tooltip title={formatLocaleDate(file.updatedAt)}>
-                                                <span>{formatLocaleDate(file.updatedAt)}</span>
+                                            <Tooltip title={formatDateFromEpoch(file.updatedAt)}>
+                                                <span>{formatDateFromEpoch(file.updatedAt)}</span>
                                             </Tooltip>
                                         }
                                         secondaryTypographyProps={{
@@ -195,7 +195,7 @@ export default createContextMenu<{ file: File }>({
                                     </ListItemIcon>
                                     <ListItemText
                                         primary="Terakhir Dibuka"
-                                        secondary={formatLocaleDate(meta.lastOpened)}
+                                        secondary={formatDateFromEpoch(meta.lastOpened)}
                                         secondaryTypographyProps={{
                                             sx: { color: isDark ? 'grey.300' : 'grey.700' }
                                         }}

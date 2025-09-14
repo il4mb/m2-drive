@@ -190,8 +190,8 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
     const source = await getConnection();
     const repository = source.getRepository(File);
 
-    if (!isRoot && actor != "system" && actor?.id != userId) {
-        throw new Error("403: Not allowed to performs this action");
+    if (!isRoot) {
+        await checkPermission(["can-delete-file", "can-delete-folder"]);
     }
 
     // Find all trashed files for this user
@@ -225,7 +225,11 @@ export const emptyTrash = createFunction(async ({ userId }: EmptyTrashProps) => 
 
     writeActivity(
         "DELETE_FILE", 
-        `Menghapus banyak file/folder jumlah ${trashedFiles.length || 0}`
+        `Menghapus banyak file/folder jumlah ${trashedFiles.length || 0}`,
+        {
+            affected: trashedFiles.length
+        }
     );
 
 });
+

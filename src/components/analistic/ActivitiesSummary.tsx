@@ -155,7 +155,8 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
         <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate="visible">
+            animate="visible"
+            layoutId={"activities-summary"}>
             {/* Summary Cards */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -269,7 +270,7 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}>
-                        <Paper sx={{ p: 2, height: isMobile ? 300 : 400 }}>
+                        <Paper sx={{ p: 2, height: isMobile ? 300 : 400, "& > *:focus-visible, & > *:focus": { outline: "none" } }}>
                             <Typography variant="h6" gutterBottom>
                                 {activeTab === 0 && 'Activities Per Day'}
                                 {activeTab === 1 && 'Activities By Type'}
@@ -385,7 +386,7 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
                             {activeTab === 2 && (
                                 <>
                                     <Typography variant="body2" color="text.secondary" paragraph>
-                                        Most active users based on activity count. User IDs are shown for unnamed users.
+                                        Most active users based on activity count.
                                     </Typography>
                                     <Box>
                                         {data.topUsers.slice(0, 5).map((user, index) => (
@@ -516,7 +517,7 @@ const UserTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload, 
                         <Stack sx={{ p: 1.5 }}>
                             <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <UserAvatar user={user} size={22} disableIndicator/>
+                                    <UserAvatar user={user} size={22} disableIndicator />
                                     <Typography
                                         variant="body2"
                                         noWrap

@@ -49,6 +49,11 @@ export const addUser = createFunction(async ({ name, email, role, password }: Ad
     }
 
     await userRepository.save(user);
+
+    writeActivity("ADD_USER", "Menambahkan pengguna baru", {
+        userId: uid
+    });
+
     return user;
 })
 
@@ -117,7 +122,7 @@ export const updateUser = createFunction(
 
         if (name) user.name = name;
         if (role) {
-            if(isUpdateProfile) {
+            if (isUpdateProfile) {
                 throw new Error("Invalid props role in update profile!");
             }
             user.meta = {
@@ -150,9 +155,9 @@ export const updateUser = createFunction(
         await usersRepository.save(user);
 
         if (isHim) {
-            writeActivity("EDIT_USER", `Memperbarui profile`);
+            writeActivity("EDIT_USER", `Memperbarui profile`, { userId });
         } else {
-            writeActivity("EDIT_USER", `Memperbarui pengguna ${user.name}`);
+            writeActivity("EDIT_USER", `Memperbarui pengguna ${user.name}`, { userId });
         }
     }
 )
@@ -179,4 +184,6 @@ export const deleteUser = createFunction(async ({ userId }: { userId: string }) 
     }
 
     await userRepository.delete({ id: user.id });
+    writeActivity("DELETE_USER", `Menghapus pengguna ${user.name}`);
+
 })

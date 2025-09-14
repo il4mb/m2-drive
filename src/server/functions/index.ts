@@ -1,16 +1,18 @@
+import { cleanNonEssentialActivities } from "./activities";
 import { addFileContributor, getFileContributors, removeFileContributor, updateFileContributor } from "./contributors";
 import { backupDatabase, getDatabaseInfo } from "./database";
 import { bulkCopyMove, copyFile, moveFile } from "./fileCopyMove";
 import { filePreflight } from "./filePreflight";
 import { emptyTrash, removeFile, restoreFile } from "./fileTrash";
 import { createFolder, updateFile } from "./fileUpdate";
+import { getStorageSummary } from "./garbage";
 import { deleteOption, saveOption } from "./options";
 import { deleteRole, saveRole } from "./roles";
 import { executeSQL } from "./sql-runner";
-import { getActivitySummary } from "./summary";
-import { bulkDeleteTask, deleteTask, updateTask } from "./task";
+import { cleanStorage, scanStorage } from "./storage";
+import { getActivitySummary, getDriveSummaryAllUser, getUserUssageSummary } from "./summary";
+import { bulkDeleteTask, cleanUpTask, deleteTask, getTaskHourlySummary, updateTask } from "./task";
 import { addUser, updateUser, deleteUser } from "./users";
-import { getUserUssageSummary } from "./ussageSummary";
 
 const functions = {
     getFileContributors,
@@ -27,7 +29,10 @@ const functions = {
     createFolder,
     updateFile,
     getUserUssageSummary,
+    getDriveSummaryAllUser,
     getActivitySummary,
+    getStorageSummary,
+    getTaskHourlySummary,
     addUser,
     updateUser,
     deleteUser,
@@ -41,7 +46,10 @@ const functions = {
     executeSQL,
     backupDatabase,
     getDatabaseInfo,
-
+    cleanNonEssentialActivities,
+    scanStorage,
+    cleanStorage,
+    cleanUpTask
 } as const;
 
 export type FunctionName = keyof typeof functions;

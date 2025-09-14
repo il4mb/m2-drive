@@ -97,7 +97,16 @@ export const POST = withApi(async (req) => {
         }
         await repository.save(file);
 
-        writeActivity("UPLOAD_FILE", `Mengupload ${file.type} ${file.name} ke ${folder?.name || 'My Drive'}`);
+        const metadata: any = { fileId: file.id }
+        if (file.pId) {
+            metadata.folderId = file.pId;
+        }
+
+        writeActivity(
+            "UPLOAD_FILE",
+            `Mengupload ${file.type} ${file.name} ke ${folder?.name || 'My Drive'}`,
+            metadata
+        );
 
         if (fileType.startsWith("image/") || fileType.startsWith("video/")) {
             addTaskQueue("generate-thumbnail", {

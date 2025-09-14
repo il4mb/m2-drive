@@ -9,8 +9,6 @@ import {
     Card,
     CardContent,
     Alert,
-    Tooltip,
-    AlertTitle,
     Drawer,
     Dialog,
     DialogTitle,
@@ -24,16 +22,13 @@ import {
     ShieldUser,
     X,
     Edit,
-    Trash2,
-    Copy,
     CheckCircle,
-    AlertCircle,
     Users,
     KeyRound
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { ChangeEvent, useEffect, useState } from "react";
-import TransferList from "../../../../components/ui/TransferList";
+import TransferList from "@/components/ui/TransferList";
 import { PERMISSION_LIST, SYSTEM_ROLES } from "@/permission";
 import Role from "@/entities/Role";
 import _, { isEqual } from "lodash";
@@ -42,8 +37,6 @@ import { invokeFunction } from "@/libs/websocket/invokeFunction";
 import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import { useActionPending } from "@/hooks/useActionPending";
-import ConfirmationDialog from "@/components/ui/dialog/ConfirmationDialog";
-import { useCheckMyPermissionState } from "@/components/context/CurrentUserAbilitiesProvider";
 import { useMyPermission } from "@/hooks/useMyPermission";
 import RoleItem from "./RoleItem";
 import ActionView from "@/components/navigation/ActionView";

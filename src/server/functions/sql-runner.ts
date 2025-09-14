@@ -14,9 +14,9 @@ import { checkPermission } from "../checkPermission";
 const blockedKeywords = ["create", "drop", "alter", "truncate", "delete"];
 
 export const executeSQL = createFunction(async ({ sql }: { sql: string }): Promise<QueryResult> => {
-   
+
     await checkPermission("can-manage-db");
-    
+
     const normalized = sql.trim().toLowerCase();
 
     // Block if starts with disallowed keyword
@@ -27,7 +27,13 @@ export const executeSQL = createFunction(async ({ sql }: { sql: string }): Promi
     const connection = await getConnection();
     const start = Date.now();
 
-     writeActivity("RUN_QUERY", `Menjalankan query SQL database`);
+    writeActivity(
+        "RUN_QUERY",
+        `Menjalankan query SQL database`,
+        {
+
+        }
+    );
 
     try {
         const rows = await connection.query(sql);

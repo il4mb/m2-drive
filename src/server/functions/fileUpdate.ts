@@ -112,7 +112,6 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         }
     }
 
-
     const allowedFields: (keyof File)[] = ["name", "pId", "type", "updatedAt"];
     const folderMetaFields = [
         "itemCount",
@@ -139,17 +138,6 @@ export const updateFile = createFunction(async ({ id, data }: UpdateFileProps) =
         "Key"
     ];
     const allowedMetaFields = file.type === "folder" ? folderMetaFields : fileMetaFields;
-
-    // // If user is admin, only allow updating tags in meta
-    // if (isAdmin && !isOwner) {
-    //     // Check if admin is trying to update anything other than meta.tags
-    //     const hasNonMetaUpdates = Object.keys(data).some(key => key !== "meta");
-    //     const hasNonTagMetaUpdates = data.meta ? Object.keys(data.meta).some(key => key !== "tags") : false;
-
-    //     // if (hasNonMetaUpdates || hasNonTagMetaUpdates) {
-    //     //     throw new Error("Gagal: Tidak ada pembaruan!");
-    //     // }
-    // }
 
     if (!isRoot && data.meta?.generalPermit) {
         if (file.type == "file") {

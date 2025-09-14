@@ -65,7 +65,15 @@ export const addFileContributor = createFunction(async ({ fileId, userId, role }
     });
 
     await contributorRepository.save(contributor);
-    writeActivity("ADD_CONTRIBUTOR", `Menambahkan ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`);
+    writeActivity(
+        "ADD_CONTRIBUTOR",
+        `Menambahkan ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`,
+        {
+            fileId,
+            userId,
+            role: contributor.role
+        }
+    );
     return contributor;
 });
 
@@ -103,7 +111,15 @@ export const updateFileContributor = createFunction(async ({ contributorId: id, 
     contributor.updatedAt = currentTime();
     await contributorRepository.save(contributor);
 
-    writeActivity("EDIT_CONTRIBUTOR", `Memperbarui ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`);
+    writeActivity(
+        "EDIT_CONTRIBUTOR", 
+        `Memperbarui ${user.name} sebagai ${contributor.role} pada ${file?.type} ${file?.name}`,
+        {
+            fileId: contributor.fileId,
+            userId: contributor.userId,
+            role
+        }
+    );
 })
 
 
@@ -130,5 +146,13 @@ export const removeFileContributor = createFunction(async ({ id }: { id: string 
 
     await contributorRepository.remove(contributor);
 
-    writeActivity("DELETE_CONTRIBUTOR", `Mengeluarkan ${user.name} pada ${file?.type} ${file?.name}`);
+    writeActivity(
+        "DELETE_CONTRIBUTOR", 
+        `Mengeluarkan ${user.name} pada ${file?.type} ${file?.name}`,
+        {
+            fileId: contributor.fileId,
+            userId: contributor.userId,
+            role: contributor.role
+        }
+    );
 })

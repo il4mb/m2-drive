@@ -23,7 +23,6 @@ export default function OnlineUsers() {
 
     return (
         <Stack>
-            <Typography fontSize={18} fontWeight={600} mb={1}>Pengguna Yang Aktif</Typography>
             <Stack direction="row" justifyContent="start" alignItems="center" ml={2} mb={1}>
                 {displayedUsers.map(e => (
                     <UserAvatar

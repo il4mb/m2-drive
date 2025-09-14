@@ -15,8 +15,8 @@ export interface DriveSummaryProps {
 export default function DriveSummary({ user }: DriveSummaryProps) {
     const theme = useTheme();
     const summary = useDriveUssageSummary(user?.id);
-    const driveSizeOptionInString = useOption(`@drive-size-${user?.meta.role}`);
-    const maxUploadSizeOptionInString = useOption(`@max-upload-${user?.meta.role}`);
+    const [driveSizeOptionInString] = useOption(`@drive-size-${user?.meta.role}`, '100gb');
+    const [maxUploadSizeOptionInString] = useOption(`@max-upload-${user?.meta.role}`, '100gb');
 
     const mimeData = useMemo(() =>
         Object.entries(summary.data?.mimeBreakdown || {})

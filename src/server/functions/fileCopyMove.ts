@@ -442,7 +442,7 @@ export const bulkCopyMove = createFunction(
 
         const canManage = await checkPermissionSilent("can-manage-drive-root");
         if (!canManage) {
-            await checkPermission("can-edit-file");
+            await checkPermission(["can-edit-file", "can-edit-folder"]);
         }
         const results = [];
         const errors = [];

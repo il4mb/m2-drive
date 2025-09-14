@@ -11,7 +11,7 @@ import {
     Typography,
     Box
 } from "@mui/material";
-import { formatFileSize, formatLocaleDate } from "@/libs/utils";
+import { formatFileSize, formatDateFromEpoch } from "@/libs/utils";
 import { useTheme } from "@mui/material/styles";
 import { FileIcon } from "@untitledui/file-icons";
 
@@ -147,10 +147,10 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
                     transition={{ duration: 0.5, delay: 0.4 }}>
                     <Stack spacing={0.5} alignItems="center">
                         <Typography variant="caption" color="text.secondary">
-                            Created: {formatLocaleDate(createdAt)}
+                            Created: {formatDateFromEpoch(createdAt)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            Modified: {formatLocaleDate(updatedAt)}
+                            Modified: {formatDateFromEpoch(updatedAt)}
                         </Typography>
                     </Stack>
                 </motion.div>

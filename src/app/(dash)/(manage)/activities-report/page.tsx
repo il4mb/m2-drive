@@ -3,28 +3,37 @@
 import ActivityView from '@/components/activities/ActivityView';
 import ActivitySummary from '@/components/analistic/ActivitiesSummary';
 import Container from '@/components/Container';
+import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import PermissionSuspense from '@/components/PermissionSuspense';
 import { Activity } from '@/entities/Activity';
-import { formatNumber } from '@/libs/utils';
+import { File, Folder } from '@/entities/File';
+import { formatFileSize, formatNumber } from '@/libs/utils';
 import { getMany } from '@/libs/websocket/query';
 import { onSnapshot } from '@/libs/websocket/SnapshotManager';
-import { Paper, Stack, Typography, Box, Skeleton } from '@mui/material';
-import { Activity as ActivityIcon } from 'lucide-react';
+import { Paper, Stack, Typography, Box, Skeleton, IconButton } from '@mui/material';
+import { FileIcon } from '@untitledui/file-icons';
+import { Activity as ActivityIcon, FolderOpen, Settings } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 const LIMIT = 4;
+type DetailActivity = Activity & {
+    file: File | null;
+    folder: Folder | null;
+}
 
 export default function PageComponent() {
 
+    const { addAction } = useActionsProvider();
     const [mounted, setMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const bottomObserverRef = useRef<HTMLDivElement>(null);
 
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const [activities, setActivities] = useState<DetailActivity[]>([]);
     const [loading, setLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -40,11 +49,14 @@ export default function PageComponent() {
 
         const unsubscribe = onSnapshot(
             getMany("activity")
+                .debug()
                 .relations(['user'])
+                .join("file", "file.id = metadata->>'fileId'")
+                .join(["file", "folder"], "folder.id = metadata->>'folderId'")
                 .orderBy("createdAt", "DESC")
                 .limit(page * LIMIT),
             (data) => {
-                setActivities(data.rows);
+                setActivities(data.rows as any);
                 setTotal(data.total);
                 setLoading(false);
                 setIsLoadingMore(false);
@@ -102,6 +114,17 @@ export default function PageComponent() {
             bottomObserver.disconnect();
         };
     }, [mounted, loadMore, isLoadingMore, activities.length, total]);
+
+
+    useEffect(() => {
+        return addAction("setting", {
+            component: () => (
+                <IconButton LinkComponent={Link} href={"/settings/activities"}>
+                    <Settings size={18} />
+                </IconButton>
+            )
+        })
+    }, [])
 
     const ActivitySkeleton = () => (
         <motion.div
@@ -192,7 +215,7 @@ export default function PageComponent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.4 }}
-                    p={2}
+                    p={[2, 2, 4]}
                     borderRadius={2}
                     flex={1}
                     spacing={1}
@@ -205,7 +228,10 @@ export default function PageComponent() {
 
                     <Box sx={{ py: 4 }} />
                     <Stack flex={1} p={2}>
-                        <Typography fontSize={16} mb={3}>Aktivitas Terbaru</Typography>
+                        <Stack direction={"row"} justifyContent={"space-between"}>
+                            <Typography fontSize={16} mb={3}>Aktivitas Terbaru</Typography>
+
+                        </Stack>
 
                         {/* Initial loading */}
                         {loading && activities.length === 0 && (
@@ -238,7 +264,64 @@ export default function PageComponent() {
                                         sx={{
                                             mb: 3
                                         }}>
-                                        <ActivityView activity={activity} />
+                                        <ActivityView activity={activity}>
+                                            {activity.folder && (
+                                                <Stack mt={1} p={1}>
+                                                    <Stack
+                                                        direction={"row"}
+                                                        spacing={1}
+                                                        alignItems={"center"}>
+                                                        {activity.folder.type == "folder"
+                                                            ? <FolderOpen size={26} />
+                                                            : <FileIcon
+                                                                variant='solid'
+                                                                size={26}
+                                                                // @ts-ignore
+                                                                type={activity.folder.meta.mimeType || "empty"} />
+                                                        }
+                                                        <Stack>
+                                                            <Typography>{activity.folder.name}</Typography>
+                                                            <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                                {activity.folder.type == "folder"
+                                                                    // @ts-ignore
+                                                                    ? activity.folder.meta.itemCount + ' items'
+                                                                    // @ts-ignore
+                                                                    : formatFileSize(activity.folder.meta.size || 0)}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Stack>
+                                                </Stack>
+                                            )}
+
+                                            {activity.file && (
+                                                <Stack mt={0} p={1}>
+                                                    <Stack
+                                                        direction={"row"}
+                                                        spacing={1}
+                                                        alignItems={"center"}>
+                                                        {activity.file.type == "folder"
+                                                            ? <FolderOpen size={26} />
+                                                            : <FileIcon
+                                                                variant='solid'
+                                                                size={26}
+                                                                // @ts-ignore
+                                                                type={activity.file.meta.mimeType || "empty"} />
+                                                        }
+                                                        <Stack>
+                                                            <Typography>{activity.file.name}</Typography>
+                                                            <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                                {activity.file.type == "folder"
+                                                                    // @ts-ignore
+                                                                    ? activity.file.meta.itemCount + ' items'
+                                                                    // @ts-ignore
+                                                                    : formatFileSize(activity.file.meta.size || 0)}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Stack>
+                                                </Stack>
+                                            )}
+
+                                        </ActivityView>
                                     </Box>
                                 );
                             })}

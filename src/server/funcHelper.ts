@@ -1,6 +1,6 @@
 import { getConnection } from "@/data-source";
 import { Activity } from "@/entities/Activity";
-import User from "@/entities/User";
+import { Options } from "@/entities/Options";
 import { getRequestContext } from "@/libs/requestContext";
 import { currentTime } from "@/libs/utils";
 import { Between } from "typeorm";
@@ -30,7 +30,6 @@ export const writeActivity = async (type: string, description: string, metadata:
         }
 
         if (!user) throw new Error("Failed Write Activity: user not found!");
-        if (typeof user == "string") return;
 
         const connection = await getConnection();
         const activityRepository = connection.getRepository(Activity);
@@ -40,7 +39,7 @@ export const writeActivity = async (type: string, description: string, metadata:
         // Try to find existing activity in last 1 minute
         const existing = await activityRepository.findOne({
             where: {
-                userId: user.id,
+                userId: typeof user == "string" ? `#System` : user.id,
                 type,
                 description,
                 createdAt: Between(threetyMinuteAgo, now),
@@ -56,7 +55,7 @@ export const writeActivity = async (type: string, description: string, metadata:
 
         // Insert new activity
         const activity = activityRepository.create({
-            userId: user.id,
+            userId: typeof user == "string" ? `#System` : user.id,
             description,
             type,
             metadata,
@@ -70,4 +69,11 @@ export const writeActivity = async (type: string, description: string, metadata:
     } catch (error: any) {
         console.error(error);
     }
+}
+
+export const getOption = async (id: string) => {
+    const connection = await getConnection();
+    const optionRepository = connection.getRepository(Options);
+    const value = await optionRepository.findOneBy({ id });
+    return value?.value;
 }

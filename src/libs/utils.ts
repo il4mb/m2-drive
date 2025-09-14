@@ -42,6 +42,35 @@ export const getFileSizeFromUnit = (value: string | TypeUnit): number => {
 };
 
 
+export function formatDuration(seconds: number) {
+	if (!seconds) return "0s";
+	const s = Math.floor(seconds % 60);
+	const m = Math.floor((seconds / 60) % 60);
+	const h = Math.floor(seconds / 3600);
+
+	if (h > 0) return `${h}h ${m}m ${s}s`;
+	if (m > 0) return `${m}m ${s}s`;
+	return `${s}s`;
+}
+
+export const getDurationToMidnight = () => {
+	const now = new Date();
+
+	// bikin target midnight = besok jam 00:00
+	const midnight = new Date(now);
+	midnight.setHours(24, 0, 0, 0);
+
+	// beda ms → convert ke jam/menit/detik
+	const diffMs = midnight.getTime() - now.getTime();
+
+	const hours = Math.floor(diffMs / (1000 * 60 * 60));
+	const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+	const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+	return { hours, minutes, seconds };
+};
+
+
 
 export const DATE_EPOCH = 1700000000;
 export const DATE_FORMAT_INTL: Intl.DateTimeFormatOptions = {
@@ -55,9 +84,14 @@ export const DATE_FORMAT_INTL: Intl.DateTimeFormatOptions = {
 
 
 export const epochTime = (time: number) => (time + DATE_EPOCH) * 1000;
-export const formatLocaleDate = (time: number, locale: string = 'en-US') => {
+export const formatDateFromEpoch = (time: number, locale: string = 'en-US') => {
 	const timestamp = (time + DATE_EPOCH) * 1000;
 	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(timestamp));
+}
+
+export const formatDateFromISO = (isoString?: string | null, locale: string = 'en-US') => {
+	if (!isoString) return "N/A";
+	return new Intl.DateTimeFormat(locale, DATE_FORMAT_INTL).format(new Date(isoString));
 }
 
 export const toRelativeTime = (time: number) => {

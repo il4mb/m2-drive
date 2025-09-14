@@ -98,8 +98,10 @@ export class Query<T extends EntityName = EntityName, Q extends QueryType = Quer
         return this;
     }
 
-    join(entity: EntityName, on: string, alias?: string,) {
-        this.joinsTable = [...this.joinsTable, { entity, alias, on }]
+    join(entity: EntityName | [EntityName, string], on: string, alias?: string,) {
+        const tableName = typeof entity == "string" ? entity : entity[0];
+        const tableAlias = alias || typeof entity == "string" ? alias : entity[1];
+        this.joinsTable = [...this.joinsTable, { entity: tableName, alias: tableAlias, on }]
         return this;
     }
 

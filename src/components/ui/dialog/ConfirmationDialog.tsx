@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, ReactNode } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -24,7 +24,7 @@ export type ConfirmationDialogType = 'warning' | 'error' | 'info' | 'help';
 interface ConfirmationDialogProps {
     onClose?: () => void;
     onConfirm: (signal?: AbortSignal) => Promise<unknown> | void;
-    title: string;
+    title: string | ReactNode;
     message: string | React.ReactNode;
     confirmText?: string;
     cancelText?: string;
@@ -170,12 +170,17 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 aria-describedby="confirmation-dialog-description">
                 <DialogTitle id="confirmation-dialog-title">
                     <Box display="flex" alignItems="center">
-                        <Typography component={Stack} direction={"row"} alignItems={"start"} spacing={1} color={getColorByType()} >
-                            {getIcon()}
-                            <Typography variant="h6" component="span" sx={{ color: 'currentcolor' }}>
-                                {title}
-                            </Typography>
-                        </Typography>
+                        {typeof title == "string" ? (
+                            <>
+                                <Typography component={Stack} direction={"row"} alignItems={"start"} spacing={1} color={getColorByType()} >
+                                    {getIcon()}
+                                    <Typography variant="h6" component="span" sx={{ color: 'currentcolor' }}>
+                                        {title}
+                                    </Typography>
+                                </Typography>
+                            </>
+                        ) : title}
+
                         {showCloseButton && (
                             <IconButton
                                 aria-label="close"

@@ -69,7 +69,10 @@ export const saveRole = createFunction(async (data: SaveRoleProps) => {
         role.abilities = parsed.abilities;
 
         await repo.save(role);
-        writeActivity("EDIT_ROLE", `Mengedit role ${role.id}, ${role.abilities.length} ability`);
+        writeActivity(
+            "EDIT_ROLE",
+            `Mengedit role ${role.id}, ${role.abilities.length} ability`,
+        );
         return role;
     }
 });

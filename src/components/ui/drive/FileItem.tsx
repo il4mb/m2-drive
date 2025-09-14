@@ -8,7 +8,7 @@ import ContextMenu from '../../context-menu/ContextMenu';
 import { FileIcon } from '@untitledui/file-icons';
 import { ContextMenuItemProps } from '../../context-menu/ContextMenuItem';
 import { motion } from 'motion/react';
-import { formatLocaleDate } from '@/libs/utils';
+import { formatDateFromEpoch } from '@/libs/utils';
 
 
 export type FileContextMenu = {
@@ -80,7 +80,7 @@ export default function FileItem({ index = 0, file, menu = {}, layout = "grid", 
                             file.meta?.lastOpen && (
                                 <Typography>
                                     {// @ts-ignore
-                                        formatLocaleDate(file.meta.lastOpen, 'ID-id')}
+                                        formatDateFromEpoch(file.meta.lastOpen, 'ID-id')}
                                 </Typography>
                             )}
                     </Stack>

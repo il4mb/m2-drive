@@ -7,7 +7,7 @@ import Container from "@/components/Container";
 import { useState } from "react";
 import DatabaseManager from "./ui/database/DatabaseManager";
 import PermissionSuspense from "@/components/PermissionSuspense";
-import { a11yProps, TabPanel } from "@/app/(dash)/settings/ui/TabPanel";
+import { a11yProps, TabPanel } from "@/app/(dash)/(manage)/settings/ui/TabPanel";
 
 export default function page() {
 

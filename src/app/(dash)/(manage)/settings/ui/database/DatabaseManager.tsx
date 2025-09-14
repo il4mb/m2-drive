@@ -1,6 +1,6 @@
 'use client'
 
-import { formatFileSize, formatLocaleDate } from '@/libs/utils';
+import { formatFileSize, formatDateFromEpoch } from '@/libs/utils';
 import {
     Box,
     Chip,
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import QueryRunner from './QueryRunner';
-import { a11yProps, TabPanel } from "@/app/(dash)/settings/ui/TabPanel";
+import { a11yProps, TabPanel } from "@/app/(dash)/(manage)/settings/ui/TabPanel";
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { DatabaseInfo } from '@/server/functions/database';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
@@ -148,7 +148,7 @@ export default function DatabaseManager() {
                                             }}
                                         />
                                         <Chip
-                                            label={`Last Backup: ${info?.lastBackup ? formatLocaleDate(info?.lastBackup) : 'N/A'}`}
+                                            label={`Last Backup: ${info?.lastBackup ? formatDateFromEpoch(info?.lastBackup) : 'N/A'}`}
                                             size="small"
                                             sx={{
                                                 bgcolor: 'rgba(255, 255, 255, 0.2)',

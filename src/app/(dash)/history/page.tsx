@@ -22,7 +22,7 @@ import { Activity } from "@/entities/Activity";
 import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { getMany, Json } from "@/libs/websocket/query";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
-import { formatLocaleDate } from "@/libs/utils";
+import { formatDateFromEpoch } from "@/libs/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 
 type SectionProps = {
@@ -152,7 +152,7 @@ export default function Page() {
 
                         <Stack flex={1}>
                             <Typography variant="body2" color="text.secondary">
-                                {activity.description?.substring(0, 40)} • {formatLocaleDate(activity.createdAt)}
+                                {activity.description?.substring(0, 40)} • {formatDateFromEpoch(activity.createdAt)}
                             </Typography>
                             <Typography fontWeight={500} noWrap>
                                 {activity.file?.name}

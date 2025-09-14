@@ -5,7 +5,7 @@ import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvider';
 import LogoutButton from '@/components/ui/LogoutButton';
 import UserAvatar from '@/components/ui/UserAvatar';
-import { currentTime, formatLocaleDate, toTimeLeft } from '@/libs/utils';
+import { currentTime, formatDateFromEpoch, toTimeLeft } from '@/libs/utils';
 import { Button, Paper, Stack, Typography, Divider, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Cookie, Pen } from 'lucide-react';

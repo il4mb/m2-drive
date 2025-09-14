@@ -1,5 +1,5 @@
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
-import {  UserDriveSummary } from "@/server/functions/ussageSummary";
+import { UserDriveSummary } from "@/server/functions/summary";
 import { useEffect, useState } from "react"
 
 export const useDriveUssageSummary = (userId?: string) => {

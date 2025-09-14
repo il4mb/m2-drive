@@ -6,6 +6,7 @@ import Role from "@/entities/Role";
 import Token from "@/entities/Token";
 import { Task } from "@/entities/Task";
 import { Activity } from "@/entities/Activity";
+import Storage from "@/entities/Storage";
 
 export const entityMap = {
     activity: Activity,
@@ -16,6 +17,7 @@ export const entityMap = {
     role: Role,
     token: Token,
     "task": Task,
+    storage: Storage
 } as const;
 
 export type EntityMap = typeof entityMap;

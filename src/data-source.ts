@@ -12,6 +12,7 @@ import { Task } from "./entities/Task";
 import { FileSubscriber } from "./entities/subscribers/FileSubscriber";
 import { DatabaseSubscriber } from "./server/database/databaseSubscriber";
 import { Activity } from "./entities/Activity";
+import Storage from "./entities/Storage";
 
 const dev = process.env.NODE_ENV !== "production";
 export const databasePath = `${process.cwd()}/database.sqlite`;
@@ -30,6 +31,7 @@ const source = new DataSource({
         Role,
         Task,
         Activity,
+        Storage
     ],
     subscribers: [
         UserSubscriber,

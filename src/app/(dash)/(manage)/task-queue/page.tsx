@@ -1,329 +1,86 @@
 'use client'
 
 import Container from '@/components/Container';
-import AnchorMenu from '@/components/context-menu/AnchorMenu';
-import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import PermissionSuspense from '@/components/PermissionSuspense';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
-import { Task } from '@/entities/Task';
-import { useMyPermission } from '@/hooks/useMyPermission';
-import { epochTime, formatLocaleDate } from '@/libs/utils';
+import { formatDuration, formatNumber } from '@/libs/utils';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
 import { getMany } from '@/libs/websocket/query';
-import { onSnapshot } from '@/libs/websocket/SnapshotManager';
 import {
-    Box, Chip, Paper, Stack, Typography, LinearProgress, IconButton,
-    alpha, useTheme, Switch, FormControlLabel, Tooltip,
-    Badge, Checkbox,
-    Alert,
-    Button
+    Chip, Paper, Stack, Typography,
+    useTheme,
+    Badge,
+    Button,
+    Grid,
+    LinearProgress,
+    FormControlLabel,
+    Switch,
+    Box
 } from '@mui/material';
 import {
-    Cpu, MoreVertical, Clock, CheckCircle, XCircle, Play,
-    AlertCircle, RefreshCw, Hash, Trash2, RotateCcw,
-    Key,
-    Home
+    Cpu, Clock, CheckCircle, XCircle,
+    RefreshCw,
+    ListTree,
+    BrushCleaning,
+    BarChart3
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import TaskTimelineChart, { HourlyStat } from './ui/TaskTimelineChart';
+import TaskItem from './ui/TaskItem';
+import InfiniteScroll from '@/components/InfiniteScroll';
+import { useOption } from '@/hooks/useOption';
+import AutoCleaner from './ui/AutoCleaner';
 
-// Constants
-const STATUS_COLORS = {
-    pending: 'warning',
-    processing: 'info',
-    completed: 'success',
-    failed: 'error'
-} as const;
-
-const STATUS_ICONS = {
-    pending: Clock,
-    processing: RefreshCw,
-    completed: CheckCircle,
-    failed: XCircle
-} as const;
-
-const PRIORITY_COLORS = {
-    0: 'default',
-    1: 'info',
-    2: 'warning',
-    3: 'error'
-} as const;
-
-const STATUS_FILTERS = [
-    { value: 'all', label: 'All', color: 'default' },
-    { value: 'pending', label: 'Pending', color: 'warning' },
-    { value: 'processing', label: 'Processing', color: 'info' },
-    { value: 'completed', label: 'Completed', color: 'success' },
-    { value: 'failed', label: 'Failed', color: 'error' }
-] as const;
-
-// Utility functions
-const formatDuration = (ms: number) => {
-    if (!ms) return '-';
-    return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
-};
-
-// Components
-interface TaskItemProps {
-    disabled: boolean;
-    task: Task;
-    isSelected: boolean;
-    selectEnabled: boolean;
-    onSelectionChange: (taskId: string, selected: boolean) => void;
-    onRetry: (taskId: string) => Promise<void>;
-    onDelete: (taskId: string) => Promise<void>;
+type Summary = {
+    hour: string,
+    total: number,
+    avgExecTime: number | null
 }
 
-const TaskItem = ({
-    disabled,
-    task,
-    isSelected,
-    selectEnabled,
-    onSelectionChange,
-    onRetry,
-    onDelete
-}: TaskItemProps) => {
-    const theme = useTheme();
-    const StatusIcon = STATUS_ICONS[task.status];
-    const priorityColor = PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS] || 'default';
-
-    const menuItems = useMemo(() => [
-        ...(task.status === "failed" ? [{
-            label: "Coba lagi",
-            icon: RotateCcw,
-            action: () => onRetry(task.id)
-        }] : []),
-        {
-            label: "Hapus",
-            icon: Trash2,
-            action: () => onDelete(task.id)
-        }
-    ], [task.status, task.id, onRetry, onDelete]);
-
-    return (
-        <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.2 }}
-            sx={{
-                p: 2,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                '&:last-child': { borderBottom: 'none' },
-                '&:hover': {
-                    backgroundColor: alpha(theme.palette.action.hover, 0.05)
-                },
-                backgroundColor: isSelected ? alpha(theme.palette.info.main, 0.1) : 'transparent'
-            }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-                {/* Selection Checkbox */}
-                {selectEnabled && (
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                size="small"
-                                checked={isSelected}
-                                onChange={(e) => onSelectionChange(task.id, e.target.checked)}
-                            />
+type StatusChipProps = {
+    icon: React.ReactNode;
+    label: string;
+    count?: number;
+    color: any;
+    active: boolean;
+    onClick: () => void;
+}
+const StatusChip = ({ icon, label, count, color, active, onClick }: StatusChipProps) => (
+    <Button
+        startIcon={icon}
+        size="small"
+        color={color}
+        variant={active ? "contained" : "outlined"}
+        onClick={onClick}>
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+            <span>{label}</span>
+            {(active && count !== undefined) && (
+                <Badge
+                    badgeContent={count}
+                    color={color}
+                    sx={{
+                        '& .MuiBadge-badge': {
+                            fontSize: '0.6rem',
+                            height: 16,
+                            minWidth: 16,
+                            boxShadow: 2
                         }
-                        label=""
-                    />
-                )}
-
-                {/* Status */}
-                <Box sx={{ minWidth: 100 }}>
-                    <Chip
-                        icon={<StatusIcon size={14} />}
-                        label={task.status.toUpperCase()}
-                        size="small"
-                        color={STATUS_COLORS[task.status]}
-                        variant={task.status === 'processing' ? 'filled' : 'outlined'}
-                    />
-                </Box>
-
-                {/* Task Info */}
-                <Box sx={{ flex: 1 }}>
-                    <Typography variant="body1" fontWeight={500}>
-                        {task.type}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        ID: {task.id.slice(0, 8)}...
-                    </Typography>
-                    {task.error && (
-                        <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                            <AlertCircle size={12} style={{ marginRight: 4 }} />
-                            {task.error}
-                        </Typography>
-                    )}
-                </Box>
-
-                {/* Priority */}
-                <Box sx={{ minWidth: 80 }}>
-                    <Chip
-                        icon={<Hash size={14} />}
-                        label={`P${task.priority}`}
-                        size="small"
-                        color={priorityColor}
-                        variant="outlined"
-                    />
-                </Box>
-
-                {/* Created Time */}
-                <Box sx={{ minWidth: 140 }}>
-                    <Stack spacing={0.5}>
-                        <Typography variant="body2">
-                            {task.createdAt && formatLocaleDate(task.createdAt)}
-                        </Typography>
-                        {task.startedAt && (
-                            <Typography variant="caption" color="text.secondary">
-                                Started: {formatLocaleDate(task.startedAt)}
-                            </Typography>
-                        )}
-                    </Stack>
-                </Box>
-
-                {/* Duration */}
-                <Box sx={{ minWidth: 80 }}>
-                    <Typography variant="body2">
-                        {task.startedAt && task.completedAt ? (
-                            formatDuration(epochTime(task.completedAt) - epochTime(task.startedAt))
-                        ) : task.startedAt ? (
-                            'Running...'
-                        ) : (
-                            '-'
-                        )}
-                    </Typography>
-                </Box>
-
-                {/* Actions */}
-                <Box sx={{ width: 40, display: 'flex', justifyContent: 'center' }}>
-                    <AnchorMenu items={menuItems} disabled={disabled} >
-                        <IconButton size="small">
-                            <MoreVertical size={16} />
-                        </IconButton>
-                    </AnchorMenu>
-                </Box>
-            </Stack>
-
-            {/* Progress Bar */}
-            {task.status === 'processing' && (
-                <LinearProgress
-                    variant="indeterminate"
-                    sx={{ mt: 1, height: 2, borderRadius: 1 }}
+                    }}
                 />
             )}
-        </Box>
-    );
-};
-
-const EmptyState = () => {
-    const theme = useTheme();
-
-    return (
-        <Stack flex={1} alignItems="center" justifyContent="center" sx={{ p: 6 }}>
-            <Box textAlign={"center"}>
-                <Play size={48} color={theme.palette.text.secondary} />
-                <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-                    No tasks found
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Tasks will appear here when they are created.
-                </Typography>
-            </Box>
         </Stack>
-    );
-};
-
-const SelectionHeader = ({
-    disabled = false,
-    selectedCount,
-    totalCount,
-    onSelectAll,
-    onBulkDelete,
-    onBulkRetry,
-    canBulkRetry
-}: {
-    disabled?: boolean;
-    selectedCount: number;
-    totalCount: number;
-    onSelectAll: (select: boolean) => void;
-    onBulkDelete: () => void;
-    onBulkRetry: () => void;
-    canBulkRetry: boolean;
-}) => {
-    const theme = useTheme();
-
-    return (
-        <Stack alignItems="center" direction="row" spacing={2} sx={{
-            p: 2,
-            bgcolor: alpha(theme.palette.info.main, 0.1)
-        }}>
-            <Checkbox onChange={e => onSelectAll(e.target.checked)} />
-            <Box>
-                <Typography variant="body2" color="info.main">
-                    Selected {selectedCount} of {totalCount} tasks
-                </Typography>
-            </Box>
-            {selectedCount > 0 && (
-                <>
-                    <Tooltip title="Delete selected">
-                        <IconButton disabled={disabled} size='small' onClick={onBulkDelete}>
-                            <Trash2 size={18} />
-                        </IconButton>
-                    </Tooltip>
-                    {canBulkRetry && (
-                        <Tooltip title="Retry selected">
-                            <IconButton disabled={disabled} size='small' onClick={onBulkRetry}>
-                                <RotateCcw size={18} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                </>
-            )}
-        </Stack>
-    );
-};
+    </Button>
+);
 
 export default function TaskQueuePage() {
 
-    const router = useRouter();
-    const canManageTask = useMyPermission("can-manage-task-queue");
-    const canSeeTask = useMyPermission("can-see-task-queue");
-    const { addAction } = useActionsProvider();
     const theme = useTheme();
-
-    const [selectEnabled, setSelectEnabled] = useState(false);
-    const [selected, setSelected] = useState<string[]>([]);
-    const [sortBy] = useState('createdAt');
-    const [order] = useState<'ASC' | 'DESC'>('DESC');
+    const [total, setTotal] = useState(0);
+    const [mounted, setMounted] = useState(false);
     const [filter, setFilter] = useState<string>('all');
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [taskList, setTaskList] = useState<Task[]>([]);
 
-    // Memoized computations
-    const filteredTasks = useMemo(() => {
-        return taskList.filter(task => filter === 'all' || task.status === filter);
-    }, [taskList, filter]);
-
-    const stats = useMemo(() => ({
-        total: taskList.length,
-        pending: taskList.filter(t => t.status === 'pending').length,
-        processing: taskList.filter(t => t.status === 'processing').length,
-        completed: taskList.filter(t => t.status === 'completed').length,
-        failed: taskList.filter(t => t.status === 'failed').length
-    }), [taskList]);
-
-    const canBulkRetry = useMemo(() =>
-        selected.every(id => taskList.find(task => task.id === id)?.status === "failed"),
-        [selected, taskList]
-    );
-
-    // Event handlers
     const handleRetry = useCallback(async (taskId: string) => {
         try {
             const result = await invokeFunction("updateTask", {
@@ -331,12 +88,12 @@ export default function TaskQueuePage() {
                 data: { status: 'pending' }
             });
             if (!result.success) throw new Error(result.error);
-            enqueueSnackbar("Berhasil restart task", {
+            enqueueSnackbar("Task restarted successfully", {
                 variant: 'success',
                 action: CloseSnackbar
             });
         } catch (error: any) {
-            enqueueSnackbar(error.message || "Gagal restart task", {
+            enqueueSnackbar(error.message || "Failed to restart task", {
                 variant: "error",
                 action: CloseSnackbar
             });
@@ -347,187 +104,236 @@ export default function TaskQueuePage() {
         try {
             const result = await invokeFunction("deleteTask", { taskId });
             if (!result.success) throw new Error(result.error);
-            enqueueSnackbar("Berhasil hapus task", {
+            enqueueSnackbar("Task deleted successfully", {
                 variant: 'success',
                 action: CloseSnackbar
             });
-            setSelected(prev => prev.filter(id => id !== taskId));
         } catch (error: any) {
-            enqueueSnackbar(error.message || "Gagal hapus task", {
+            enqueueSnackbar(error.message || "Failed to delete task", {
                 variant: "error",
                 action: CloseSnackbar
             });
         }
     }, []);
 
-    const handleBulkDelete = useCallback(async () => {
-        if (selected.length === 0) return;
-
-        try {
-
-            const result = await invokeFunction("bulkDeleteTask", { tasksId: selected });
-            if (!result.success) throw new Error(result.error);
-            enqueueSnackbar(`Berhasil hapus ${result.data?.affected} task`, {
-                variant: 'success',
-                action: CloseSnackbar
-            });
-            setSelected([]);
-        } catch (error: any) {
-            enqueueSnackbar(error.message || "Gagal hapus task", {
-                variant: "error",
-                action: CloseSnackbar
-            });
-        }
-    }, [selected]);
-
-    const handleBulkRetry = useCallback(async () => {
-        if (selected.length === 0) return;
-
-        try {
-            for (const taskId of selected) {
-                await handleRetry(taskId);
-            }
-        } catch (error: any) {
-            enqueueSnackbar(error.message || "Gagal restart task", {
-                variant: "error",
-                action: CloseSnackbar
-            });
-        }
-    }, [selected, handleRetry]);
-
-    const handleRefresh = useCallback(() => {
-        setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 1000);
-    }, []);
-
-    const handleSelectionChange = useCallback((taskId: string, selected: boolean) => {
-        setSelected(prev => selected
-            ? [...prev, taskId]
-            : prev.filter(id => id !== taskId)
-        );
-    }, []);
-
-    const handleSelectAll = useCallback((select: boolean) => {
-        setSelected(select ? filteredTasks.map(task => task.id) : []);
-    }, [filteredTasks]);
-
-    // Effects
-    useEffect(() => {
-        const query = getMany("task");
-        if (sortBy) {
-            query.orderBy(sortBy, order);
-        }
-        if (filter && filter !== 'all') {
+    const [error, setError] = useState<string | null>();
+    const query = useMemo(() => {
+        const query = getMany("task").orderBy("createdAt", "DESC");
+        if (filter !== "all") {
             query.where("status", "==", filter);
         }
+        return query;
+    }, [filter]);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-        return onSnapshot(query, (data) => {
-            setTaskList(data.rows)
+    const [summary, setSummary] = useState<Summary[]>([]);
+    const timelineChartData = useMemo(() => {
+        if (!summary || summary.length === 0) return [];
+
+        const map = new Map<string, HourlyStat>();
+        summary.forEach(item => {
+            const hour = item.hour.padStart(2, "0");
+            map.set(hour, {
+                hour: parseInt(hour, 10),
+                total: item.total,
+                avgExecTime: item.avgExecTime || 0,
+            });
         });
-    }, [sortBy, order, filter]);
+
+        const now = new Date();
+        const currentHour = now.getHours();
+
+        const data: { hour: string; total: number; avgExecTime: number }[] = [];
+        for (let i = 23; i >= 0; i--) {
+            const h = (currentHour - i + 24) % 24;
+            const key = h.toString().padStart(2, "0");
+            const stat = map.get(key);
+
+            data.push({
+                hour: `${key}:00`,
+                total: stat?.total ?? 0,
+                avgExecTime: stat?.avgExecTime ?? 0,
+            });
+        }
+
+        return data;
+    }, [summary]);
+
+    const averageTime = useMemo(() => {
+        const total = summary.length;
+        if (total === 0) return 0;
+        const sumAverage = summary.reduce((prev, current) => prev + (current.avgExecTime || 0), 0);
+        return sumAverage / total;
+    }, [summary]);
+
+    useEffect(() => setMounted(true), []);
 
     useEffect(() => {
-        return addAction("filter", {
-            position: 10,
-            component: () => (
-                <AnchorMenu
-                    items={STATUS_FILTERS.map(item => ({
-                        label: item.label,
-                        action: () => setFilter(item.value),
-                        active: filter === item.value
-                    }))}
-                />
-            ),
-            icon: undefined
-        });
-    }, [addAction, filter]);
+        if (!mounted) return;
+        invokeFunction("getTaskHourlySummary")
+            .then(result => {
+                if (!result.success) setError(result.error);
+                setSummary(result.data || []);
+            });
+    }, [mounted]);
 
     return (
         <PermissionSuspense permission={"can-see-task-queue"}>
-            <Container maxWidth='xl' scrollable>
-                <StickyHeader
-                    actions={
-                        <>
-                            <Tooltip title="Refresh">
-                                <IconButton onClick={handleRefresh}>
-                                    <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                                </IconButton>
-                            </Tooltip>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        size="small"
-                                        checked={selectEnabled}
-                                        onChange={(e) => setSelectEnabled(e.target.checked)}
-                                    />
-                                }
-                                label="Select"
-                            />
-                        </>
-                    }>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+            <Container ref={scrollRef} maxWidth='xl' scrollable sx={{ p: 3 }}>
+                <StickyHeader>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={2}>
                         <Stack alignItems="center" spacing={1} direction="row">
-                            <Cpu size={24} />
-                            <Typography fontSize={20} fontWeight={600}>Task Queue</Typography>
-                            <Badge badgeContent={filteredTasks.length} color="primary" showZero>
+                            <Cpu size={28} color={theme.palette.primary.main} />
+                            <Typography variant="h4" fontWeight={700}>
+                                Task Queue
+                            </Typography>
+                            <Badge
+                                badgeContent={total}
+                                color="primary"
+                                showZero
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        fontSize: '0.75rem',
+                                        height: 20,
+                                        minWidth: 20
+                                    }
+                                }}>
                                 <Chip
-                                    label={`${stats.total} total`}
-                                    size="small"
+                                    label={`${formatNumber(total)} total tasks`}
+                                    size="medium"
                                     variant="outlined"
-                                    sx={{ ml: 2 }}
+                                    sx={{
+                                        ml: 2,
+                                        borderRadius: 2,
+                                        borderWidth: 2,
+                                        fontWeight: 500
+                                    }}
                                 />
                             </Badge>
                         </Stack>
                     </Stack>
                 </StickyHeader>
 
-                <Paper
-                    component={Stack}
-                    flex={1}
-                    sx={{
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                    }}>
-                    {!canManageTask && (
-                        <Alert severity='warning'>
-                            Kamu dalam mode <strong>Read Only.</strong>
-                        </Alert>
-                    )}
-                    {selectEnabled && (
-                        <SelectionHeader
-                            disabled={!canManageTask}
-                            selectedCount={selected.length}
-                            totalCount={filteredTasks.length}
-                            onSelectAll={handleSelectAll}
-                            onBulkDelete={handleBulkDelete}
-                            onBulkRetry={handleBulkRetry}
-                            canBulkRetry={canBulkRetry}
-                        />
-                    )}
-
-                    {canSeeTask && (
-                        <Stack flex={1} spacing={0}>
-                            <AnimatePresence mode='popLayout'>
-                                {filteredTasks.map((task) => (
-                                    <TaskItem
-                                        disabled={!canManageTask}
-                                        key={task.id}
-                                        task={task}
-                                        isSelected={selected.includes(task.id)}
-                                        selectEnabled={selectEnabled}
-                                        onSelectionChange={handleSelectionChange}
-                                        onRetry={handleRetry}
-                                        onDelete={handleDelete}
-                                    />
-                                ))}
-                            </AnimatePresence>
-                            {filteredTasks.length === 0 && <EmptyState />}
+                <Stack spacing={3} mt={2}>
+                    {/* Performance Metrics */}
+                    <Paper sx={{ p: 3, borderRadius: 3 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+                            <BarChart3 size={24} color={theme.palette.primary.main} />
+                            <Typography variant="h6" fontWeight={600}>
+                                Performance Metrics
+                            </Typography>
                         </Stack>
-                    )}
 
-                </Paper>
+                        <Grid container spacing={3}>
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <Stack spacing={2}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="body2" color="text.secondary">
+                                            Average Execution Time
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={600}>
+                                            {formatDuration(averageTime)}
+                                        </Typography>
+                                    </Stack>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min((averageTime / 10000) * 100, 100)}
+                                        sx={{ height: 8, borderRadius: 4 }}
+                                    />
+                                </Stack>
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 8 }}>
+                                <Stack spacing={1}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Tasks Distribution (Last 24h)
+                                    </Typography>
+                                    <TaskTimelineChart data={timelineChartData} />
+                                </Stack>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+
+                    {/* Main Content */}
+                    <Grid container spacing={3} flexWrap={"wrap-reverse"}>
+                        <Grid size={{ xs: 12, lg: 8 }}>
+                            <Paper sx={{ p: 2, borderRadius: 3 }}>
+
+                                <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} mb={1}>
+                                    <StatusChip
+                                        icon={<Cpu size={14} />}
+                                        label="All"
+                                        count={total}
+                                        color="primary"
+                                        active={filter === 'all'}
+                                        onClick={() => setFilter('all')}
+                                    />
+                                    <StatusChip
+                                        icon={<Clock size={14} />}
+                                        label="Pending"
+                                        count={total}
+                                        color="warning"
+                                        active={filter === 'pending'}
+                                        onClick={() => setFilter('pending')}
+                                    />
+                                    <StatusChip
+                                        icon={<RefreshCw size={14} />}
+                                        label="Processing"
+                                        count={total}
+                                        color="info"
+                                        active={filter === 'processing'}
+                                        onClick={() => setFilter('processing')}
+                                    />
+                                    <StatusChip
+                                        icon={<CheckCircle size={14} />}
+                                        label="Completed"
+                                        count={total}
+                                        color="success"
+                                        active={filter === 'completed'}
+                                        onClick={() => setFilter('completed')}
+                                    />
+                                    <StatusChip
+                                        icon={<XCircle size={14} />}
+                                        label="Failed"
+                                        count={total}
+                                        color="error"
+                                        active={filter === 'error'}
+                                        onClick={() => setFilter('error')}
+                                    />
+                                </Stack>
+
+                                <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+                                    <ListTree size={24} color={theme.palette.primary.main} />
+                                    <Typography variant="h6" fontWeight={600}>
+                                        Task List
+                                    </Typography>
+                                </Stack>
+
+                                <Stack sx={{ overflowX: 'scroll' }} className='no-scrollbar'>
+                                    <InfiniteScroll
+                                        sx={{ flex: 1, minHeight: 700 }}
+                                        scrollRef={scrollRef}
+                                        query={query}
+                                        onResult={({ total }) => setTotal(total)}
+                                        renderItem={({ item }) => (
+                                            <TaskItem
+                                                task={item}
+                                                onDelete={handleDelete}
+                                                onRetry={handleRetry}
+                                            />
+                                        )}
+                                    />
+                                </Stack>
+                            </Paper>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, lg: 4 }}>
+                            <Stack spacing={2}>
+                                {/* Auto Cleaner */}
+                                <AutoCleaner />
+                            </Stack>
+                        </Grid>
+                    </Grid>
+                </Stack>
             </Container>
         </PermissionSuspense>
     );

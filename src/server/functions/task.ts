@@ -6,6 +6,8 @@ import { getRequestContext } from "@/libs/requestContext";
 import { checkPermission } from "../checkPermission";
 import { getConnection } from "@/data-source";
 import { In } from "typeorm";
+import { currentTime, DATE_EPOCH } from "@/libs/utils";
+import { addTaskQueue } from "../taskQueue";
 
 type UpdateTask = {
     taskId: string;
@@ -63,7 +65,6 @@ export const deleteTask = createFunction(async ({ taskId }: { taskId: string }) 
 
 export const bulkDeleteTask = createFunction(async ({ tasksId }: { tasksId: string[] }) => {
 
-    const { user: actor } = getRequestContext();
     await checkPermission("can-manage-task-queue");
 
     const connection = await getConnection();
@@ -76,4 +77,44 @@ export const bulkDeleteTask = createFunction(async ({ tasksId }: { tasksId: stri
         deletedIds: tasksId,
         affected: result.affected ?? 0
     };
+});
+
+
+
+
+export const cleanUpTask = createFunction(async () => {
+    await checkPermission("can-manage-task-queue");
+
+    const connection = await getConnection();
+    const taskRepository = connection.getRepository(Task);
+    const exist = await taskRepository.findOneBy({ type: "clean-task", status: In(["pending", "processing"]) });
+    if (exist) throw new Error("Task sudah ada mohon, mohon coba kembali setelah task selesai!");
+
+    addTaskQueue("clean-task", {});
+    writeActivity("START_CLEAN_TASK", "Memulai membersihkan task");
+})
+
+
+export const getTaskHourlySummary = createFunction(async () => {
+    const connection = await getConnection();
+    const repo = connection.getRepository(Task);
+
+    const stats = await repo
+        .createQueryBuilder("a")
+        .select([
+            `strftime('%H', datetime(a.createdAt + ${DATE_EPOCH}, 'unixepoch', 'localtime')) AS hour`,
+            `COUNT(*) AS total`,
+            `AVG(CASE WHEN a.completedAt IS NOT NULL AND a.startedAt IS NOT NULL 
+                      THEN (a.completedAt - a.startedAt) END) AS avgExecTime`
+        ])
+        .groupBy("hour")
+        .orderBy("hour", "ASC")
+        .where("createdAt > :aDayAgo", { aDayAgo: currentTime("-24h") })
+        .getRawMany();
+
+    return stats.map(s => ({
+        hour: s.hour,
+        total: Number(s.total),
+        avgExecTime: s.avgExecTime ? Number(s.avgExecTime) : null // ms
+    }));
 });

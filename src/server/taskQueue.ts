@@ -413,6 +413,10 @@ export const handlers: TaskHandlerMap<TaskPayloads> = {
                         objects.push({ key, size });
                         totalSize += obj.Size ?? 0;
 
+                        if (key.startsWith("backup/")) {
+                            continue;
+                        }
+
                         let exists = false;
                         if (key.startsWith("avatars/")) {
                             exists = usersIdSet.has(key.replace("avatars/", ""));

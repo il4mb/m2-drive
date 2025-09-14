@@ -15,6 +15,8 @@ import { useCurrentSession } from './CurrentSessionProvider';
 import { enqueueSnackbar } from 'notistack';
 import CloseSnackbar from '../ui/CloseSnackbar';
 import { ClientTaskQueue } from '@/libs/clientTaskQueue';
+import { invokeFunction } from '@/libs/websocket/invokeFunction';
+import { currentTime } from '@/libs/utils';
 
 interface UploadProviderState {
     uploads: FileUpload[];
@@ -57,6 +59,7 @@ type UploadProviderProps = {
 };
 
 export const UploadsProvider = ({ children }: UploadProviderProps) => {
+
     const queue = useMemo(() => new ClientTaskQueue(4), []);
     const session = useCurrentSession();
     const pathname = usePathname();
@@ -67,95 +70,40 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
     const [uploads, setUploads] = useState<FileUpload[]>([]);
     const CHUNK_SIZE = 5 * 1024 * 1024;
 
-    const initialRequest = async (data: InitialRequestProps, signal: AbortSignal) => {
-        const response = await fetch(
-            "/api/uploads",
-            {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                signal
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Initial request failed: ${response.status}`);
-        }
-
-        return response.json();
-    }
-
-    const presignRequest = async (data: PresignRequestProps, signal: AbortSignal) => {
-        const query = new URLSearchParams();
-        Object.entries(data).forEach(([key, value]) => {
-            query.append(key, value.toString());
-        });
-
-        const response = await fetch(
-            "/api/uploads?" + query.toString(),
-            {
-                method: "GET",
-                signal
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Presign request failed: ${response.status}`);
-        }
-
-        return response.json();
-    }
-
-    const completeRequest = async (data: CompleteRequestProps, signal: AbortSignal) => {
-        const response = await fetch(
-            "/api/uploads/complete",
-            {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                signal
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Complete request failed: ${response.status}`);
-        }
-
-        return response.json();
-    }
-
     /** Upload handler for each file */
     const uploadHandler = useCallback(
         async (_: null, id: string, signal: AbortSignal) => {
+
             try {
+
                 const upload = await db.get({ id });
                 if (!upload) throw new Error("Upload not found!");
                 const fileBlobs = await dbFileBlob.get({ fileId: upload.id })
                 if (!fileBlobs) throw new Error("fileBlobs not found!");
+                const aWeek = currentTime("-7d");
+
+                if (upload.createdAt <= aWeek) {
+                    throw new Error("Upload has been expired!");
+                }
 
 
                 // Initial request to get upload ID and key
-                const response = await initialRequest({
+                const result = await invokeFunction("initUpload", {
                     fileType: upload.fileType,
                     fileName: upload.fileName,
                     fileSize: upload.fileSize,
                     Key: upload.Key,
                     UploadId: upload.UploadId
-                }, signal);
+                });
 
-                if (!response.data?.Key || !response.data?.UploadId) {
-                    throw new Error("Failed to initialize upload");
+                if (!result.success || !result.data) {
+                    throw new Error(result.error || "Failed to initialize upload");
                 }
 
                 await updateUpload(id, {
                     status: "uploading",
-                    Key: response.data.Key,
-                    UploadId: response.data.UploadId,
-                    // progress: 0
+                    Key: result.data!.Key,
+                    UploadId: result.data!.UploadId,
                 });
 
                 const totalChunks = upload.totalChunks;
@@ -167,16 +115,16 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
                     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
 
                     const PartNumber = i + 1;
-                    const presign = await presignRequest({
-                        Key: response.data.Key,
-                        UploadId: response.data.UploadId,
+                    const presign = await invokeFunction("getUploadURLPresign", {
+                        Key: result.data.Key,
+                        UploadId: result.data.UploadId,
                         PartNumber
-                    }, signal);
+                    });
 
-                    if (!presign.data?.url) throw new Error("Failed to get presign URL");
+                    if (!presign.success || !presign.data) throw new Error("Failed to get presign URL");
 
                     // Do upload to presign-url
-                    const uploadRes = await fetch(presign.data.url, {
+                    const uploadRes = await fetch(presign.data, {
                         method: "PUT",
                         body: chunks[i],
                         signal
@@ -204,18 +152,18 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
                     chunkIndex: upload.totalChunks
                 });
 
-                const completeResponse = await completeRequest({
+                const completeResponse = await invokeFunction("completeUpload", {
                     fileName: upload.fileName,
                     fileType: upload.fileType,
                     fileSize: upload.fileSize,
-                    fId: upload.fId,
-                    Key: response.data.Key,
-                    UploadId: response.data.UploadId,
+                    folderId: upload.fId,
+                    Key: result.data.Key,
+                    UploadId: result.data.UploadId,
                     etags
-                }, signal);
+                });
 
-                if (!completeResponse.status) {
-                    throw new Error("Failed to complete upload");
+                if (!completeResponse.success) {
+                    throw new Error(completeResponse.error || "Failed to complete upload");
                 }
 
                 await updateUpload(id, {
@@ -267,7 +215,7 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
             totalChunks,
             etags: [],
             progress: 0,
-            // createdAt: new Date().toISOString()
+            createdAt: currentTime()
         };
 
         const fileBlob = { fileId: id, chunks }
@@ -319,6 +267,8 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
             return;
         }
 
+
+
         const initialStatus = upload.status;
 
         return new Promise<void>((resolve) => {
@@ -356,9 +306,15 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
             return;
         }
         if (["finishing", "pending", "uploading"].includes(upload.status)) {
-            // Cancel the upload first
             await cancelUpload(id);
         }
+        if (upload.Key && upload.UploadId) {
+            await invokeFunction("abortUpload", {
+                Key: upload.Key,
+                UploadId: upload.UploadId
+            });
+        }
+
         await db.delete({ id });
     }
 

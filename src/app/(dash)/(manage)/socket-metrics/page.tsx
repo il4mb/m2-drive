@@ -41,6 +41,7 @@ import { enqueueSnackbar } from 'notistack';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { useRouter } from 'next/navigation';
 import PermissionSuspense from '@/components/PermissionSuspense';
+import Container from '@/components/Container';
 
 interface ConnectionMetrics {
     totalConnections: number;
@@ -308,7 +309,7 @@ export default function SocketMetricsDashboard() {
 
     return (
         <PermissionSuspense permission={"can-see-socket-connection"}>
-            <Box sx={{ p: 3 }}>
+            <Container maxWidth={"lg"} scrollable>
                 <StickyHeader>
                     <Stack alignItems={"center"}>
                         <Typography variant="h4" component="h1">
@@ -753,7 +754,7 @@ export default function SocketMetricsDashboard() {
                         </Button>
                     </DialogActions>
                 </Dialog>
-            </Box>
+            </Container>
         </PermissionSuspense>
     );
 }

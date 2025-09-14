@@ -40,7 +40,7 @@ export default createContextMenu<State>({
         const [generalPermit, setGeneralPermit] = useState<GeneralPermit>(
             // @ts-ignore
             () => ["none", "viewer", "editor"].includes(file.meta?.generalPermit) ? file.meta?.generalPermit : "none");
-        const link = `${window.location.origin}/file/${file.id}`;
+        const link = `${window.location.origin}/opener/${file.id}`;
 
         const handleCopy = async () => {
             try {

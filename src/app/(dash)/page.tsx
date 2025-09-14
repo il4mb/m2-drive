@@ -8,6 +8,7 @@ import { useCurrentSession } from '@/components/context/CurrentSessionProvider';
 import OnlineUsers from '@/components/OnlineUsers';
 import { useMyPermission } from '@/hooks/useMyPermission';
 import { Button, Paper, Stack, Typography } from '@mui/material';
+import { ChartArea } from 'lucide-react';
 import Link from 'next/link';
 
 export default function page() {
@@ -38,9 +39,12 @@ export default function page() {
             <Stack direction={['column', 'column', 'column', 'row-reverse']} alignItems={'flex-start'} gap={3}>
                 <ActivitiesCard sx={{ boxShadow: 2, width: '100%', flexBasis: { lg: 400 } }} />
                 <Stack flex={1} component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2, width: '100%', flexBasis: { lg: 800 } }}>
-                    <Typography mb={2} fontSize={26}>
-                        Statistik Drive Saya
-                    </Typography>
+                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                        <ChartArea />
+                        <Typography mb={2} fontSize={26}>
+                            Statistik Drive Saya
+                        </Typography>
+                    </Stack>
                     <DriveSummary user={session?.user || undefined} />
                 </Stack>
             </Stack>

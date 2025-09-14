@@ -31,13 +31,12 @@ export default function UploadViewAction({
     
     return (
         <Stack direction={"row"} alignItems={"center"} spacing={0.5}>
-            {["done", "error", "stop"].includes(status) && (
+            {["done", "error", "stop", "pause"].includes(status) && (
                 <Tooltip title="Remove Upload" arrow>
                     <IconButton 
                         disabled={disabled || isLoading || loading.delete} 
                         color='error' 
-                        onClick={onDelete}
-                    >
+                        onClick={onDelete}>
                         {loading.delete ? <LoaderCircle size={14} className='animate-spin' /> : <Trash size={14} />}
                     </IconButton>
                 </Tooltip>
@@ -48,8 +47,7 @@ export default function UploadViewAction({
                     <IconButton 
                         disabled={disabled || isLoading || loading.start} 
                         color='primary' 
-                        onClick={onStart}
-                    >
+                        onClick={onStart}>
                         {loading.start ? <LoaderCircle size={14} className='animate-spin' /> : <Play size={14} />}
                     </IconButton>
                 </Tooltip>
@@ -57,14 +55,6 @@ export default function UploadViewAction({
             
             {status == "uploading" && (
                 <>
-                    <Tooltip title="Stop Upload" arrow>
-                        <IconButton 
-                            disabled={disabled || isLoading || loading.stop} 
-                            color='secondary' 
-                            onClick={onStop}>
-                            {loading.stop ? <LoaderCircle size={14} className='animate-spin' /> : <Square size={13} />}
-                        </IconButton>
-                    </Tooltip>
                     <Tooltip title="Pause Upload" arrow>
                         <IconButton 
                             disabled={disabled || isLoading || loading.pause} 

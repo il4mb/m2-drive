@@ -14,23 +14,48 @@ import {
 import { formatFileSize, formatDateFromEpoch } from "@/libs/utils";
 import { useTheme } from "@mui/material/styles";
 import { FileIcon } from "@untitledui/file-icons";
+import { invokeFunction } from "@/libs/websocket/invokeFunction";
+import { enqueueSnackbar } from "notistack";
+import CloseSnackbar from "@/components/ui/CloseSnackbar";
+import { useState } from "react";
 
 export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file }) => {
 
     const theme = useTheme();
     const fileSize = (file.meta as any)?.size || 0;
     const mimeType = file.meta?.mimeType || 'unknown';
-    const createdAt = file.createdAt || 0;;
+    const createdAt = file.createdAt || 0;
     const updatedAt = file.updatedAt || 0;
 
-    const handleDownload = () => {
-        const source = `/file/${file.id}`;
-        const link = document.createElement("a");
-        link.href = source;
-        link.download = file.name || "download";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const [download, setDownload] = useState(false);
+
+    const handleDownload = async () => {
+
+        try {
+            if (download) return;
+            setDownload(true);
+
+            const name = `${file.name}.${file.meta?.ext || 'bin'}`;
+            const result = await invokeFunction("getFileURLPresign", { fileId: file.id });
+            if (!result.success || !result.data?.url) {
+                throw new Error(result.error);
+            }
+
+            const link = document.createElement("a");
+            link.href = result.data.url;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (error: any) {
+            enqueueSnackbar(error.message || "Unknown Error", {
+                variant: 'error',
+                action: CloseSnackbar
+            })
+        } finally {
+            setDownload(false);
+        }
     };
 
 
@@ -120,7 +145,7 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.3 }}>
-                    <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+                    <Stack direction="row" gap={1} justifyContent="center" flexWrap="wrap">
                         <Chip
                             icon={<Info size={14} />}
                             label={formatFileSize(fileSize)}
@@ -132,11 +157,11 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
                             label={mimeType.split('/')[1]?.toUpperCase() || mimeType.toUpperCase()}
                             variant="filled"
                             size="small"
-                            sx={{
-                                bgcolor: getFileTypeColor(),
-                                color: 'white',
-                                fontWeight: 600
-                            }}
+                            // sx={{
+                            //     bgcolor: getFileTypeColor(),
+                            //     // color: 'white',
+                            //     fontWeight: 600
+                            // }}
                         />
                     </Stack>
                 </motion.div>
@@ -167,6 +192,7 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
                     alignItems="center">
                     <Button
                         variant="contained"
+                        loading={download}
                         size="large"
                         startIcon={<Download size={20} />}
                         onClick={handleDownload}

@@ -64,6 +64,7 @@ export type FileUpload = {
     fileType: string;
     fileSize: number;
     thumbnail?: ArrayBuffer;
+    createdAt: number;
 
     chunkIndex: number;
     totalChunks: number;

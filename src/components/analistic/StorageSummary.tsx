@@ -57,6 +57,7 @@ import CloseSnackbar from '../ui/CloseSnackbar';
 import Storage from '@/entities/Storage';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import Link from 'next/link';
+import { Task } from '@/entities/Task';
 
 
 // Animation variants
@@ -86,14 +87,17 @@ const CHART_COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#E
 
 export default function StorageSummary() {
 
-    const [showInfo, setShowInfo] = useState(true);
+    const theme = useTheme();
 
+    const [showInfo, setShowInfo] = useState(true);
     const [data, setData] = useState<Storage | null>(null);
     const [loading, setLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [error, setError] = useState<string>();
+    const [task, setTask] = useState<Task | null>();
+    const isTaskActive = Boolean(task && (task.status === 'pending' || task.status === 'processing'));
 
-    const theme = useTheme();
+
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => setMounted(true), []);
@@ -116,6 +120,17 @@ export default function StorageSummary() {
             }
         );
     }, [mounted]);
+
+    useEffect(() => {
+        if (!mounted) return;
+        return onSnapshot(
+            getOne("task")
+                .where("type", "==", "scan-storage")
+                .orderBy("createdAt", "DESC"),
+            setTask
+        )
+    }, [mounted]);
+
 
     const shoundShowCleaner = useMemo(() => {
         if (!data) return false;
@@ -239,6 +254,35 @@ export default function StorageSummary() {
             variants={containerVariants}
             initial="hidden"
             animate="visible">
+
+            {isTaskActive && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    variants={itemVariants}>
+                    <Paper sx={{ p: 3, borderRadius: 2, mb: 3, boxShadow: 2, bgcolor: 'info.light' }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                            <CircularProgress size={24} />
+                            <Box>
+                                <Typography variant="h6" fontWeight={600}>
+                                    Scanning in Progress
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {task?.status === 'processing'
+                                        ? 'Currently scanning drive storage...'
+                                        : 'Task is queued and will start soon'}
+                                </Typography>
+                                {task?.createdAt && (
+                                    <Typography variant="caption" color="text.secondary">
+                                        Started: {formatDateFromEpoch(task.createdAt)}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Stack>
+                    </Paper>
+                </motion.div>
+            )}
+
 
             {showInfo && (
                 <Alert variant='outlined' severity='info' sx={{ mb: 1 }} onClose={() => setShowInfo(false)}>

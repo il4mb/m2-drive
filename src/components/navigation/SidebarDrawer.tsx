@@ -1,8 +1,8 @@
 'use client'
 
-import { Box, IconButton, List, Paper, Stack, Typography, useMediaQuery, Theme } from '@mui/material';
-import { useState, useEffect } from 'react';
-import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea, Cpu } from 'lucide-react';
+import { Box, IconButton, List, Paper, Stack, Typography, useMediaQuery, Theme, Button, Chip, Badge } from '@mui/material';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronLeft, FolderOpen, FolderRoot, History, Home, Info, Settings, Share2, Trash, Users2, Menu, ChartArea, Cpu, FilePlus, CloudUpload } from 'lucide-react';
 import { IMenu } from '@/types';
 import MenuItem from './MenuItem';
 import MenuGroup from './MenuGroup';
@@ -15,6 +15,7 @@ import { useMyAbilities } from '@/components/context/CurrentUserAbilitiesProvide
 import UserAvatar from '../ui/UserAvatar';
 import { useSidebar } from './SidebarProvider';
 import LogoutButton from '../ui/LogoutButton';
+import { useUploads } from '../context/UploadsProvider';
 
 const MENU: IMenu[] = [
     {
@@ -98,10 +99,12 @@ const MENU: IMenu[] = [
 
 export default function SidebarDrawer() {
 
+    const upload = useUploads();
     const pathname = usePathname();
     const sidebar = useSidebar();
     const session = useCurrentSession();
     const { role } = useMyAbilities();
+    const totalUpload = useMemo(() => upload.uploads.length, [upload]);
 
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
     const [isMounted, setIsMounted] = useState(false);
@@ -262,6 +265,27 @@ export default function SidebarDrawer() {
                                 <Box component={ChevronLeft} sx={{ scale: sidebar?.open ? '1 1' : '-1.2 1.2', transition: 'all .2s ease' }} />
                             </IconButton>
                         </Stack>
+
+                        {sidebar?.open && (
+                            <Badge badgeContent={totalUpload} color="primary">
+                                <Button
+                                    LinkComponent={Link}
+                                    href='/drive/upload'
+                                    startIcon={<CloudUpload size={26} strokeWidth={3} />}
+                                    variant='outlined'
+                                    size='large'
+                                    sx={{
+                                        fontWeight: 900,
+                                        fontSize: 22,
+                                        borderRadius: 4,
+                                        width: '100%',
+                                        mb: 1
+                                    }}>
+                                    Upload
+                                </Button>
+                            </Badge>
+                        )}
+
                         <List sx={{ p: 0, m: 0, ml: sidebar?.open ? 0 : -1 }}>
                             {MENU.map((child, i) => (
                                 child.type == "link"

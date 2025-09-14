@@ -79,7 +79,7 @@ export default function FileContentViewer() {
     return (
         <Paper component={Stack} sx={{ flex: 1, overflow: 'hidden', mb: 1 }}>
 
-            {(loading || viewerPending) ? (
+            {((loading || viewerPending) && !error) ? (
                 <LoadingState />
             ) : (error || !success) ? (
                 <ErrorState
@@ -94,24 +94,6 @@ export default function FileContentViewer() {
                 />
             ) : (
                 <ViewerContent {...fileContentProps as any} />
-            )}
-            {error && !loading && (
-                <Alert
-                    severity="error"
-                    sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        maxWidth: 400,
-                        zIndex: 10
-                    }}
-                    action={
-                        <Button color="inherit" size="small" onClick={handleRefresh}>
-                            Retry
-                        </Button>
-                    }>
-                    {error}
-                </Alert>
             )}
         </Paper>
     );

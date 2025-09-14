@@ -10,25 +10,28 @@ import {
 } from "@mui/material";
 import { ImageIcon, AlertTriangle } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import usePresignUrl from "@/hooks/usePresignUrl";
 
 const ImageViewerComponent: React.FC<{ file: File<"file"> }> = ({ file }) => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
 	const [progress, setProgress] = useState<number | null>(null);
 	const [imageSrc, setImageSrc] = useState<string | null>(null);
+	const source = usePresignUrl(file.id);
 
-	const fileUri = `/file/${file.id}`;
-	const isLargeFile =
-		typeof file.meta?.size === "number" && file.meta.size > 4 * 1024 * 1024; // > 4MB
+	// const fileUri = `/file/${file.id}`;
+	const isLargeFile = typeof file.meta?.size === "number" && file.meta.size > 4 * 1024 * 1024; // > 4MB
 
 	const fetchImage = useCallback(() => {
+
+		if(!source) return;
 		setLoading(true);
 		setError(false);
 		setProgress(null);
 		setImageSrc(null);
 
 		const xhr = new XMLHttpRequest();
-		xhr.open("GET", fileUri, true);
+		xhr.open("GET", source, true);
 		xhr.responseType = "blob";
 
 		xhr.onprogress = (event) => {
@@ -52,19 +55,19 @@ const ImageViewerComponent: React.FC<{ file: File<"file"> }> = ({ file }) => {
 
 		xhr.send();
 		return () => xhr.abort();
-	}, [fileUri]);
+	}, [source]);
 
 	useEffect(() => {
+		if(!source) return;
 		const cleanup = fetchImage();
 		return cleanup;
-	}, [fetchImage]);
+	}, [fetchImage, source]);
 
 	return (
 		<Stack
 			alignItems="center"
 			justifyContent="center"
-			sx={{ flex: 1, width: "100%", height: "100%", position: "relative" }}
-		>
+			sx={{ flex: 1, width: "100%", height: "100%", position: "relative" }}>
 			{/* Loading State */}
 			{loading && !error && (
 				<Stack
@@ -77,8 +80,7 @@ const ImageViewerComponent: React.FC<{ file: File<"file"> }> = ({ file }) => {
 						transform: "translate(-50%, -50%)",
 						textAlign: "center",
 					}}
-					spacing={1}
-				>
+					spacing={1}>
 					{progress !== null ? (
 						<LinearProgress variant="determinate" value={progress} sx={{ width: 200 }} />
 					) : (

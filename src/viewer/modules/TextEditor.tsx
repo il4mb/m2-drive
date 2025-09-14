@@ -3,6 +3,7 @@ import { ViewerModule } from "../ModuleViewerManager";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Alert, Stack, IconButton, LinearProgress, Typography, Box, Paper, Button, TextField } from "@mui/material";
 import { formatFileSize } from "@/libs/utils";
+import usePresignUrl from "@/hooks/usePresignUrl";
 
 // Maximum file size to handle (5MB)
 const MAX_FILE_SIZE = 124 * 1024;
@@ -13,7 +14,9 @@ export default {
     name: "Text Editor",
     icon: <PencilLine size={18} />,
     supports: (_, file) => file.type == "file",
-    component({ file, source }) {
+    component({ file }) {
+        
+        const source = usePresignUrl(file.id);
         const [text, setText] = useState<string>('');
         const [originalText, setOriginalText] = useState<string>('');
         const [loading, setLoading] = useState(false);

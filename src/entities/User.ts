@@ -32,5 +32,6 @@ type Meta = {
     avatar?: string;
     role: string;
     isActive?: boolean;
+    
     [k: string]: any;
 }

@@ -3,8 +3,10 @@ import { addFileContributor, getFileContributors, removeFileContributor, updateF
 import { backupDatabase, getDatabaseInfo } from "./database";
 import { bulkCopyMove, copyFile, moveFile } from "./fileCopyMove";
 import { filePreflight } from "./filePreflight";
+import { getFileURLPresign } from "./filePresign";
 import { emptyTrash, removeFile, restoreFile } from "./fileTrash";
 import { createFolder, updateFile } from "./fileUpdate";
+import { abortUpload, completeUpload, getUploadURLPresign, initUpload } from "./fileUpload";
 import { getStorageSummary } from "./garbage";
 import { deleteOption, saveOption } from "./options";
 import { deleteRole, saveRole } from "./roles";
@@ -15,6 +17,11 @@ import { bulkDeleteTask, cleanUpTask, deleteTask, getTaskHourlySummary, updateTa
 import { addUser, updateUser, deleteUser } from "./users";
 
 const functions = {
+    initUpload,
+    getUploadURLPresign,
+    getFileURLPresign,
+    completeUpload,
+    abortUpload,
     getFileContributors,
     addFileContributor,
     updateFileContributor,

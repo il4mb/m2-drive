@@ -1,28 +1,31 @@
 import useCache from "./useCache";
-import { useEffect } from "react";
-import useRequest from "./useRequest";
+import { useEffect, useState } from "react";
+import { invokeFunction } from "@/libs/websocket/invokeFunction";
 
-export default function usePresignUrl(objKey?: string) {
+export default function usePresignUrl(fileId?: string) {
 
-    const [cache, setCache, pending] = useCache(objKey);
-    const request = useRequest({
-        endpoint: `/api/presign-url/${objKey}`,
-        onSuccess(result) {
-            setCache({
-                value: result.data.url,
-                exp: result.data.exp
-            })
-        },
-    });
+    const [cache, setCache, pending] = useCache(fileId);
+    const [mounted, setMounted] = useState(false);
 
+    const handleGetPresign = async () => {
+        if (!fileId) return;
+        const result = await invokeFunction("getFileURLPresign", { fileId });
+        if (!result.success || !result.data) return;
+        setCache({
+            value: result.data!.url,
+            exp: result.data!.exp
+        });
+    }
+
+    useEffect(() => setMounted(true), []);
     useEffect(() => {
-        if (pending) return;
+        if (pending || !mounted) return;
         if (cache && cache.exp <= Date.now()) {
-            request.send()
+            handleGetPresign();
         } else if (!cache) {
-            request.send()
+            handleGetPresign();
         }
-    }, [pending, cache]);
+    }, [pending, mounted, cache]);
 
     return cache?.value || undefined;
 }

@@ -12,7 +12,7 @@ import {
     IconButton,
     Skeleton
 } from "@mui/material";
-import { History, MoreVertical, Eye, Edit, Download, Share, FolderOpen } from "lucide-react";
+import { History, MoreVertical, Eye, Edit, Download, Share, FolderOpen, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { FileIcon } from "@untitledui/file-icons";
 import Container from "@/components/Container";
@@ -24,6 +24,7 @@ import { getMany, Json } from "@/libs/websocket/query";
 import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 import { formatDateFromEpoch } from "@/libs/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
+import Link from "next/link";
 
 type SectionProps = {
     title: string;
@@ -91,11 +92,7 @@ export default function Page() {
 
     const ActivityItem = ({ activity, type, index }: { activity: FileActivity, type: "view" | "edit", index: number }) => {
         const file = activity.file;
-        const getActionText = () => {
-            if (type === "view") return "Melihat";
-            if (type === "edit") return "Mengedit";
-            return "Berinteraksi dengan";
-        }
+        const isMine = activity.file?.uId == session.userId;
 
         return (
             <motion.div
@@ -160,15 +157,11 @@ export default function Page() {
                         </Stack>
 
                         <Stack direction="row" spacing={1}>
-                            <IconButton size="small">
-                                <Download size={16} />
-                            </IconButton>
-                            <IconButton size="small">
-                                <Share size={16} />
-                            </IconButton>
-                            <IconButton size="small">
-                                <MoreVertical size={16} />
-                            </IconButton>
+                            {isMine && (
+                                <IconButton size="small" LinkComponent={Link} href={"/drive/" + activity.file?.id}>
+                                    <ExternalLink size={16} />
+                                </IconButton>
+                            )}
                         </Stack>
                     </Stack>
                 </Paper>
@@ -214,11 +207,11 @@ export default function Page() {
                         {loading && <Skeleton variant="rounded" width={32} height={24} />}
                     </Stack>
                 </Stack>
-                {!loading && data.rows.length > 0 && (
+                {/* {!loading && data.rows.length > 0 && (
                     <Button size="small" variant="text">
                         Lihat Semua
                     </Button>
-                )}
+                )} */}
                 {loading && <Skeleton variant="rounded" width={100} height={32} />}
             </Stack>
 

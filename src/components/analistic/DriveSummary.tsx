@@ -6,6 +6,12 @@ import { Box, Card, Chip, Grid, LinearProgress, Stack, Typography, useTheme, alp
 import { motion } from 'motion/react';
 import { ReactNode, useMemo } from 'react';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { CustomTooltip } from '../CustomTooltip';
+
+function truncateLabel(label: string, max: number = 15) {
+    return label.length > max ? `${label.slice(0, max)}…` : label;
+}
+
 
 export interface DriveSummaryProps {
     children?: ReactNode;
@@ -157,8 +163,8 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                                                     innerRadius="60%"
                                                     outerRadius="80%"
                                                     paddingAngle={2}
-                                                    label={({ type, count, percent }) =>
-                                                        `${type}: ${((percent || 0) * 100).toFixed(0)}%`
+                                                    label={({ type, percent }) =>
+                                                        `${truncateLabel(type, 12)}: ${((percent || 0) * 100).toFixed(0)}%`
                                                     }
                                                     labelLine={false}>
                                                     {mimeData.map((_, index) => (
@@ -170,13 +176,7 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                                                         />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip
-                                                    formatter={(value: number) => [`${value} files`, 'Count']}
-                                                    labelFormatter={(label, payload) => {
-                                                        const item = payload?.[0]?.payload;
-                                                        return item?.fullType || label;
-                                                    }}
-                                                />
+
                                                 <Legend
                                                     verticalAlign="middle"
                                                     align="right"
@@ -188,8 +188,17 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                                                     }}
                                                     formatter={(value, entry) => {
                                                         const item = mimeData.find(m => m.type === value);
-                                                        return `${value} (${item?.count})`;
+                                                        return `${truncateLabel(value, 15)} (${item?.count})`;
                                                     }}
+                                                />
+
+                                                <Tooltip
+                                                    formatter={(value: number) => [`${value} files`, 'Count']}
+                                                    labelFormatter={(label, payload) => {
+                                                        const item = payload?.[0]?.payload;
+                                                        return item?.fullType || label;
+                                                    }}
+                                                    content={<CustomTooltip />}
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>

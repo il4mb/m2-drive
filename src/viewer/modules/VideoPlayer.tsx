@@ -16,13 +16,14 @@ import {
     FormControl,
     InputLabel,
     Select} from "@mui/material";
+import usePresignUrl from "@/hooks/usePresignUrl";
 
 interface VideoPlayerProps {
     file: File<'file'>;
 }
 
 export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
-    const source = `/file/${file.id}`;
+    const source = usePresignUrl(file.id);
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);

@@ -13,7 +13,6 @@ import { Box } from '@mui/material';
 
 export type ViewerModuleComponentProps = {
     file: File;
-    source?: string;
 }
 
 export interface ViewerModule {
@@ -52,6 +51,7 @@ const defaultViewerModules: ViewerModule[] = [
         icon: <FileIcon size={18} type={"pdf"} />,
         supports: ['application/pdf'],
         component: ({ file }) => {
+
 
             return (
                 <Box

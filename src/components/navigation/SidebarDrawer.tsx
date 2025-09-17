@@ -282,9 +282,15 @@ export default function SidebarDrawer() {
                                     width={'2.8em'}
                                     height={'2.8em'}
                                     justifyContent={"center"}
-                                    alignItems={"center"}>
+                                    alignItems={"center"}
+                                    sx={{
+                                        ...(!sidebar?.open && {
+                                            background: getColor("primary")[dark ? 500 : 200],
+                                            borderRadius: 2
+                                        })
+                                    }}>
                                     <M2Drive
-                                        color={getColor("primary")[dark ? 200 : 500]}
+                                        color={getColor("primary")[dark ? 100 : 500]}
                                         width={sidebar?.open ? '2.8em' : '2em'}
                                         height={sidebar?.open ? '2.8em' : '2em'}
                                         onClick={() => sidebar?.setOpen(prev => !prev)} />

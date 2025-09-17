@@ -9,7 +9,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "M2 Drive",
-    description: "Platform penyimpanan cloud modern yang dikembangkan khusus untuk MAN 2 Kota Pekanbaru</strong>. Memberikan solusi terpadu untuk manajemen dokumen digital dengan keamanan dan performa terbaik."
+    description: "Platform penyimpanan cloud modern yang dikembangkan khusus untuk MAN 2 Kota Pekanbaru. Memberikan solusi terpadu untuk manajemen dokumen digital dengan keamanan dan performa terbaik."
 }
 
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {

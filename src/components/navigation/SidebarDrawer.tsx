@@ -17,6 +17,8 @@ import { useSidebar } from './SidebarProvider';
 import LogoutButton from '../ui/LogoutButton';
 import { useUploads } from '../context/UploadsProvider';
 import M2Drive from '../icon/M2Drive';
+import { getColor } from '@/theme/colors';
+import useDarkMode from '@/hooks/useDarkMode';
 
 const MENU: IMenu[] = [
     {
@@ -100,6 +102,7 @@ const MENU: IMenu[] = [
 
 export default function SidebarDrawer() {
 
+    const dark = useDarkMode();
     const upload = useUploads();
     const pathname = usePathname();
     const sidebar = useSidebar();
@@ -281,6 +284,7 @@ export default function SidebarDrawer() {
                                     justifyContent={"center"}
                                     alignItems={"center"}>
                                     <M2Drive
+                                        color={getColor("primary")[dark ? 200 : 500]}
                                         width={sidebar?.open ? '2.8em' : '2em'}
                                         height={sidebar?.open ? '2.8em' : '2em'}
                                         onClick={() => sidebar?.setOpen(prev => !prev)} />

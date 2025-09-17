@@ -89,12 +89,6 @@ export default function page() {
         [total, notNecessary, oldLength]
     );
 
-
-    useEffect(() => {
-        console.log(autoCleanEnabled)
-    }, [autoCleanEnabled])
-
-
     useEffect(() => {
         return onSnapshot(
             getCount("activity"),

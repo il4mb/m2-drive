@@ -13,7 +13,8 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions
+    DialogActions,
+    CircularProgress
 } from "@mui/material";
 import {
     CirclePlus,
@@ -54,6 +55,7 @@ export default function RoleManager() {
     const [abilities, setAbilities] = useState<string[]>([]);
     const roles = useRoles();
 
+    const [loading, setLoading] = useState(true);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [copiedRole, setCopiedRole] = useState<string | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -194,6 +196,11 @@ export default function RoleManager() {
 
 
     useEffect(() => {
+        if (roles.length > 0) setLoading(false);
+    }, [roles]);
+
+
+    useEffect(() => {
         return addAction("add-role", {
             component: () => (
                 <Button
@@ -206,6 +213,16 @@ export default function RoleManager() {
             )
         })
     }, []);
+
+
+    if (loading) {
+        return (
+            <Stack alignItems="center" justifyContent="center" p={4} flex={1}>
+                <CircularProgress />
+                <Typography variant="body2" sx={{ mt: 2 }}>Loading roles...</Typography>
+            </Stack>
+        );
+    }
 
     return (
         <Stack spacing={3}>

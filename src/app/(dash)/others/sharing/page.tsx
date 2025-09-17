@@ -52,7 +52,7 @@ export default function Page() {
 
     return (
         <Container maxWidth="lg" scrollable>
-            <StickyHeader>
+            <StickyHeader loading={isLoading}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
                     <Stack alignItems="center" spacing={1} direction="row">
                         <Share2 size={20} />
@@ -60,17 +60,6 @@ export default function Page() {
                             Berbagi File
                         </Typography>
                     </Stack>
-                    {isLoading && (
-                        <LinearProgress
-                            sx={{
-                                position: 'absolute',
-                                bottom: -10,
-                                left: 0,
-                                width: '100%',
-                                height: 2
-                            }}
-                        />
-                    )}
                 </Stack>
             </StickyHeader>
 

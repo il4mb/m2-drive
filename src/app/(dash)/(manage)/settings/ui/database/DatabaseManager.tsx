@@ -211,7 +211,7 @@ export default function DatabaseManager() {
                 {/* Content Section */}
                 <Stack flex={1}>
                     <TabPanel value={value} index={0} sx={{ px: [1, 1, 3], height: '100%' }}>
-                        <TableSchema schema={info?.schema || []} onRefresh={handleFetchInfo} />
+                        <TableSchema loading={loading} schema={info?.schema || []} onRefresh={handleFetchInfo} />
                     </TabPanel>
                     <TabPanel value={value} index={1} sx={{ px: [1, 1, 3], height: '100%' }}>
                         <QueryRunner schema={schema} />

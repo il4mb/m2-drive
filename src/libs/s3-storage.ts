@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetBucketCorsCommand, PutBucketCorsCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
 import * as https from "https";
 
@@ -27,6 +27,71 @@ export const s3Client = new S3Client({
         }),
     }),
 });
+
+
+const fixCorsError = async (domain: string) => {
+    
+    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const httpOrigin = `http://${cleanDomain}`;
+    const httpsOrigin = `https://${cleanDomain}`;
+    const originsToAdd = [httpOrigin, httpsOrigin];
+
+    const current = await s3Client.send(new GetBucketCorsCommand({ Bucket: bucketName }));
+    let rules = current.CORSRules ?? [];
+
+    const alreadyAllowed = rules.some(rule =>
+        rule.AllowedOrigins?.some(origin => originsToAdd.includes(origin))
+    );
+
+    if (alreadyAllowed) {
+        return {
+            status: true,
+            message: "Origin already allowed in CORS"
+        };
+    }
+
+    for (const rule of rules) {
+        rule.AllowedOrigins = (rule.AllowedOrigins || []).filter(o => o !== "*");
+    }
+
+    if (rules.length > 0) {
+        const existingOrigins = rules[0].AllowedOrigins ?? [];
+        const newOrigins = [...existingOrigins, ...originsToAdd.filter(o => !existingOrigins.includes(o))];
+        rules[0].AllowedOrigins = newOrigins;
+        rules[0].ID = cleanDomain;
+        rules[0].ExposeHeaders = ["ETag", "Content-Type", "Content-Length", "x-amz-request-id"]
+    } else {
+        rules.push({
+            ID: cleanDomain,
+            AllowedOrigins: originsToAdd,
+            AllowedMethods: ["PUT", "POST", "GET"],
+            AllowedHeaders: ["*"],
+            ExposeHeaders: ["ETag", "Content-Type", "Content-Length", "x-amz-request-id"],
+            MaxAgeSeconds: 3600
+        });
+    }
+
+    rules = rules
+        .filter(r => r.AllowedOrigins?.length && r.AllowedMethods?.length)
+        .map(r => ({
+            ID: r.ID,
+            AllowedOrigins: r.AllowedOrigins!.filter(Boolean),
+            AllowedMethods: r.AllowedMethods!,
+            AllowedHeaders: r.AllowedHeaders || ["*"],
+            ExposeHeaders: r.ExposeHeaders || ["ETag", "Content-Type", "Content-Length", "x-amz-request-id"],
+            MaxAgeSeconds: r.MaxAgeSeconds || 3600
+        }));
+
+    await s3Client.send(new PutBucketCorsCommand({
+        Bucket: bucketName,
+        CORSConfiguration: { CORSRules: rules }
+    }));
+
+    return {
+        status: true,
+        message: "CORS updated successfully"
+    };
+};
 
 
 

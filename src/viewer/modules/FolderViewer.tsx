@@ -254,10 +254,10 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
                                     xs: '180px',
                                     md: '200px'
                                 } : '100%',
-                                width: {
+                                width: layout === "grid" ? {
                                     xs: '46%',
                                     md: '100%'
-                                }
+                                } : '100%'
                             }}>
                             <FileView
                                 {...fileViewProps}

@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Alert, Stack, IconButton, LinearProgress, Typography, Box, Paper, Button, TextField } from "@mui/material";
 import { formatFileSize } from "@/libs/utils";
 import usePresignUrl from "@/hooks/usePresignUrl";
+import { enqueueSnackbar } from "notistack";
+import CloseSnackbar from "@/components/ui/CloseSnackbar";
 
 // Maximum file size to handle (5MB)
 const MAX_FILE_SIZE = 124 * 1024;
@@ -86,6 +88,12 @@ export default {
         const handleSave = async () => {
             if (!source || !isDirty) return;
 
+            enqueueSnackbar("Fitur ini belum tersedia!", {
+                variant: "error",
+                action: CloseSnackbar
+            });
+            return
+
             setSaving(true);
             try {
                 // Simulate save operation
@@ -93,8 +101,6 @@ export default {
 
                 setOriginalText(text);
                 setIsDirty(false);
-
-                console.log("File saved");
             } catch (err: any) {
                 setError(err?.message || "Failed to save file");
             } finally {

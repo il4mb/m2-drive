@@ -91,7 +91,7 @@ export default function StorageSummary() {
 
     const [showInfo, setShowInfo] = useState(true);
     const [data, setData] = useState<Storage | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [error, setError] = useState<string>();
     const [task, setTask] = useState<Task | null>();
@@ -217,9 +217,10 @@ export default function StorageSummary() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <Stack alignItems="center" justifyContent="center" p={4} flex={1}>
                 <CircularProgress />
-            </Box>
+                <Typography variant="body2" sx={{ mt: 2 }}>Loading data...</Typography>
+            </Stack>
         );
     }
 

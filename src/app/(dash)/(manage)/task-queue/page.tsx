@@ -178,163 +178,161 @@ export default function TaskQueuePage() {
     }, [mounted]);
 
     return (
-        <PermissionSuspense permission={"can-see-task-queue"}>
-            <Container ref={scrollRef} maxWidth='xl' scrollable sx={{ p: 3 }}>
-                <StickyHeader>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={2}>
-                        <Stack alignItems="center" spacing={1} direction="row">
-                            <Cpu size={28} color={theme.palette.primary.main} />
-                            <Typography variant="h4" fontWeight={700}>
-                                Task Queue
-                            </Typography>
-                            <Badge
-                                badgeContent={total}
-                                color="primary"
-                                showZero
+        <Container ref={scrollRef} maxWidth='xl' scrollable sx={{ p: 3 }}>
+            <StickyHeader>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={2}>
+                    <Stack alignItems="center" spacing={1} direction="row">
+                        <Cpu size={28} color={theme.palette.primary.main} />
+                        <Typography variant="h4" fontWeight={700}>
+                            Task Queue
+                        </Typography>
+                        <Badge
+                            badgeContent={total}
+                            color="primary"
+                            showZero
+                            sx={{
+                                '& .MuiBadge-badge': {
+                                    fontSize: '0.75rem',
+                                    height: 20,
+                                    minWidth: 20
+                                }
+                            }}>
+                            <Chip
+                                label={`${formatNumber(total)} total tasks`}
+                                size="medium"
+                                variant="outlined"
                                 sx={{
-                                    '& .MuiBadge-badge': {
-                                        fontSize: '0.75rem',
-                                        height: 20,
-                                        minWidth: 20
-                                    }
-                                }}>
-                                <Chip
-                                    label={`${formatNumber(total)} total tasks`}
-                                    size="medium"
-                                    variant="outlined"
-                                    sx={{
-                                        ml: 2,
-                                        borderRadius: 2,
-                                        borderWidth: 2,
-                                        fontWeight: 500
-                                    }}
-                                />
-                            </Badge>
-                        </Stack>
+                                    ml: 2,
+                                    borderRadius: 2,
+                                    borderWidth: 2,
+                                    fontWeight: 500
+                                }}
+                            />
+                        </Badge>
                     </Stack>
-                </StickyHeader>
+                </Stack>
+            </StickyHeader>
 
-                <Stack spacing={3} mt={2}>
-                    {/* Performance Metrics */}
-                    <Paper sx={{ p: 3, borderRadius: 3 }}>
-                        <Stack direction="row" alignItems="center" spacing={1} mb={3}>
-                            <BarChart3 size={24} color={theme.palette.primary.main} />
-                            <Typography variant="h6" fontWeight={600}>
-                                Performance Metrics
-                            </Typography>
-                        </Stack>
+            <Stack spacing={3} mt={2}>
+                {/* Performance Metrics */}
+                <Paper sx={{ p: 3, borderRadius: 3 }}>
+                    <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+                        <BarChart3 size={24} color={theme.palette.primary.main} />
+                        <Typography variant="h6" fontWeight={600}>
+                            Performance Metrics
+                        </Typography>
+                    </Stack>
 
-                        <Grid container spacing={3}>
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <Stack spacing={2}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                        <Typography variant="body2" color="text.secondary">
-                                            Average Execution Time
-                                        </Typography>
-                                        <Typography variant="h6" fontWeight={600}>
-                                            {formatDuration(averageTime)}
-                                        </Typography>
-                                    </Stack>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={Math.min((averageTime / 10000) * 100, 100)}
-                                        sx={{ height: 8, borderRadius: 4 }}
-                                    />
-                                </Stack>
-                            </Grid>
-                            <Grid size={{ xs: 12, md: 8 }}>
-                                <Stack spacing={1}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Tasks Distribution (Last 24h)
-                                    </Typography>
-                                    <TaskTimelineChart data={timelineChartData} />
-                                </Stack>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-
-                    {/* Main Content */}
-                    <Grid container spacing={3} flexWrap={"wrap-reverse"}>
-                        <Grid size={{ xs: 12, lg: 8 }}>
-                            <Paper sx={{ p: 2, borderRadius: 3 }}>
-
-                                <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} mb={1}>
-                                    <StatusChip
-                                        icon={<Cpu size={14} />}
-                                        label="All"
-                                        count={total}
-                                        color="primary"
-                                        active={filter === 'all'}
-                                        onClick={() => setFilter('all')}
-                                    />
-                                    <StatusChip
-                                        icon={<Clock size={14} />}
-                                        label="Pending"
-                                        count={total}
-                                        color="warning"
-                                        active={filter === 'pending'}
-                                        onClick={() => setFilter('pending')}
-                                    />
-                                    <StatusChip
-                                        icon={<RefreshCw size={14} />}
-                                        label="Processing"
-                                        count={total}
-                                        color="info"
-                                        active={filter === 'processing'}
-                                        onClick={() => setFilter('processing')}
-                                    />
-                                    <StatusChip
-                                        icon={<CheckCircle size={14} />}
-                                        label="Completed"
-                                        count={total}
-                                        color="success"
-                                        active={filter === 'completed'}
-                                        onClick={() => setFilter('completed')}
-                                    />
-                                    <StatusChip
-                                        icon={<XCircle size={14} />}
-                                        label="Failed"
-                                        count={total}
-                                        color="error"
-                                        active={filter === 'error'}
-                                        onClick={() => setFilter('error')}
-                                    />
-                                </Stack>
-
-                                <Stack direction="row" alignItems="center" spacing={1} mb={3}>
-                                    <ListTree size={24} color={theme.palette.primary.main} />
-                                    <Typography variant="h6" fontWeight={600}>
-                                        Task List
-                                    </Typography>
-                                </Stack>
-
-                                <Stack sx={{ overflowX: 'scroll' }} className='no-scrollbar'>
-                                    <InfiniteScroll
-                                        sx={{ flex: 1, minHeight: 700 }}
-                                        scrollRef={scrollRef}
-                                        query={query}
-                                        onResult={({ total }) => setTotal(total)}
-                                        renderItem={({ item }) => (
-                                            <TaskItem
-                                                task={item}
-                                                onDelete={handleDelete}
-                                                onRetry={handleRetry}
-                                            />
-                                        )}
-                                    />
-                                </Stack>
-                            </Paper>
-                        </Grid>
-
-                        <Grid size={{ xs: 12, lg: 4 }}>
+                    <Grid container spacing={3}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Stack spacing={2}>
-                                {/* Auto Cleaner */}
-                                <AutoCleaner />
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2" color="text.secondary">
+                                        Average Execution Time
+                                    </Typography>
+                                    <Typography variant="h6" fontWeight={600}>
+                                        {formatDuration(averageTime)}
+                                    </Typography>
+                                </Stack>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={Math.min((averageTime / 10000) * 100, 100)}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                />
+                            </Stack>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 8 }}>
+                            <Stack spacing={1}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Tasks Distribution (Last 24h)
+                                </Typography>
+                                <TaskTimelineChart data={timelineChartData} />
                             </Stack>
                         </Grid>
                     </Grid>
-                </Stack>
-            </Container>
-        </PermissionSuspense>
+                </Paper>
+
+                {/* Main Content */}
+                <Grid container spacing={3} flexWrap={"wrap-reverse"}>
+                    <Grid size={{ xs: 12, lg: 8 }}>
+                        <Paper sx={{ p: 2, borderRadius: 3 }}>
+
+                            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} mb={1}>
+                                <StatusChip
+                                    icon={<Cpu size={14} />}
+                                    label="All"
+                                    count={total}
+                                    color="primary"
+                                    active={filter === 'all'}
+                                    onClick={() => setFilter('all')}
+                                />
+                                <StatusChip
+                                    icon={<Clock size={14} />}
+                                    label="Pending"
+                                    count={total}
+                                    color="warning"
+                                    active={filter === 'pending'}
+                                    onClick={() => setFilter('pending')}
+                                />
+                                <StatusChip
+                                    icon={<RefreshCw size={14} />}
+                                    label="Processing"
+                                    count={total}
+                                    color="info"
+                                    active={filter === 'processing'}
+                                    onClick={() => setFilter('processing')}
+                                />
+                                <StatusChip
+                                    icon={<CheckCircle size={14} />}
+                                    label="Completed"
+                                    count={total}
+                                    color="success"
+                                    active={filter === 'completed'}
+                                    onClick={() => setFilter('completed')}
+                                />
+                                <StatusChip
+                                    icon={<XCircle size={14} />}
+                                    label="Failed"
+                                    count={total}
+                                    color="error"
+                                    active={filter === 'error'}
+                                    onClick={() => setFilter('error')}
+                                />
+                            </Stack>
+
+                            <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+                                <ListTree size={24} color={theme.palette.primary.main} />
+                                <Typography variant="h6" fontWeight={600}>
+                                    Task List
+                                </Typography>
+                            </Stack>
+
+                            <Stack sx={{ overflowX: 'scroll' }} className='no-scrollbar'>
+                                <InfiniteScroll
+                                    sx={{ flex: 1, minHeight: 700 }}
+                                    scrollRef={scrollRef}
+                                    query={query}
+                                    onResult={({ total }) => setTotal(total)}
+                                    renderItem={({ item }) => (
+                                        <TaskItem
+                                            task={item}
+                                            onDelete={handleDelete}
+                                            onRetry={handleRetry}
+                                        />
+                                    )}
+                                />
+                            </Stack>
+                        </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, lg: 4 }}>
+                        <Stack spacing={2}>
+                            {/* Auto Cleaner */}
+                            <AutoCleaner />
+                        </Stack>
+                    </Grid>
+                </Grid>
+            </Stack>
+        </Container>
     );
 }

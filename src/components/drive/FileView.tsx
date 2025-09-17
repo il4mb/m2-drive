@@ -1,7 +1,7 @@
 'use client'
 
 import { File } from '@/entities/File';
-import { formatFileSize } from '@/libs/utils';
+import { formatFileSize, formatNumber } from '@/libs/utils';
 import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import { FileIcon } from '@untitledui/file-icons';
 import { Folder } from 'lucide-react';
@@ -144,6 +144,7 @@ export default function FileView<T = any>({
                                     WebkitBoxOrient: "vertical",
                                     WebkitLineClamp: 2, // Max 2 lines
                                     lineHeight: "1.2em",
+                                    wordBreak: 'break-word',
                                 }}>
                                 {file.name}
                             </Typography>
@@ -176,8 +177,12 @@ export default function FileView<T = any>({
                             </Box>
                         </Stack>
                     ) : (
-                        <>
-                            <Stack direction={"row"} spacing={1} flexBasis={400} alignItems={"center"}>
+                        <Stack direction={"row"} alignItems={"center"} flexWrap={"wrap"} flex={1} gap={{ xs: 0, md: 2 }}>
+                            <Stack
+                                direction={"row"}
+                                spacing={1}
+                                flexBasis={400}
+                                alignItems={"center"}>
                                 <Box sx={{ mr: 1 }}>
                                     {file.type == "folder"
                                         ? <Folder
@@ -187,12 +192,21 @@ export default function FileView<T = any>({
                                             // @ts-ignore   
                                             type={file.meta?.mimeType || ''} />}
                                 </Box>
-                                <Typography fontSize={size - ((40 / 100) * size)}>
+                                <Typography
+                                    fontSize={size - ((40 / 100) * size)}
+                                    sx={{
+                                        display: "-webkit-box",
+                                        overflow: "hidden",
+                                        WebkitBoxOrient: "vertical",
+                                        WebkitLineClamp: 2, // Max 2 lines
+                                        lineHeight: "1.2em",
+                                        wordBreak: 'break-word',
+                                    }}>
                                     {file.name}
                                 </Typography>
                             </Stack>
 
-                            <Typography flexBasis={200}>
+                            <Typography flexBasis={200} variant={'caption'} color='text.secondary'>
                                 {file.type == "folder"
                                     // @ts-ignore
                                     ? `${file.meta?.itemCount || 0} items`
@@ -203,24 +217,27 @@ export default function FileView<T = any>({
                             {contributors.length > 0 && (
                                 <Stack
                                     direction={"row"}
-                                    ml={5}
+                                    ml={{ xs: "auto", md: 5 }}
                                     alignItems={"center"}>
-                                    <Typography>
-                                        Dibagikan:
-                                    </Typography>
-                                    <Stack
-                                        direction={"row"}
-                                        alignItems={"center"}
-                                        ml={1}>
-                                        {contributors.map((c, i) => (
+                                    <Typography>Dibagikan:</Typography>
+                                    <Stack direction={"row"} alignItems={"center"} ml={2}>
+                                        {contributors.slice(0, 3).map((c, i) => (
                                             <UserAvatar
                                                 key={i}
                                                 userId={c.user.id}
-                                                size={18} />
+                                                size={18}
+                                                sx={{ ml: -1 }}
+                                            />
                                         ))}
+                                        {contributors.length > 3 && (
+                                            <Avatar sx={{ ml: -1, width: 20, height: 20, fontSize: '0.7em' }}>
+                                                +{formatNumber(contributors.length - 3, 9)}
+                                            </Avatar>
+                                        )}
                                     </Stack>
                                 </Stack>
                             )}
+
 
 
                             {viewers.length > 0 && (
@@ -234,7 +251,7 @@ export default function FileView<T = any>({
                                     ))}
                                 </Stack>
                             )}
-                        </>
+                        </Stack>
                     )}
             </Stack>
         </ContextMenu>

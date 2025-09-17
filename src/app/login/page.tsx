@@ -34,9 +34,9 @@ export default function page() {
             return Boolean(isEmailValid(email) && password.length >= 8);
         },
         onError(error) {
-            enqueueSnackbar(error.message, { 
-                variant: "error", 
-                action: CloseSnackbar 
+            enqueueSnackbar(error.message, {
+                variant: "error",
+                action: CloseSnackbar
             })
         },
         onSuccess({ data }) {
@@ -92,7 +92,7 @@ export default function page() {
             flex={1}
             alignItems="center"
             justifyContent="center"
-            sx={{ minHeight: "100vh" }}>
+            sx={{ minHeight: "100vh", px: [2, 2, 0] }}>
             <Paper
                 component={motion.div}
                 elevation={4}

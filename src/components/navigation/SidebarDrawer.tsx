@@ -16,6 +16,7 @@ import UserAvatar from '../ui/UserAvatar';
 import { useSidebar } from './SidebarProvider';
 import LogoutButton from '../ui/LogoutButton';
 import { useUploads } from '../context/UploadsProvider';
+import M2Drive from '../icon/M2Drive';
 
 const MENU: IMenu[] = [
     {
@@ -244,101 +245,136 @@ export default function SidebarDrawer() {
                 flexShrink: 0,
                 pr: 2
             }}>
-            <Paper
+            <Stack
+                component={Paper}
+                flex={1}
                 sx={{
                     height: '100%',
+                    overflow: 'hidden',
+                    maxHeight: '100dvh',
                     display: 'flex',
                     borderRadius: 0,
                     boxShadow: 2,
                 }}
                 elevation={1}>
 
-                <Stack flex={1} px={sidebar?.open ? 3 : 2} py={2}>
+                <Stack flex={1} overflow={"auto"} className='no-scrollbar'>
                     <Stack flex={1}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                            {sidebar?.open && (
-                                <Typography variant="h6" component="div">
-                                    M2 Drive
-                                </Typography>
-                            )}
-                            <IconButton onClick={() => sidebar?.setOpen(prev => !prev)} sx={{ border: 'none', ml: 0.5 }}>
-                                <Box component={ChevronLeft} sx={{ scale: sidebar?.open ? '1 1' : '-1.2 1.2', transition: 'all .2s ease' }} />
-                            </IconButton>
-                        </Stack>
-
-                        {sidebar?.open && (
-                            <Badge badgeContent={totalUpload} color="primary">
-                                <Button
-                                    LinkComponent={Link}
-                                    href='/drive/upload'
-                                    startIcon={<CloudUpload size={26} strokeWidth={3} />}
-                                    variant='outlined'
-                                    size='large'
-                                    sx={{
-                                        fontWeight: 900,
-                                        fontSize: 22,
-                                        borderRadius: 4,
-                                        width: '100%',
-                                        mb: 1
-                                    }}>
-                                    Upload
-                                </Button>
-                            </Badge>
-                        )}
-
-                        <List sx={{ p: 0, m: 0, ml: sidebar?.open ? 0 : -1 }}>
-                            {MENU.map((child, i) => (
-                                child.type == "link"
-                                    ? <MenuItem
-                                        key={i}
-                                        menu={child}
-                                        shouldExpand={sidebar?.open}
-                                        active={currentActivePath == child.href}
-                                    />
-                                    : <MenuGroup
-                                        key={i}
-                                        menu={child}
-                                        shouldExpand={sidebar?.open}
-                                    />
-                            ))}
-                        </List>
-                    </Stack>
-
-                    <Stack mt="auto" py={2}
-                        direction={sidebar?.open ? "row" : "column"}
-                        spacing={2}
-                        alignItems={sidebar?.open ? "center" : "flex-start"}
-                        justifyContent={sidebar?.open ? "space-between" : "center"}
-                        mb={2}>
                         <Stack
-                            direction={sidebar?.open ? "row" : "column"}
-                            spacing={sidebar?.open ? 2 : 1}
+                            px={2}
+                            py={1}
+                            component={Paper}
+                            elevation={1}
+                            boxShadow={0}
+                            direction="row"
                             alignItems="center"
-                            component={Link}
-                            href="/profile"
-                            sx={{
-                                textDecoration: 'none',
-                                color: 'inherit'
-                            }}>
-                            <UserAvatar size={40} userId={session?.user?.id} />
+                            justifyContent="space-between"
+                            mb={2}
+                            position={"sticky"}
+                            top={0}
+                            borderRadius={0}
+                            zIndex={100}>
+                            <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                                <Stack
+                                    width={'2.8em'}
+                                    height={'2.8em'}
+                                    justifyContent={"center"}
+                                    alignItems={"center"}>
+                                    <M2Drive
+                                        width={sidebar?.open ? '2.8em' : '2em'}
+                                        height={sidebar?.open ? '2.8em' : '2em'}
+                                        onClick={() => sidebar?.setOpen(prev => !prev)} />
+                                </Stack>
+                                {sidebar?.open && (
+                                    <Typography variant="h5" component="div" fontWeight={800}>
+                                        Drive
+                                    </Typography>
+                                )}
+                            </Stack>
                             {sidebar?.open && (
-                                <Box>
-                                    <Typography component="div" fontWeight={600} fontSize={18}>
-                                        {session?.user?.name}
-                                    </Typography>
-                                    <Typography component="div" color="text.secondary">
-                                        {role?.label}
-                                    </Typography>
-                                </Box>
+                                <IconButton onClick={() => sidebar?.setOpen(prev => !prev)} sx={{ border: 'none', ml: 0.5 }}>
+                                    <Box component={ChevronLeft} sx={{ scale: sidebar?.open ? '1 1' : '-1.2 1.2', transition: 'all .2s ease' }} />
+                                </IconButton>
                             )}
                         </Stack>
-                        <ThemeToggle />
+                        <Stack flex={1} px={2} pb={2}>
+
+                            {sidebar?.open && (
+                                <Badge badgeContent={totalUpload} color="primary">
+                                    <Button
+                                        disabled={pathname == "/drive/upload"}
+                                        LinkComponent={Link}
+                                        href='/drive/upload'
+                                        startIcon={<CloudUpload size={26} strokeWidth={3} />}
+                                        variant='outlined'
+                                        size='large'
+                                        sx={{
+                                            fontWeight: 900,
+                                            fontSize: 22,
+                                            borderRadius: 4,
+                                            width: '100%',
+                                            mb: 1
+                                        }}>
+                                        Upload
+                                    </Button>
+                                </Badge>
+                            )}
+
+                            <List sx={{ p: 0, m: 0, ml: sidebar?.open ? 0 : -1, mr: sidebar?.open ? 0 : -1 }}>
+                                {MENU.map((child, i) => (
+                                    child.type == "link"
+                                        ? <MenuItem
+                                            key={i}
+                                            menu={child}
+                                            shouldExpand={sidebar?.open}
+                                            active={currentActivePath == child.href}
+                                        />
+                                        : <MenuGroup
+                                            key={i}
+                                            menu={child}
+                                            shouldExpand={sidebar?.open}
+                                        />
+                                ))}
+                            </List>
+
+                            <Stack mt="auto" py={2}
+                                direction={sidebar?.open ? "row" : "column"}
+                                spacing={2}
+                                alignItems={sidebar?.open ? "center" : "flex-start"}
+                                justifyContent={sidebar?.open ? "space-between" : "center"}
+                                mb={2}>
+                                <Stack
+                                    direction={sidebar?.open ? "row" : "column"}
+                                    spacing={sidebar?.open ? 2 : 1}
+                                    alignItems="center"
+                                    component={Link}
+                                    href="/profile"
+                                    sx={{
+                                        textDecoration: 'none',
+                                        color: 'inherit'
+                                    }}>
+                                    <UserAvatar size={40} userId={session?.user?.id} />
+                                    {sidebar?.open && (
+                                        <Box>
+                                            <Typography component="div" fontWeight={600} fontSize={18}>
+                                                {session?.user?.name}
+                                            </Typography>
+                                            <Typography component="div" color="text.secondary">
+                                                {role?.label}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Stack>
+                                <ThemeToggle />
+                            </Stack>
+                            {sidebar?.open && (
+                                <LogoutButton />
+                            )}
+
+                        </Stack>
                     </Stack>
-                    {sidebar?.open && (
-                        <LogoutButton />
-                    )}
                 </Stack>
-            </Paper>
+            </Stack>
         </Stack>
     );
 

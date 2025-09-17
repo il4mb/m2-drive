@@ -14,6 +14,7 @@ import {
     alpha,
     IconButton,
     Alert,
+    CircularProgress,
 } from "@mui/material";
 import { FolderOpenDot } from "lucide-react";
 
@@ -32,6 +33,7 @@ export interface UsersDriveProps {
 export default function UsersDrive({ }: UsersDriveProps) {
 
     const theme = useTheme();
+    const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
     const canManageDrive = useMyPermission('can-manage-drive-root');
     const [error, setError] = useState<string | null>(null);
@@ -44,9 +46,18 @@ export default function UsersDrive({ }: UsersDriveProps) {
             .then(result => {
                 if (!result.success) setError(result.error || null);
                 setSummaries(result.data || []);
+                setLoading(false);
             })
     }, [mounted]);
 
+    if (loading) {
+        return (
+            <Stack alignItems="center" justifyContent="center" p={4} flex={1}>
+                <CircularProgress />
+                <Typography variant="body2" sx={{ mt: 2 }}>Loading users...</Typography>
+            </Stack>
+        );
+    }
 
     return (
         <Stack>

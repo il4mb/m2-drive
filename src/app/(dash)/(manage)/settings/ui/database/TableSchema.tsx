@@ -44,6 +44,7 @@ export interface TableSchemaProps {
 }
 
 export default function TableSchema({ schema, loading = false, onRefresh }: TableSchemaProps) {
+    
     const theme = useTheme();
     const [selectedTable, setSelectedTable] = useState<TypeTableSchema | null>(null);
     const [detailDialogOpen, setDetailDialogOpen] = useState(false);

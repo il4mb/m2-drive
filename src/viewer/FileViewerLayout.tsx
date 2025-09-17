@@ -54,7 +54,7 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, end
                     <ModuleViewerManager endpoint={pageEndpoint} endpointResolve={endpointResolve}>
                         <FileViewersProvider path={pathList}>
                             <Stack flex={1} overflow={"hidden"}>
-                                <StickyHeader sx={{ top: 8 }}>
+                                <StickyHeader sx={{ top: 8, borderRadius: { xs: 0, md: 2 } }}>
                                     <Stack flex={1} direction={"row"} alignItems={"center"} spacing={1}>
                                         {canGoBack && (
                                             <IconButton onClick={router.back}>

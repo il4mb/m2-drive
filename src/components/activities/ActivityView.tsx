@@ -55,7 +55,7 @@ export default function ActivityView({ activity, children }: ActivityViewProps) 
     const type = activity.type;
 
     return (
-        <Stack>
+        <Stack sx={{ wordBreak: 'break-word' }}>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
                 <Avatar sx={{ background: getColor(getTypeColor(type) as any)[400], width: 32, height: 32 }}>
                     {createElement(getTypeIcon(type), { size: 18 })}
@@ -72,7 +72,7 @@ export default function ActivityView({ activity, children }: ActivityViewProps) 
                     </Stack>
                     {type == "CLEAN_ACTIVITY" && (
                         <Box>
-                            <Typography variant='caption' color='text.secondary' sx={{ textDecoration: 'underline'}}>
+                            <Typography variant='caption' color='text.secondary' sx={{ textDecoration: 'underline' }}>
                                 Total row effected {formatNumber(activity.metadata?.affected || 0)}.
                             </Typography>
                         </Box>

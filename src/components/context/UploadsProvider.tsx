@@ -350,7 +350,7 @@ export const UploadsProvider = ({ children }: UploadProviderProps) => {
     }, [db, queue]);
 
     useEffect(() => {
-        setShowBadge(uploads.length > 0);
+        setShowBadge(uploads.length > 0 && pathname != "/drive/upload");
     }, [pathname, uploads]);
 
     return (

@@ -111,7 +111,7 @@ export default function UploadSizeManager() {
 
     const handleDelete = (roleName: string) => {
         // Implement delete functionality
-        console.log("Delete option for:", roleName);
+        // console.log("Delete option for:", roleName);
     };
 
     const formatFileSize = (bytes: number, unit: UploadUnit = 'mb') => {

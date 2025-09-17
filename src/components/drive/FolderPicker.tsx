@@ -105,7 +105,7 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
                     <Stack
                         alignItems="center"
                         justifyContent="center"
-                        height={200}
+                        minHeight={300}
                         spacing={1}>
                         <CircularProgress size={28} />
                         <Typography variant="body2" color="text.secondary">
@@ -116,7 +116,7 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
                     <Stack
                         alignItems="center"
                         justifyContent="center"
-                        height={200}
+                        minHeight={300}
                         spacing={1}>
                         <Folder size={28} />
                         <Typography variant="body2" color="text.secondary">
@@ -124,7 +124,7 @@ export default function FolderPicker({ onSelectedChange, disabled, userId }: Fol
                         </Typography>
                     </Stack>
                 ) : (
-                    <List sx={{ p: 0, overflow: 'auto' }}>
+                    <List sx={{ p: 0, overflow: 'auto', minHeight: 300 }}>
                         {files.map((file, i) => {
                             const active = file.id === selected?.id;
                             const disable = Array.isArray(disabled) ? disabled.includes(file.id) : disabled;

@@ -18,52 +18,50 @@ export default function page() {
     }
 
     return (
-        <PermissionSuspense permission={"can-see-system-settings"}>
-            <Container maxWidth={"xl"} scrollable>
+        <Container maxWidth={"xl"} scrollable>
 
-                <Stack component={Paper} p={2} mb={2} position={"sticky"} top={0} zIndex={10} boxShadow={2} borderRadius={2}>
-                    <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"space-between"}>
-                        <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                            <Settings size={28} />
-                            <Typography fontSize={22} fontWeight={600}>
-                                Pengaturan
-                            </Typography>
-                        </Stack>
+            <Stack component={Paper} p={2} mb={2} position={"sticky"} top={0} zIndex={10} boxShadow={2} borderRadius={2}>
+                <Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent={"space-between"}>
+                    <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                        <Settings size={28} />
+                        <Typography fontSize={22} fontWeight={600}>
+                            Pengaturan
+                        </Typography>
                     </Stack>
                 </Stack>
+            </Stack>
 
-                <Stack component={Paper} borderRadius={2} flex={1}>
+            <Stack component={Paper} borderRadius={2} flex={1}>
 
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-                            <Tab label={
-                                <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                                    <ShieldUser size={16} />
-                                    <Typography>Role Manager</Typography>
-                                </Stack>
-                            } {...a11yProps(0)} />
-                            <Tab label={
-                                <Stack direction={"row"} spacing={1} alignItems={"center"}>
-                                    <Database size={16} />
-                                    <Typography>Database Manager</Typography>
-                                </Stack>
-                            } {...a11yProps(1)} />
-                        </Tabs>
-                    </Box>
-                    <Stack flex={1} p={[2, 2, 3]}>
-                        <TabPanel value={value} index={0}>
-                            <PermissionSuspense permission={"can-see-role"}>
-                                <RoleManager />
-                            </PermissionSuspense>
-                        </TabPanel>
-                        <TabPanel value={value} index={1}>
-                            <PermissionSuspense permission={"can-see-db"}>
-                                <DatabaseManager />
-                            </PermissionSuspense>
-                        </TabPanel>
-                    </Stack>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                        <Tab label={
+                            <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                <ShieldUser size={16} />
+                                <Typography>Role Manager</Typography>
+                            </Stack>
+                        } {...a11yProps(0)} />
+                        <Tab label={
+                            <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                                <Database size={16} />
+                                <Typography>Database Manager</Typography>
+                            </Stack>
+                        } {...a11yProps(1)} />
+                    </Tabs>
+                </Box>
+                <Stack flex={1} p={[2, 2, 3]}>
+                    <TabPanel value={value} index={0}>
+                        <PermissionSuspense permission={"can-see-role"}>
+                            <RoleManager />
+                        </PermissionSuspense>
+                    </TabPanel>
+                    <TabPanel value={value} index={1}>
+                        <PermissionSuspense permission={"can-see-db"}>
+                            <DatabaseManager />
+                        </PermissionSuspense>
+                    </TabPanel>
                 </Stack>
-            </Container>
-        </PermissionSuspense>
+            </Stack>
+        </Container>
     );
 }

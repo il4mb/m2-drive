@@ -9,19 +9,21 @@ import {
     Tabs,
     Tab,
 } from "@mui/material";
-import { ChartArea, FolderRoot, Users2 } from "lucide-react";
+import { ChartArea, FolderRoot, Settings, Users2 } from "lucide-react";
 import Container from "@/components/Container";
 import { useState } from "react";
 import StickyHeader from "@/components/navigation/StickyHeader";
 import PermissionSuspense from "@/components/PermissionSuspense";
 import StorageSummary from "@/components/analistic/StorageSummary";
 import UsersDrive from "./ui/UsersDrive";
+import DriveConfig from "./ui/DriveConfig";
+import useLocalStorage from "@/hooks/useLocalstorage";
 
 
 export default function Page() {
 
     const theme = useTheme();
-    const [value, setValue] = useState(1);
+    const [value, setValue] = useLocalStorage("drive-metrics-tab", 1);
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
     };
@@ -44,6 +46,7 @@ export default function Page() {
                     <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                         <Tab label={<ChartArea size={20} />} value={1} sx={{ px: 2 }} />
                         <Tab label={<Users2 size={20} />} value={2} sx={{ px: 2 }} />
+                        <Tab label={<Settings size={20} />} value={3} sx={{ px: 2 }} />
                     </Tabs>
                 </Box>
 
@@ -52,9 +55,13 @@ export default function Page() {
                         <PermissionSuspense permission={"can-see-drive-root"}>
                             <StorageSummary />
                         </PermissionSuspense>
-                    ) : (
+                    ) : value == 2 ? (
                         <PermissionSuspense permission={"can-list-user"}>
                             <UsersDrive />
+                        </PermissionSuspense>
+                    ) : (
+                        <PermissionSuspense permission={"can-manage-drive-root"}>
+                            <DriveConfig />
                         </PermissionSuspense>
                     )}
                 </Stack>

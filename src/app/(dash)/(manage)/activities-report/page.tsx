@@ -178,214 +178,212 @@ export default function PageComponent() {
     );
 
     return (
-        <PermissionSuspense permission={"can-access-activity-report"} onAllowed={() => setMounted(true)}>
-            <Container ref={scrollRef} maxWidth={'lg'} scrollable>
-                <StickyHeader canGoBack>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                        <Box
-                            sx={{
-                                bgcolor: "primary.main",
-                                borderRadius: 1,
-                                p: 1,
-                                width: 30,
-                                height: 30,
-                                color: '#fff'
-                            }}
-                            component={ActivityIcon} size={20} />
-                        <Stack>
-                            <Typography fontWeight={600} fontSize={18} mb={-1}>
-                                Laporan Aktivitas
-                            </Typography>
-                            {total > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Menampilkan {activities.length} dari {formatNumber(total)} aktivitas
-                                    </Typography>
-                                </motion.div>
-                            )}
-                        </Stack>
-                    </Stack>
-                </StickyHeader>
-
-                <Stack
-                    component={motion.div}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                    p={[2, 2, 4]}
-                    borderRadius={2}
-                    flex={1}
-                    spacing={1}
-                    sx={{
-                        backgroundColor: 'background.paper',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    }}>
-
-                    <ActivitySummary />
-
-                    <Box sx={{ py: 4 }} />
-                    <Stack flex={1} p={2}>
-                        <Stack direction={"row"} justifyContent={"space-between"}>
-                            <Typography fontSize={16} mb={3}>Aktivitas Terbaru</Typography>
-
-                        </Stack>
-
-                        {/* Initial loading */}
-                        {loading && activities.length === 0 && (
-                            <Box>
-                                {Array.from({ length: LIMIT }).map((_, index) => (
-                                    <ActivitySkeleton key={`initial-skeleton-${index}`} />
-                                ))}
-                            </Box>
-                        )}
-
-                        {/* Current activities */}
-                        <AnimatePresence mode="popLayout">
-                            {activities.map((activity, index) => {
-                                const isNew = index >= (page - 1) * LIMIT;
-                                return (
-                                    <Box
-                                        component={motion.div}
-                                        key={activity.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                                        transition={{
-                                            type: "spring",
-                                            stiffness: 300,
-                                            damping: 25,
-                                            delay: isNew ? (index - (page - 1) * LIMIT) * 0.05 : 0,
-                                        }}
-                                        whileHover={{ y: -2 }}
-                                        sx={{
-                                            mb: 3
-                                        }}>
-                                        <ActivityView activity={activity}>
-                                            {activity.folder && (
-                                                <Stack mt={1} p={1}>
-                                                    <Stack
-                                                        direction={"row"}
-                                                        spacing={1}
-                                                        alignItems={"center"}>
-                                                        {activity.folder.type == "folder"
-                                                            ? <FolderOpen size={26} />
-                                                            : <FileIcon
-                                                                variant='solid'
-                                                                size={26}
-                                                                // @ts-ignore
-                                                                type={activity.folder.meta.mimeType || "empty"} />
-                                                        }
-                                                        <Stack>
-                                                            <Typography>{activity.folder.name}</Typography>
-                                                            <Typography variant='caption' color='text.secondary' fontSize={10}>
-                                                                {activity.folder.type == "folder"
-                                                                    // @ts-ignore
-                                                                    ? activity.folder.meta.itemCount + ' items'
-                                                                    // @ts-ignore
-                                                                    : formatFileSize(activity.folder.meta.size || 0)}
-                                                            </Typography>
-                                                        </Stack>
-                                                    </Stack>
-                                                </Stack>
-                                            )}
-
-                                            {activity.file && (
-                                                <Stack mt={0} p={1}>
-                                                    <Stack
-                                                        direction={"row"}
-                                                        spacing={1}
-                                                        alignItems={"center"}>
-                                                        {activity.file.type == "folder"
-                                                            ? <FolderOpen size={26} />
-                                                            : <FileIcon
-                                                                variant='solid'
-                                                                size={26}
-                                                                // @ts-ignore
-                                                                type={activity.file.meta.mimeType || "empty"} />
-                                                        }
-                                                        <Stack>
-                                                            <Typography>{activity.file.name}</Typography>
-                                                            <Typography variant='caption' color='text.secondary' fontSize={10}>
-                                                                {activity.file.type == "folder"
-                                                                    // @ts-ignore
-                                                                    ? activity.file.meta.itemCount + ' items'
-                                                                    // @ts-ignore
-                                                                    : formatFileSize(activity.file.meta.size || 0)}
-                                                            </Typography>
-                                                        </Stack>
-                                                    </Stack>
-                                                </Stack>
-                                            )}
-
-                                        </ActivityView>
-                                    </Box>
-                                );
-                            })}
-                        </AnimatePresence>
-
-                        {/* Next page loading */}
-                        {isLoadingMore && (
+        <Container ref={scrollRef} maxWidth={'lg'} scrollable>
+            <StickyHeader canGoBack>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box
+                        sx={{
+                            bgcolor: "primary.main",
+                            borderRadius: 1,
+                            p: 1,
+                            width: 30,
+                            height: 30,
+                            color: '#fff'
+                        }}
+                        component={ActivityIcon} size={20} />
+                    <Stack>
+                        <Typography fontWeight={600} fontSize={18} mb={-1}>
+                            Laporan Aktivitas
+                        </Typography>
+                        {total > 0 && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3 }}>
-                                <Box>
-                                    {Array.from({ length: LIMIT }).map((_, index) => (
-                                        <ActivitySkeleton key={`next-skeleton-${index}`} />
-                                    ))}
-                                </Box>
-                            </motion.div>
-                        )}
-
-                        {/* Bottom sentinel */}
-                        <div ref={bottomObserverRef} style={{ height: 1 }} />
-
-                        {/* Empty state */}
-                        {!loading && activities.length === 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.5 }}>
-                                <Box sx={{ p: 4, textAlign: 'center' }}>
-                                    <motion.div
-                                        animate={{
-                                            rotate: [0, 5, -5, 0],
-                                            scale: [1, 1.05, 1]
-                                        }}
-                                        transition={{
-                                            duration: 2,
-                                            repeat: Infinity,
-                                            repeatDelay: 3
-                                        }}>
-                                        <ActivityIcon size={48} color="#ddd" />
-                                    </motion.div>
-                                    <Typography color="text.secondary" mt={1}>
-                                        Tidak ada aktivitas yang tercatat
-                                    </Typography>
-                                </Box>
-                            </motion.div>
-                        )}
-
-                        {/* All loaded message */}
-                        {!isLoadingMore && activities.length > 0 && activities.length >= total && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}>
-                                <Box sx={{ p: 2, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Semua {formatNumber(total)} aktivitas telah dimuat
-                                    </Typography>
-                                </Box>
+                                transition={{ duration: 0.5, delay: 0.2 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Menampilkan {activities.length} dari {formatNumber(total)} aktivitas
+                                </Typography>
                             </motion.div>
                         )}
                     </Stack>
                 </Stack>
-            </Container>
-        </PermissionSuspense>
+            </StickyHeader>
+
+            <Stack
+                component={motion.div}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                p={[2, 2, 4]}
+                borderRadius={2}
+                flex={1}
+                spacing={1}
+                sx={{
+                    backgroundColor: 'background.paper',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                }}>
+
+                <ActivitySummary />
+
+                <Box sx={{ py: 4 }} />
+                <Stack flex={1} p={2}>
+                    <Stack direction={"row"} justifyContent={"space-between"}>
+                        <Typography fontSize={16} mb={3}>Aktivitas Terbaru</Typography>
+
+                    </Stack>
+
+                    {/* Initial loading */}
+                    {loading && activities.length === 0 && (
+                        <Box>
+                            {Array.from({ length: LIMIT }).map((_, index) => (
+                                <ActivitySkeleton key={`initial-skeleton-${index}`} />
+                            ))}
+                        </Box>
+                    )}
+
+                    {/* Current activities */}
+                    <AnimatePresence mode="popLayout">
+                        {activities.map((activity, index) => {
+                            const isNew = index >= (page - 1) * LIMIT;
+                            return (
+                                <Box
+                                    component={motion.div}
+                                    key={activity.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 300,
+                                        damping: 25,
+                                        delay: isNew ? (index - (page - 1) * LIMIT) * 0.05 : 0,
+                                    }}
+                                    whileHover={{ y: -2 }}
+                                    sx={{
+                                        mb: 3
+                                    }}>
+                                    <ActivityView activity={activity}>
+                                        {activity.folder && (
+                                            <Stack mt={1} p={1}>
+                                                <Stack
+                                                    direction={"row"}
+                                                    spacing={1}
+                                                    alignItems={"center"}>
+                                                    {activity.folder.type == "folder"
+                                                        ? <FolderOpen size={26} />
+                                                        : <FileIcon
+                                                            variant='solid'
+                                                            size={26}
+                                                            // @ts-ignore
+                                                            type={activity.folder.meta.mimeType || "empty"} />
+                                                    }
+                                                    <Stack>
+                                                        <Typography>{activity.folder.name}</Typography>
+                                                        <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                            {activity.folder.type == "folder"
+                                                                // @ts-ignore
+                                                                ? activity.folder.meta.itemCount + ' items'
+                                                                // @ts-ignore
+                                                                : formatFileSize(activity.folder.meta.size || 0)}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Stack>
+                                            </Stack>
+                                        )}
+
+                                        {activity.file && (
+                                            <Stack mt={0} p={1}>
+                                                <Stack
+                                                    direction={"row"}
+                                                    spacing={1}
+                                                    alignItems={"center"}>
+                                                    {activity.file.type == "folder"
+                                                        ? <FolderOpen size={26} />
+                                                        : <FileIcon
+                                                            variant='solid'
+                                                            size={26}
+                                                            // @ts-ignore
+                                                            type={activity.file.meta.mimeType || "empty"} />
+                                                    }
+                                                    <Stack>
+                                                        <Typography>{activity.file.name}</Typography>
+                                                        <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                            {activity.file.type == "folder"
+                                                                // @ts-ignore
+                                                                ? activity.file.meta.itemCount + ' items'
+                                                                // @ts-ignore
+                                                                : formatFileSize(activity.file.meta.size || 0)}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Stack>
+                                            </Stack>
+                                        )}
+
+                                    </ActivityView>
+                                </Box>
+                            );
+                        })}
+                    </AnimatePresence>
+
+                    {/* Next page loading */}
+                    {isLoadingMore && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}>
+                            <Box>
+                                {Array.from({ length: LIMIT }).map((_, index) => (
+                                    <ActivitySkeleton key={`next-skeleton-${index}`} />
+                                ))}
+                            </Box>
+                        </motion.div>
+                    )}
+
+                    {/* Bottom sentinel */}
+                    <div ref={bottomObserverRef} style={{ height: 1 }} />
+
+                    {/* Empty state */}
+                    {!loading && activities.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5 }}>
+                            <Box sx={{ p: 4, textAlign: 'center' }}>
+                                <motion.div
+                                    animate={{
+                                        rotate: [0, 5, -5, 0],
+                                        scale: [1, 1.05, 1]
+                                    }}
+                                    transition={{
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        repeatDelay: 3
+                                    }}>
+                                    <ActivityIcon size={48} color="#ddd" />
+                                </motion.div>
+                                <Typography color="text.secondary" mt={1}>
+                                    Tidak ada aktivitas yang tercatat
+                                </Typography>
+                            </Box>
+                        </motion.div>
+                    )}
+
+                    {/* All loaded message */}
+                    {!isLoadingMore && activities.length > 0 && activities.length >= total && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}>
+                            <Box sx={{ p: 2, textAlign: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Semua {formatNumber(total)} aktivitas telah dimuat
+                                </Typography>
+                            </Box>
+                        </motion.div>
+                    )}
+                </Stack>
+            </Stack>
+        </Container>
     );
 }

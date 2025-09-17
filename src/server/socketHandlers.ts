@@ -215,6 +215,7 @@ export async function setupSocketHandlers(io: Server) {
         const sessionId = socket.data.sessionId;
         const ipAddress = socket.handshake.headers["x-forwarded-for"]?.toString().split(",")[0] || socket.handshake.address;
         const userAgent = socket.handshake.headers["user-agent"] || "Unknown";
+        clients.set(socket.id, socket.data);
 
         console.log(`Client connected: ${ipAddress}, ${sessionId}, ${socket.data.displayName}`);
 
@@ -239,6 +240,7 @@ export async function setupSocketHandlers(io: Server) {
 
         // Event handlers
         const setupEventHandlers = () => {
+
             socket.on("session-validate", async (callback) => {
                 try {
 
@@ -461,8 +463,8 @@ export async function setupSocketHandlers(io: Server) {
 
             // Get active users
             socket.on('admin-get-active-users', (callback) => {
-                const users = Array.from(clients.entries()).map(([sessionId, client]) => ({
-                    socketId: socket.id,
+                const users = Array.from(clients.entries()).map(([socketId, client]) => ({
+                    socketId: socketId,
                     sessionId: client.sessionId,
                     userId: client.userId,
                     displayName: client.displayName,
@@ -584,10 +586,16 @@ export async function setupSocketHandlers(io: Server) {
                     broadcastViewers(io, leavePaths);
                 }
 
+                if (clients.has(socket.id)) {
+                    clients.delete(socket.id);
+                }
+
                 // Mark user as inactive if authenticated
                 if (socket.data.isAuthenticated && socket.data.userId) {
-                    await markUserActiveStatus(socket.data.userId, false);
-                    await handleWriteActivity(socket, "DISCONNECT", "Koneksi terputus atau keluar dari sistem.");
+                    if (!Array.from(clients.values()).some(e => e.userId == socket.data.userId)) {
+                        await markUserActiveStatus(socket.data.userId, false);
+                        await handleWriteActivity(socket, "DISCONNECT", "Koneksi terputus atau keluar dari sistem.");
+                    }
                 }
 
                 connectionMetrics.activeConnections--;

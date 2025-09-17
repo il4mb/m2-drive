@@ -184,7 +184,12 @@ export function currentTime(mod?: string): number {
 }
 
 
-export function formatNumber(num: number): string {
+export function formatNumber(num: number, max?: number): string {
+	
+	if (typeof max === "number" && num > max) {
+		return `${max}+`;
+	}
+
 	if (num < 1000) return num.toString();
 
 	if (num < 1_000_000) {

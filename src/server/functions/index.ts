@@ -11,7 +11,7 @@ import { getStorageSummary } from "./garbage";
 import { deleteOption, saveOption } from "./options";
 import { deleteRole, saveRole } from "./roles";
 import { executeSQL } from "./sql-runner";
-import { cleanStorage, scanStorage } from "./storage";
+import { cleanStorage, getCorsOptions, scanStorage, updateCorsOption } from "./storage";
 import { getActivitySummary, getDriveSummaryAllUser, getUserUssageSummary } from "./summary";
 import { bulkDeleteTask, cleanUpTask, deleteTask, getTaskHourlySummary, updateTask } from "./task";
 import { addUser, updateUser, deleteUser } from "./users";
@@ -56,6 +56,8 @@ const functions = {
     cleanNonEssentialActivities,
     scanStorage,
     cleanStorage,
+    getCorsOptions,
+    updateCorsOption,
     cleanUpTask
 } as const;
 

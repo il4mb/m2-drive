@@ -2,7 +2,6 @@
 
 import {
     Stack,
-    Button,
     Paper,
     Typography,
     Chip,
@@ -10,22 +9,18 @@ import {
     IconButton,
     Tooltip,
     alpha,
-    useTheme
-} from '@mui/material';
+    useTheme} from '@mui/material';
 import UploadView from './UploadView';
 import { FileUpload } from '@/types';
 import { useState, useMemo } from 'react';
 import {
-    ArrowUpDown,
-    Filter,
     X,
     CheckCircle,
     AlertCircle,
     PauseCircle,
     PlayCircle,
     Clock,
-    UploadCloud
-} from 'lucide-react';
+    UploadCloud} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface UploadManagerProps {
@@ -77,13 +72,10 @@ const chipVariants = {
     }
 };
 
-const buttonVariants = {
-    initial: { scale: 1 },
-    hover: { scale: 1.02 },
-    tap: { scale: 0.98 }
-};
+
 
 export default function UploadManager({ uploads = [] }: UploadManagerProps) {
+
     const theme = useTheme();
     const [sortEnabled, setSortEnabled] = useState(false);
     const [filterStatus, setFilterStatus] = useState<FileUpload['status'] | 'all'>('all');
@@ -138,56 +130,21 @@ export default function UploadManager({ uploads = [] }: UploadManagerProps) {
     const clearFilter = () => setFilterStatus('all');
 
     return (
-        <motion.div
+        <Stack
+            flex={1}
+            component={motion.div}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}>
-            <Paper
+            <Stack
+                flex={1}
+                component={Paper}
                 elevation={0}
                 sx={{
                     border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                     borderRadius: 2,
                     background: theme.palette.background.paper
                 }}>
-                {/* Header */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-
-                        <UploadCloud size={24} />
-                        <Typography variant="h6" fontWeight={600}>
-                            Upload Manager
-                        </Typography>
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 15 }}>
-                            <Chip
-                                label={`${uploads.length} file${uploads.length !== 1 ? 's' : ''}`}
-                                size="small"
-                                variant="outlined"
-                            />
-                        </motion.div>
-                    </Stack>
-
-                    <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                        <Tooltip title={sortEnabled ? 'Disable sorting' : 'Sort by status priority'}>
-                            <Button
-                                variant={sortEnabled ? "contained" : "outlined"}
-                                size="small"
-                                startIcon={
-                                    <motion.div
-                                        animate={{ rotate: sortEnabled ? 180 : 0 }}
-                                        transition={{ duration: 0.3 }}>
-                                        <ArrowUpDown size={16} />
-                                    </motion.div>
-                                }
-                                onClick={() => setSortEnabled((prev) => !prev)}
-                                sx={{ minWidth: 'auto', px: 2 }}>
-                                Sort
-                            </Button>
-                        </Tooltip>
-                    </motion.div>
-                </Stack>
 
                 {/* Status Filter Chips */}
                 <Stack direction="row" spacing={1} mb={3} flexWrap="wrap" gap={1}>
@@ -240,7 +197,9 @@ export default function UploadManager({ uploads = [] }: UploadManagerProps) {
 
                 {/* Uploads List */}
                 <AnimatePresence mode="popLayout">
-                    <motion.div
+                    <Stack
+                        flex={1}
+                        component={motion.div}
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
@@ -288,7 +247,7 @@ export default function UploadManager({ uploads = [] }: UploadManagerProps) {
                                 </motion.div>
                             )}
                         </Stack>
-                    </motion.div>
+                    </Stack>
                 </AnimatePresence>
 
                 {/* Summary Footer */}
@@ -305,7 +264,7 @@ export default function UploadManager({ uploads = [] }: UploadManagerProps) {
                         </Box>
                     </motion.div>
                 )}
-            </Paper>
-        </motion.div>
+            </Stack>
+        </Stack>
     );
 }

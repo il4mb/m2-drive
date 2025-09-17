@@ -15,11 +15,6 @@ export type HourlyStat = {
 export default function TaskTimelineChart({ data }: { data: any[] }) {
     const theme = useTheme();
 
-
-    useEffect(() => {
-        console.log(data)
-    }, [data])
-
     return (
         <Stack>
             <Typography variant="h6" fontWeight={600} gutterBottom>

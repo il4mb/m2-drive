@@ -25,6 +25,7 @@ import { useCurrentSession } from "@/components/context/CurrentSessionProvider";
 import { formatDateFromEpoch } from "@/libs/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Link from "next/link";
+import FileViewIcon from "@/components/drive/FileViewIcon";
 
 type SectionProps = {
     title: string;
@@ -123,13 +124,9 @@ export default function Page() {
                                 justifyContent: "center",
                                 position: 'relative'
                             }}>
-                            {file?.type == "folder"
-                                ? <FolderOpen size={20} />
-                                : <FileIcon
-                                    size={20}
-                                    variant="solid"
-                                    // @ts-ignore
-                                    type={file?.meta?.mimeType || "empty"} />}
+                            {file && (
+                                <FileViewIcon file={file!} size={20} />
+                            )}
 
                             {userId !== file?.uId && (
                                 <Box sx={{

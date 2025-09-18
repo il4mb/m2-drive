@@ -20,6 +20,7 @@ import ActionDetails from '../menu-actions/ActionDetails';
 import ActionOpenWith from '../menu-actions/ActionOpenWith';
 import { useFileViewersByFile } from '../file-viewers/FileViewersProvider';
 import ActionLabel from '../menu-actions/ActionLabel';
+import FileViewIcon from './FileViewIcon';
 
 export type FileMenuState = {
     file: File;
@@ -120,17 +121,7 @@ export default function FileView<T = any>({
                                 justifyContent={"center"}
                                 alignItems={"center"}>
                                 {!Boolean((file.meta as any)?.thumbnail) && (
-                                    <>
-                                        {file.type == "folder"
-                                            ? <Folder
-                                                strokeWidth={1}
-                                                size={size * 2} />
-                                            : <FileIcon
-                                                variant={"solid"}
-                                                size={size * 2}
-                                                // @ts-ignore
-                                                type={file.meta?.mimeType || ''} />}
-                                    </>
+                                    <FileViewIcon file={file} size={45} />
                                 )}
 
                             </Stack>
@@ -184,13 +175,7 @@ export default function FileView<T = any>({
                                 flexBasis={400}
                                 alignItems={"center"}>
                                 <Box sx={{ mr: 1 }}>
-                                    {file.type == "folder"
-                                        ? <Folder
-                                            size={size} />
-                                        : <FileIcon
-                                            variant={"solid"} size={size}
-                                            // @ts-ignore   
-                                            type={file.meta?.mimeType || ''} />}
+                                    <FileViewIcon file={file} size={size} />
                                 </Box>
                                 <Typography
                                     fontSize={size - ((40 / 100) * size)}

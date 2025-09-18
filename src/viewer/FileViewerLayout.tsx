@@ -13,6 +13,7 @@ import { FileIcon } from '@untitledui/file-icons';
 import { formatFileSize } from '@/libs/utils';
 import WhoViewer from '@/components/file-viewers/WhoViewer';
 import { useContextMenu } from '@/components/context-menu/ContextMenu';
+import FileViewIcon from '@/components/drive/FileViewIcon';
 
 export interface FileViewerLayoutProps {
     children?: ReactNode;
@@ -64,13 +65,7 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, end
 
                                                 <Stack direction={"row"} spacing={1} alignItems={"center"}>
                                                     <Stack minWidth={30} justifyContent={"center"} alignItems={"center"}>
-                                                        {file.type == "folder"
-                                                            ? <FolderOpen size={30} />
-                                                            : <FileIcon
-                                                                size={30}
-                                                                variant="solid"
-                                                                // @ts-ignore
-                                                                type={file.meta.mimeType} />}
+                                                        <FileViewIcon file={file} size={30} />
                                                     </Stack>
                                                     <Stack>
                                                         <Typography component={"div"}>

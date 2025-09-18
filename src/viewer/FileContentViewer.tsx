@@ -22,9 +22,11 @@ export default function FileContentViewer() {
 
     const fileId = useMemo(() => fileLayout.firstId, [fileLayout?.firstId]);
     const fileSubpath = useMemo(() => fileLayout.listId.slice(1), [fileLayout?.listId]);
+    const preflightProps = useMemo(() => ({ fileId, subsId: fileSubpath }), [fileId, fileSubpath]);
+    const { success, error, loading, file } = useFilePreflight(preflightProps);
+
 
     const [viewerPending, setViewerPending] = useState(true);
-    const { success, error, loading, file } = useFilePreflight(fileId, fileSubpath);
     const defaultViewerModule = useViewerForFile(file);
     const supportedViewers = file ? getSupportedViewers(file) : [];
     const [viewerModule, setViewerModule] = useState<ViewerModule | null>(null);

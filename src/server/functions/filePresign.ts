@@ -6,7 +6,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const getFileURLPresign = createFunction(
-    async ({ fileId, metaKey = "Key", download = false }: { fileId: string, metaKey: string, download?: boolean; }) => {
+    async ({ fileId, metaKey = "Key", download = false }: { fileId: string, metaKey?: string, download?: boolean; }) => {
 
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);

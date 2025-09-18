@@ -1,5 +1,5 @@
 import { Stack, Typography, Button } from '@mui/material';
-import { AlertCircle, RefreshCw, Download, FileLock2, FileWarning } from 'lucide-react';
+import { AlertCircle, RefreshCw, FileLock2, FileWarning } from 'lucide-react';
 import { File } from '@/entities/File';
 
 interface ErrorStateProps {

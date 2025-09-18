@@ -36,7 +36,7 @@ export const SessionManager = ({ children }: SessionManagerProps) => {
 
     const [connected, setConnected] = useState(socket.connected);
     const [userId, setUserId] = useState<string | null>(null);
-    const [isValidating, setIsValidating] = useState(false);
+    const [isValidating, setIsValidating] = useState(true);
 
     useEffect(() => {
         const onSocketConnect = () => {

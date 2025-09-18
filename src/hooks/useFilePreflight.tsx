@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 
 // File preflight hook with improved error handling
 
-export const useFilePreflight = (fileId: string, subsId?: string[]) => {
+export const useFilePreflight = ({ fileId, subsId }: { fileId: string, subsId?: string[] }) => {
     const [success, setSuccess] = useState<boolean>(false);
     const [error, setError] = useState<null | string>(null);
     const [loading, setLoading] = useState(true);
@@ -14,9 +14,19 @@ export const useFilePreflight = (fileId: string, subsId?: string[]) => {
     const sendPreflight = () => {
         invokeFunction("filePreflight", { fileId, subsId })
             .then(response => {
-                setSuccess(response.success);
-                setError(response.error || null);
-                setFile(response.data);
+                if (!response.error) {
+                    setSuccess(response.success);
+                    setFile(response.data);
+                } else {
+                    // Only set error if not "Duplicate request ignored" 
+                    // OR if file belum ada
+                    if (
+                        response.error !== "Duplicate request ignored" ||
+                        !file
+                    ) {
+                        setError(response.error || null);
+                    }
+                }
             })
             .catch(err => {
                 setError(err.message || 'Failed to load file information');
@@ -30,7 +40,8 @@ export const useFilePreflight = (fileId: string, subsId?: string[]) => {
     useEffect(() => {
         setLoading(true);
         sendPreflight();
-    }, [fileId, subsId]);
+        // file sengaja ditambahkan di depedency supaya guard di atas jalan
+    }, [fileId, subsId, file]);
 
     return { success, error, loading, file };
 };

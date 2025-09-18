@@ -36,9 +36,19 @@ export default async function scanStorageTask() {
             .getRawMany<{ thumbnail: string }>())
             .map(f => f.thumbnail);
 
+        const convertedKeys = (await fileRepo
+            .createQueryBuilder("f")
+            .leftJoin(User, "u", "u.id = f.uId")
+            .select(`json_extract(f.meta, '$.pdfObjectKey')`, "pdfObjectKey")
+            .where(`json_extract(f.meta, '$.pdfObjectKey') IS NOT NULL`)
+            .andWhere("u.id IS NOT NULL")
+            .getRawMany<{ pdfObjectKey: string }>())
+            .map(f => f.pdfObjectKey);
+
         const usersIdSet = new Set(usersId);
         const filesKeySet = new Set(filesKey);
         const thumbnailKeySet = new Set(thumbnailsKey);
+        const convertedKeysSet = new Set(convertedKeys);
 
         const garbage: { key: string; size: number }[] = [];
 
@@ -73,6 +83,8 @@ export default async function scanStorageTask() {
                         exists = usersIdSet.has(key.replace("avatars/", ""));
                     } else if (key.startsWith("thumbnails/")) {
                         exists = thumbnailKeySet.has(key.trim());
+                    } else if (key.startsWith("converted/")) {
+                        exists = convertedKeysSet.has(key.trim());
                     } else {
                         exists = filesKeySet.has(key.trim());
                     }

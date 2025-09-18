@@ -28,8 +28,8 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, end
     const router = useRouter();
 
     const [canGoBack, setCanGoBack] = useState(false);
-    const lastId = pathList[pathList.length - 1];
-    const firstId = pathList?.[0];
+    const lastId = useMemo(() => pathList[pathList.length - 1], [pathList]);
+    const firstId = useMemo(() => pathList?.[0], [pathList]);
     const [file, setFile] = useState<File | null>(null);
 
     useEffect(() => {
@@ -44,8 +44,6 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, end
     const stateValue = useMemo(() => ({
         lastId, firstId, listId: pathList, setFile
     }), [pathList, pageEndpoint]);
-
-
 
     return (
         <Context.Provider value={stateValue}>

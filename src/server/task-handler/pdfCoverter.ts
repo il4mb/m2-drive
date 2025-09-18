@@ -46,11 +46,9 @@ export const addPdfConvertTask = async (file: File) => {
         return;
     }
     const targetFile = file as RegularFile;
-    if (targetFile.type == "file" && isConvertable(targetFile.meta?.mimeType || '') || !targetFile.meta?.pdfObjectKey) {
+    if (targetFile.type == "file" && isConvertable(targetFile.meta?.mimeType || '') && (!targetFile.meta?.pdfObjectKey || (targetFile.updatedAt || 0) > (targetFile.meta.pdfConvertedAt || 0))) {
         const exist = await taskQueue.some(e => e.type == "convert-pdf" && e.payload.fileId == file.id);
-        if (exist) {
-            return;
-        }
+        if (exist) return;
         addTaskQueue("convert-pdf", { fileId: targetFile.id });
     }
 }

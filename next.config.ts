@@ -5,6 +5,10 @@ const S3_ENDPOINT = process.env.S3_ENDPOINT
 
 const nextConfig: NextConfig = {
     webpack: (config, { isServer }) => {
+        config.module.rules.push({
+            test: /pdf\.worker\.min\.js$/,
+            type: 'asset/resource',
+        });
         if (isServer) {
             config.externals = config.externals || [];
             if (!Array.isArray(config.externals)) config.externals = [config.externals];

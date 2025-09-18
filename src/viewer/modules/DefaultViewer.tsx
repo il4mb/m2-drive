@@ -36,7 +36,7 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
             setDownload(true);
 
             const name = `${file.name}.${file.meta?.ext || 'bin'}`;
-            const result = await invokeFunction("getFileURLPresign", { fileId: file.id });
+            const result = await invokeFunction("getFileURLPresign", { fileId: file.id, download: true });
             if (!result.success || !result.data?.url) {
                 throw new Error(result.error);
             }

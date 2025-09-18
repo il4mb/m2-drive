@@ -30,8 +30,23 @@ export default function usePresignUrl(fileId?: string, metaKey = "Key", download
     return cache?.value || undefined;
 }
 
+type PresignUrlWithProps = {
+    fileId: string;
+    metaKey?: string;
+    download?: boolean;
+}
+export const usePresignUrlWith = ({ fileId, metaKey = "Key", download = false }: PresignUrlWithProps) => {
+    return usePresignUrl(fileId, metaKey, download);
+}
+
 
 export const getPresignUrl = async (objectKey: string) => {
+    return (
+        await fetch(`/api/presign-url/${objectKey.replace(/^\//, '')}`).then(r => r.json())
+    )?.data?.url;
+}
+
+export const getPresignUrlWithKey = async (objectKey: string, metaKey: string) => {
     return (
         await fetch(`/api/presign-url/${objectKey.replace(/^\//, '')}`)
             .then(r => r.json())

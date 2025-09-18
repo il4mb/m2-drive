@@ -13,13 +13,12 @@ import { useState, useEffect, useCallback } from "react";
 import usePresignUrl from "@/hooks/usePresignUrl";
 
 const ImageViewerComponent: React.FC<{ file: File<"file"> }> = ({ file }) => {
+	
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
 	const [progress, setProgress] = useState<number | null>(null);
 	const [imageSrc, setImageSrc] = useState<string | null>(null);
 	const source = usePresignUrl(file.id);
-
-	// const fileUri = `/file/${file.id}`;
 	const isLargeFile = typeof file.meta?.size === "number" && file.meta.size > 4 * 1024 * 1024; // > 4MB
 
 	const fetchImage = useCallback(() => {

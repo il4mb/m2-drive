@@ -15,6 +15,8 @@ export interface FileMeta {
     tags: FileTags[];               // labels/categories
     lastOpened?: number;           // last opened timestamp
     Key: string;                  //  s3 Key
+    pdfObjectKey?: string;
+    pdfConvertedAt?: number;
 }
 
 export interface FolderMeta {

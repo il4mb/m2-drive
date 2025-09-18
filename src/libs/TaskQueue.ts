@@ -304,4 +304,21 @@ export class TaskQueue extends EventEmitter {
 
         return task;
     }
+
+
+    async some(predicate: (task: Task<any>) => boolean | Promise<boolean>): Promise<boolean> {
+        const source = await getConnection();
+        const repo = source.getRepository(Task);
+
+        const tasks = await repo.find(); // ambil semua task (atau bisa difilter kalau perlu)
+
+        for (const task of tasks) {
+            const result = await predicate(task);
+            if (result) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

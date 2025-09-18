@@ -6,6 +6,7 @@ import { getConnection } from "@/data-source";
 import { File } from "@/entities/File";
 import Contributor from "@/entities/Contributor";
 import { Repository } from "typeorm";
+import { addPdfConvertTask } from "../task-handler/pdfCoverter";
 
 type FilePreflight = {
     fileId: string;
@@ -31,6 +32,11 @@ export const filePreflight = createFunction(async ({ fileId, subsId }: FilePrefl
     // 2️⃣ Validate tree and get final target file
     const targetFile = await validateTreeAndGetTarget(subsId, fileRepository, rootFile);
 
+    if (!targetFile) {
+        throw new Error("File not found!");
+    }
+    
+    addPdfConvertTask(targetFile);
     const handleWriteActivity = () => {
         writeActivity(
             `VIEW_${targetFile.type.toUpperCase()}`,

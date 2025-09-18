@@ -2,14 +2,14 @@ import useCache from "./useCache";
 import { useEffect, useState } from "react";
 import { invokeFunction } from "@/libs/websocket/invokeFunction";
 
-export default function usePresignUrl(fileId?: string) {
+export default function usePresignUrl(fileId?: string, metaKey = "Key", download = false) {
 
-    const [cache, setCache, pending] = useCache(fileId);
+    const [cache, setCache, pending] = useCache(`${fileId}-${metaKey}-${download}`);
     const [mounted, setMounted] = useState(false);
 
     const handleGetPresign = async () => {
         if (!fileId) return;
-        const result = await invokeFunction("getFileURLPresign", { fileId });
+        const result = await invokeFunction("getFileURLPresign", { fileId, metaKey });
         if (!result.success || !result.data) return;
         setCache({
             value: result.data!.url,

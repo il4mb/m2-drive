@@ -66,7 +66,7 @@ export default function page() {
         setLoading(true);
         const redirect = searchParams.get("redirect");
         if (redirect) {
-            router.push(redirect)
+            router.push(decodeURIComponent(redirect))
         } else {
             router.push("/");
         }

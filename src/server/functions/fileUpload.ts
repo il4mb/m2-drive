@@ -4,10 +4,11 @@ import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime, generateKey } from "@/libs/utils";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getConnection } from "@/data-source";
-import { File } from "@/entities/File";
+import { File, RegularFile } from "@/entities/File";
 import { getRequestContext } from "@/libs/requestContext";
 import { IsNull, Repository } from "typeorm";
 import { addTaskQueue } from "../taskQueue";
+import { isConvertable } from "../task-handler/pdfCoverter";
 
 type InitProps = {
     Key?: string;
@@ -132,7 +133,7 @@ export const completeUpload = createFunction(async ({ folderId, fileName: nameFi
     const fileRepository = source.getRepository(File);
     const folder: File | null = await (folderId ? fileRepository.findOneBy({ id: folderId }) : null);
 
-    const file = fileRepository.create({
+    const file: RegularFile = fileRepository.create({
         id: generateKey(8),
         uId,
         pId: folder?.id || null,
@@ -146,7 +147,7 @@ export const completeUpload = createFunction(async ({ folderId, fileName: nameFi
             generalPermit: 'none',
             Key
         }
-    })
+    }) as RegularFile;
 
     await fileRepository.save(file);
 
@@ -166,6 +167,9 @@ export const completeUpload = createFunction(async ({ folderId, fileName: nameFi
             fileId: file.id,
             objectKey: Key
         })
+    }
+    if (isConvertable(file.meta?.mimeType || '')) {
+        addTaskQueue("convert-pdf", { fileId: file.id });
     }
 })
 

@@ -10,6 +10,7 @@ import DefaultViewer from './modules/DefaultViewer';
 import ImageViewer from './modules/ImageViewer';
 import { FileIcon } from '@untitledui/file-icons';
 import { Box } from '@mui/material';
+import DocumentViewer from './modules/DocumentViewer';
 
 export type ViewerModuleComponentProps = {
     file: File;
@@ -45,28 +46,28 @@ interface ViewerManagerProps {
 const defaultViewerModules: ViewerModule[] = [
     FolderViewer,
     ImageViewer,
-    {
-        id: 'pdf-viewer',
-        name: 'PDF Viewer',
-        icon: <FileIcon size={18} type={"pdf"} />,
-        supports: ['application/pdf'],
-        component: ({ file }) => {
+    // {
+    //     id: 'pdf-viewer',
+    //     name: 'PDF Viewer',
+    //     icon: <FileIcon size={18} type={"pdf"} />,
+    //     supports: ['application/pdf'],
+    //     component: ({ file }) => {
 
 
-            return (
-                <Box
-                    component={"iframe"}
-                    src={`/file/${file.id}`}
-                    width="100%"
-                    height="100%"
-                    sx={(theme) => ({ border: 'none', ...theme.applyStyles("dark", { background: '#000' }) })}
-                    title={file.name}
-                />
-            )
-        },
-        priority: 10
-    },
-    // DocumentViewer,
+    //         return (
+    //             <Box
+    //                 component={"iframe"}
+    //                 src={`/file/${file.id}`}
+    //                 width="100%"
+    //                 height="100%"
+    //                 sx={(theme) => ({ border: 'none', ...theme.applyStyles("dark", { background: '#000' }) })}
+    //                 title={file.name}
+    //             />
+    //         )
+    //     },
+    //     priority: 10
+    // },
+    DocumentViewer,
     VideoPlayer,
     TextEditor,
     {

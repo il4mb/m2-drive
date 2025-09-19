@@ -15,7 +15,10 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    Select} from "@mui/material";
+    Select,
+    useTheme,
+    useMediaQuery
+} from "@mui/material";
 import usePresignUrl from "@/hooks/usePresignUrl";
 
 interface VideoPlayerProps {
@@ -27,6 +30,11 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
+    const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -39,24 +47,46 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
     const [playbackRate, setPlaybackRate] = useState(1);
     const [quality, setQuality] = useState('auto');
     const [settingsAnchor, setSettingsAnchor] = useState<null | HTMLElement>(null);
+    const [isSeeking, setIsSeeking] = useState(false);
 
-    // Controls auto-hide
+    // Controls auto-hide with touch device support
     useEffect(() => {
-        if (!showControls) return;
+        if (!showControls || isSeeking) return;
 
-        const timer = setTimeout(() => {
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+        }
+
+        controlsTimeoutRef.current = setTimeout(() => {
             setShowControls(false);
         }, 3000);
 
-        return () => clearTimeout(timer);
-    }, [showControls]);
+        return () => {
+            if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+            }
+        };
+    }, [showControls, isSeeking]);
+
+    // Handle touch events for mobile devices
+    useEffect(() => {
+        const handleTouchStart = () => {
+            setShowControls(true);
+        };
+
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('touchstart', handleTouchStart);
+            return () => container.removeEventListener('touchstart', handleTouchStart);
+        }
+    }, []);
 
     const togglePlay = useCallback(() => {
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
             } else {
-                videoRef.current.play();
+                videoRef.current.play().catch(console.error);
             }
             setIsPlaying(!isPlaying);
         }
@@ -77,29 +107,49 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
     const handleVolumeChange = useCallback((_: Event, value: number | number[]) => {
         const newVolume = Array.isArray(value) ? value[0] : value;
         setVolume(newVolume);
+        setIsMuted(newVolume === 0);
         if (videoRef.current) {
             videoRef.current.volume = newVolume;
+            videoRef.current.muted = newVolume === 0;
         }
     }, []);
 
     const toggleMute = useCallback(() => {
         if (videoRef.current) {
-            videoRef.current.muted = !isMuted;
-            setIsMuted(!isMuted);
+            const newMutedState = !isMuted;
+            videoRef.current.muted = newMutedState;
+            setIsMuted(newMutedState);
+            if (newMutedState) {
+                setVolume(0);
+            } else {
+                setVolume(videoRef.current.volume || 0.5);
+            }
         }
     }, [isMuted]);
 
+    const handleSeekStart = useCallback(() => {
+        setIsSeeking(true);
+        setShowControls(true);
+    }, []);
+
     const handleSeek = useCallback((_: Event, value: number | number[]) => {
+        const newTime = Array.isArray(value) ? value[0] : value;
+        setCurrentTime(newTime);
+    }, []);
+
+    const handleSeekEnd = useCallback((_: Event | React.SyntheticEvent, value: number | number[]) => {
         const newTime = Array.isArray(value) ? value[0] : value;
         setCurrentTime(newTime);
         if (videoRef.current) {
             videoRef.current.currentTime = newTime;
         }
+        setIsSeeking(false);
     }, []);
 
     const skip = useCallback((seconds: number) => {
         if (videoRef.current) {
             videoRef.current.currentTime += seconds;
+            setShowControls(true);
         }
     }, []);
 
@@ -112,7 +162,7 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
-            if (!containerRef.current?.contains(document.activeElement)) return;
+            if (!containerRef.current?.contains(document.activeElement) && !isFullscreen) return;
 
             switch (e.code) {
                 case 'Space':
@@ -140,22 +190,30 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
 
         document.addEventListener('keydown', handleKeyPress);
         return () => document.removeEventListener('keydown', handleKeyPress);
-    }, [togglePlay, skip, toggleFullscreen, toggleMute]);
+    }, [togglePlay, skip, toggleFullscreen, toggleMute, isFullscreen]);
 
     // Fullscreen change listener
     useEffect(() => {
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
+            setShowControls(true);
         };
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
+    // Handle video source changes
+    useEffect(() => {
+        if (videoRef.current && source) {
+            videoRef.current.load();
+        }
+    }, [source]);
+
     if (!source) {
         return (
-            <Stack flex={1} alignItems="center" justifyContent="center">
-                <Typography>Loading video...</Typography>
+            <Stack flex={1} alignItems="center" justifyContent="center" sx={{ bgcolor: 'black' }}>
+                <Typography color="white">Loading video...</Typography>
             </Stack>
         );
     }
@@ -169,8 +227,12 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
             position="relative"
             bgcolor="black"
             onMouseMove={() => setShowControls(true)}
-            onMouseLeave={() => setShowControls(false)}
-            sx={{ cursor: showControls ? 'default' : 'none' }}
+            onMouseLeave={() => !isSeeking && setShowControls(false)}
+            sx={{
+                cursor: showControls ? 'default' : 'none',
+                touchAction: 'none',
+                overflow: 'hidden'
+            }}
         >
             {/* Video Element */}
             <Box
@@ -189,7 +251,9 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                 onClick={togglePlay}
                 sx={{
                     objectFit: 'contain',
-                    outline: 'none'
+                    outline: 'none',
+                    width: '100%',
+                    height: '100%'
                 }}
             />
 
@@ -204,7 +268,8 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                             position: 'absolute',
                             top: '50%',
                             left: '50%',
-                            transform: 'translate(-50%, -50%)'
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 10
                         }}
                     >
                         <Box
@@ -214,7 +279,11 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                                 border: '3px solid rgba(255,255,255,0.3)',
                                 borderTop: '3px solid white',
                                 borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
+                                animation: 'spin 1s linear infinite',
+                                '@media (max-width: 600px)': {
+                                    width: 36,
+                                    height: 36
+                                }
                             }}
                         />
                     </motion.div>
@@ -235,7 +304,8 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                             left: 0,
                             right: 0,
                             background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
-                            padding: 16
+                            padding: isMobile ? '8px' : '16px',
+                            zIndex: 20
                         }}
                     >
                         {/* Progress Bar */}
@@ -244,16 +314,20 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                             value={currentTime}
                             max={duration}
                             onChange={handleSeek}
+                            onChangeCommitted={handleSeekEnd}
+                            onMouseDown={handleSeekStart}
+                            onTouchStart={handleSeekStart}
                             sx={{
                                 color: 'white',
                                 height: 4,
+                                mx: isMobile ? 0.5 : 1,
                                 '& .MuiSlider-thumb': {
-                                    width: 12,
-                                    height: 12,
+                                    width: isMobile ? 10 : 12,
+                                    height: isMobile ? 10 : 12,
                                     transition: '0.2s',
-                                    '&:hover': {
-                                        width: 16,
-                                        height: 16
+                                    '&:hover, &:active': {
+                                        width: isMobile ? 14 : 16,
+                                        height: isMobile ? 14 : 16
                                     }
                                 },
                                 '& .MuiSlider-rail': {
@@ -263,57 +337,114 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                         />
 
                         {/* Control Buttons */}
-                        <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 1 }}>
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={isMobile ? 0.5 : 1}
+                            sx={{ mt: 1 }}
+                        >
                             {/* Play/Pause */}
-                            <IconButton onClick={togglePlay} sx={{ color: 'white' }}>
-                                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                            <IconButton
+                                onClick={togglePlay}
+                                sx={{
+                                    color: 'white',
+                                    padding: isMobile ? '4px' : '8px'
+                                }}
+                            >
+                                {isPlaying ?
+                                    <Pause size={isMobile ? 18 : 20} /> :
+                                    <Play size={isMobile ? 18 : 20} />
+                                }
                             </IconButton>
 
-                            {/* Volume Control */}
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <IconButton onClick={toggleMute} sx={{ color: 'white' }}>
-                                    {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                                </IconButton>
-                                <Slider
-                                    value={isMuted ? 0 : volume}
-                                    max={1}
-                                    step={0.1}
-                                    onChange={handleVolumeChange}
-                                    sx={{
-                                        color: 'white',
-                                        width: 80,
-                                        '& .MuiSlider-rail': {
-                                            opacity: 0.3
+                            {/* Volume Control - Hidden on mobile when not fullscreen */}
+                            {(!isMobile || isFullscreen) && (
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <IconButton
+                                        onClick={toggleMute}
+                                        sx={{
+                                            color: 'white',
+                                            padding: isMobile ? '4px' : '8px'
+                                        }}
+                                    >
+                                        {isMuted || volume === 0 ?
+                                            <VolumeX size={isMobile ? 16 : 20} /> :
+                                            <Volume2 size={isMobile ? 16 : 20} />
                                         }
-                                    }}
-                                />
-                            </Stack>
+                                    </IconButton>
+                                    {!isMobile && (
+                                        <Slider
+                                            value={isMuted ? 0 : volume}
+                                            max={1}
+                                            step={0.1}
+                                            onChange={handleVolumeChange}
+                                            sx={{
+                                                color: 'white',
+                                                width: 80,
+                                                '& .MuiSlider-rail': {
+                                                    opacity: 0.3
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </Stack>
+                            )}
 
                             {/* Time Display */}
-                            <Typography variant="body2" sx={{ color: 'white', minWidth: 100 }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: 'white',
+                                    minWidth: isMobile ? 70 : 100,
+                                    fontSize: isMobile ? '0.75rem' : '0.875rem'
+                                }}
+                            >
                                 {formatTime(currentTime)} / {formatTime(duration)}
                             </Typography>
 
-                            {/* Skip Buttons */}
-                            <IconButton onClick={() => skip(-10)} sx={{ color: 'white' }}>
-                                <SkipBack size={20} />
-                            </IconButton>
-                            <IconButton onClick={() => skip(10)} sx={{ color: 'white' }}>
-                                <SkipForward size={20} />
-                            </IconButton>
+                            {/* Skip Buttons - Hidden on mobile */}
+                            {!isMobile && (
+                                <>
+                                    <IconButton
+                                        onClick={() => skip(-10)}
+                                        sx={{
+                                            color: 'white',
+                                            padding: '8px'
+                                        }}
+                                    >
+                                        <SkipBack size={20} />
+                                    </IconButton>
+                                    <IconButton
+                                        onClick={() => skip(10)}
+                                        sx={{
+                                            color: 'white',
+                                            padding: '8px'
+                                        }}
+                                    >
+                                        <SkipForward size={20} />
+                                    </IconButton>
+                                </>
+                            )}
 
-                            {/* Settings */}
-                            <IconButton
-                                onClick={(e) => setSettingsAnchor(e.currentTarget)}
-                                sx={{ color: 'white' }}
-                            >
-                                <Settings size={20} />
-                            </IconButton>
+                            {/* Settings - Hidden on mobile */}
+                            {!isMobile && (
+                                <IconButton
+                                    onClick={(e) => setSettingsAnchor(e.currentTarget)}
+                                    sx={{
+                                        color: 'white',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    <Settings size={20} />
+                                </IconButton>
+                            )}
 
                             <Menu
                                 anchorEl={settingsAnchor}
                                 open={Boolean(settingsAnchor)}
                                 onClose={() => setSettingsAnchor(null)}
+                                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                             >
                                 <MenuItem>
                                     <FormControl fullWidth size="small">
@@ -357,24 +488,34 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                             <Box sx={{ flex: 1 }} />
 
                             {/* Fullscreen */}
-                            <IconButton onClick={toggleFullscreen} sx={{ color: 'white' }}>
-                                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                            <IconButton
+                                onClick={toggleFullscreen}
+                                sx={{
+                                    color: 'white',
+                                    padding: isMobile ? '4px' : '8px'
+                                }}>
+                                {isFullscreen ?
+                                    <Minimize size={isMobile ? 18 : 20} /> :
+                                    <Maximize size={isMobile ? 18 : 20} />
+                                }
                             </IconButton>
                         </Stack>
 
-                        {/* Video Title */}
-                        <Typography
-                            variant="h6"
-                            sx={{
-                                color: 'white',
-                                mt: 1,
-                                textOverflow: 'ellipsis',
-                                overflow: 'hidden',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            {file.name}
-                        </Typography>
+                        {/* Video Title - Hidden on mobile */}
+                        {!isMobile && (
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    color: 'white',
+                                    mt: 1,
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    fontSize: isTablet ? '1rem' : '1.25rem'
+                                }}>
+                                {file.name}
+                            </Typography>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -382,33 +523,61 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
             {/* Play Button Overlay */}
             <AnimatePresence>
                 {!isPlaying && !showControls && (
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)'
-                        }}
-                    >
-                        <IconButton
-                            onClick={togglePlay}
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 15
+                    }}>
+                        <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}>
+                            <IconButton
+                                onClick={togglePlay}
+                                sx={{
+                                    width: isMobile ? 56 : 70,
+                                    height: isMobile ? 56 : 70,
+                                    borderRadius: 100,
+                                    color: 'white',
+                                    bgcolor: 'rgba(0,0,0,0.4)',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0,0,0,0.8)'
+                                    }
+                                }}>
+                                <Play size={isMobile ? 24 : 30} />
+                            </IconButton>
+                        </motion.div>
+                    </Box>
+                )}
+            </AnimatePresence>
+
+            {/* Mobile double-tap seek indicators */}
+            <AnimatePresence>
+                {isMobile && !showControls && (
+                    <>
+                        <Box
                             sx={{
-                                width: 70,
-                                height: 70,
-                                borderRadius: 100,
-                                color: 'white',
-                                bgcolor: 'rgba(0,0,0,0.4)',
-                                '&:hover': {
-                                    bgcolor: 'rgba(0,0,0,0.8)'
-                                }
+                                position: 'absolute',
+                                left: '25%',
+                                top: 0,
+                                bottom: 0,
+                                width: '25%',
+                                zIndex: 5
                             }}
-                        >
-                            <Play size={30} />
-                        </IconButton>
-                    </motion.div>
+                        />
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                right: '25%',
+                                top: 0,
+                                bottom: 0,
+                                width: '25%',
+                                zIndex: 5
+                            }}
+                        />
+                    </>
                 )}
             </AnimatePresence>
 
@@ -416,6 +585,18 @@ export const VideoPlayerComponent: React.FC<VideoPlayerProps> = ({ file }) => {
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
+                }
+                
+                /* Improve mobile video controls */
+                video::-webkit-media-controls {
+                    display: none !important;
+                }
+                
+                /* Prevent iOS safari from overriding styles */
+                @supports (-webkit-touch-callout: none) {
+                    .video-container {
+                        -webkit-touch-callout: none;
+                    }
                 }
             `}</style>
         </Stack>

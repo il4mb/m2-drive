@@ -131,7 +131,11 @@ const getValidIconType = (type: string): string => {
 
 export default function FileViewIcon({ file, size = 18, showDocumentPreview = false }: FileIconProps) {
 
-    const pdfPresign = usePresignUrlWith({ fileId: file.id, metaKey: 'pdfObjectKey' });
+    const pdfPresign = usePresignUrlWith({
+        fileId: file.id,
+        // @ts-ignore
+        metaKey: file.meta?.mimeType == "application/pdf" ? "Key": 'pdfObjectKey'
+    });
 
     if (pdfPresign && showDocumentPreview) {
         return <ContentIcon url={pdfPresign} file={file} />

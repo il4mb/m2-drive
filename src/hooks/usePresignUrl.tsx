@@ -40,10 +40,10 @@ export const usePresignUrlWith = ({ fileId, metaKey = "Key", download = false }:
 }
 
 
-export const getPresignUrl = async (objectKey: string) => {
+export const getPresignUrl = async (objectKey: string, download = false, fileName = "download") => {
     return (
-        await fetch(`/api/presign-url/${objectKey.replace(/^\//, '')}`).then(r => r.json())
-    )?.data?.url;
+         await invokeFunction("getFileURLPresign", { objectKey, download, fileName })
+    ).data?.url;
 }
 
 export const getPresignUrlWithKey = async (objectKey: string, metaKey: string) => {

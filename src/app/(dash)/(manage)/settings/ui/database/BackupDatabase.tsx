@@ -78,7 +78,7 @@ export default function BackupDatabase({ }: BackupDatabaseProps) {
                 throw new Error("Backup object key doesn't exist!");
             }
 
-            const url = await getPresignUrl(backup.payload.objectKey);
+            const url = await getPresignUrl(backup.payload.objectKey, true, "backup.sqlite");
             if (!url) {
                 throw new Error("Failed to get download url, object may not be found!");
             }
@@ -91,6 +91,7 @@ export default function BackupDatabase({ }: BackupDatabaseProps) {
             // Push download automatically
             const link = document.createElement("a");
             link.href = url;
+            link.target = "_blank";
             link.download = backup.payload.objectKey.split("/").pop() || "backup.sqlite";
             document.body.appendChild(link);
             link.click();

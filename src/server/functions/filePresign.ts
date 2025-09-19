@@ -6,7 +6,31 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const getFileURLPresign = createFunction(
-    async ({ fileId, metaKey = "Key", download = false }: { fileId: string, metaKey?: string, download?: boolean; }) => {
+    async ({ fileId, metaKey = "Key", download = false, objectKey: initKey, fileName }: {
+        fileId?: string;
+        metaKey?: string;
+        download?: boolean;
+        objectKey?: string;
+        fileName?: string;
+    }) => {
+
+
+        if (initKey) {
+            const command = new GetObjectCommand({
+                Bucket: bucketName,
+                Key: initKey,
+                ...(download && {
+                    ResponseContentDisposition: `attachment; filename="${encodeURIComponent(`${fileName || 'download'}`)}"`,
+                })
+            });
+
+            const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            return {
+                url,
+                exp: Date.now() + (3600 * 1000) - 20_000
+            }
+        }
+
 
         const connection = await getConnection();
         const fileRepository = connection.getRepository(File);

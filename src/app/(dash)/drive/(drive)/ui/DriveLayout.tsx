@@ -4,7 +4,7 @@ import Container from "@/components/Container";
 import StickyHeader from "@/components/navigation/StickyHeader";
 import { Breakpoint, Button, Paper, Stack, Typography, useTheme } from "@mui/material";
 import { HardDrive, UploadCloud, } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { Dispatch, ReactNode, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { File } from "@/entities/File";
 import { ModuleViewerManager } from "@/viewer/ModuleViewerManager";
@@ -37,18 +37,20 @@ export default function DriveLayout({ children }: layoutProps) {
     const session = useCurrentSession();
     const contextMenu = useContextMenu();
     const theme = useTheme();
+    const pathname = usePathname();
     const params = useParams<{ pId: string[] }>();
     const pId = useMemo(() => params.pId, [params]);
     const firstId = useMemo(() => pId?.[0], [pId]);
     const endpoint = useMemo(() => `/drive/${firstId}/{ID}`, [firstId]);
     const userId = useMemo(() => session.userId, [session]);
+    const shouldOpen = useMemo(() => pId?.length > 0, [pId, pathname]);
     const endpointResolve = useCallback((file: File) => `/drive/${firstId}/${[...pId.splice(1), file.id].join("/")}`, [pId, firstId]);
 
     useEffect(() => {
         return contextMenu.addState({ userId })
     }, [userId]);
 
-    if (pId?.length > 0) {
+    if (shouldOpen) {
 
         return (
             <FileViewerLayout

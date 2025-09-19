@@ -43,6 +43,7 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
 
             const link = document.createElement("a");
             link.href = result.data.url;
+            link.target = "_blank";
             link.download = name;
             document.body.appendChild(link);
             link.click();
@@ -61,7 +62,6 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
 
     const getFileTypeColor = () => {
         const extension = file.name.split('.').pop()?.toLowerCase();
-
         switch (extension) {
             case 'pdf': return '#f40f02';
             case 'doc': case 'docx': return '#2b579a';
@@ -82,7 +82,6 @@ export const DefaultViewerComponent: React.FC<{ file: File<'file'> }> = ({ file 
             spacing={4}
             sx={{
                 p: 4,
-                background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${theme.palette.background.paper} 100%)`,
                 minHeight: '100%'
             }}>
             {/* File Icon */}

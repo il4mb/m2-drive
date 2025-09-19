@@ -42,7 +42,7 @@ export function invokeFunction<N extends FunctionName>(
                 // Cache latest result
                 invokeCache.set(key, { timestamp: now, result: data });
                 if (!data.success) {
-                    console.warn(data.error);
+                    // console.warn(data.error);
                 }
                 resolve(data);
             }

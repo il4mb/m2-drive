@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, X, Presentation, Play, Pause } from "lucide-react"
+import { FileText, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, X, Presentation, Play, Pause, RotateCw, Layout, Grid } from "lucide-react"
 import {
     Box,
     Stack,
@@ -13,7 +13,9 @@ import {
     LinearProgress,
     Chip,
     Dialog,
-    Slide
+    Slide,
+    ToggleButtonGroup,
+    ToggleButton
 } from "@mui/material";
 import { usePresignUrlWith } from "@/hooks/usePresignUrl";
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -26,16 +28,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TransitionProps } from '@mui/material/transitions';
 import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
-import { pdfjs } from 'react-pdf';
-import { Document, Page } from 'react-pdf';
-import 'react-pdf/dist/Page/TextLayer.css';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { pdfOptions } from "@/components/context/ContextInjector";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-const options = {
-    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-};
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+).toString();
 
 const supportedMimes = new Set([
     // Word
@@ -148,9 +148,13 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
     const [presentationMode, setPresentationMode] = useState(false);
     const [isAutoplay, setIsAutoplay] = useState(false);
     const [pageDirection, setPageDirection] = useState(0); // 0: initial, 1: next, -1: previous
+    const [layoutMode, setLayoutMode] = useState<'vertical' | 'horizontal'>('vertical');
+    const [rotation, setRotation] = useState(0);
+    const [pageDimensions, setPageDimensions] = useState<Array<{ width: number; height: number; ratio: number }>>([]);
     const autoplayIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const theme = useTheme();
     const documentRef = useRef<HTMLDivElement>(null);
+    const viewerRef = useRef<HTMLDivElement>(null);
 
     const totalPages = numPages;
 
@@ -165,6 +169,16 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         setError(error.message);
         setIsLoading(false);
     }
+
+    const onPageLoadSuccess = useCallback((page: any, index: number) => {
+        const { width, height } = page.getViewport({ scale: 1 });
+        const ratio = width / height;
+        setPageDimensions(prev => {
+            const newDims = [...prev];
+            newDims[index] = { width, height, ratio };
+            return newDims;
+        });
+    }, []);
 
     const handleDownload = useCallback(() => {
         if (!url) return;
@@ -184,6 +198,16 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
 
     const handleZoomOut = useCallback(() => {
         setScale(prev => Math.max(prev - 0.2, 0.5));
+    }, []);
+
+    const handleRotate = useCallback(() => {
+        setRotation(prev => (prev + 90) % 360);
+    }, []);
+
+    const handleLayoutChange = useCallback((event: React.MouseEvent<HTMLElement>, newLayout: 'vertical' | 'horizontal') => {
+        if (newLayout !== null) {
+            setLayoutMode(newLayout);
+        }
     }, []);
 
     const handlePresentationMode = useCallback(() => {
@@ -260,6 +284,38 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         setPage(prev => Math.min(prev + 1, totalPages));
     }, [totalPages]);
 
+    // Calculate optimal page width based on layout mode
+    const getPageWidth = useCallback((pageNumber: number) => {
+        if (layoutMode === 'horizontal') {
+            return Math.min(800, viewerRef.current?.clientWidth || 800);
+        }
+
+        // For vertical layout, use container width but limit to 800px
+        return Math.min(viewerRef.current?.clientWidth || 800, 800) * scale;
+    }, [layoutMode, scale]);
+
+    // Calculate optimal page size for presentation mode (maintains aspect ratio)
+    const getPresentationPageSize = useCallback((pageNumber: number) => {
+        if (pageNumber < 1 || pageNumber > pageDimensions.length || !pageDimensions[pageNumber - 1]) {
+            return { width: window.innerWidth * 0.9, height: window.innerHeight * 0.9 };
+        }
+
+        const { ratio } = pageDimensions[pageNumber - 1];
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+
+        // Calculate dimensions that maintain aspect ratio and fit within screen
+        let width = maxWidth;
+        let height = width / ratio;
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * ratio;
+        }
+
+        return { width, height };
+    }, [pageDimensions]);
+
     // Keyboard navigation for presentation mode
     useEffect(() => {
         if (!presentationMode) return;
@@ -316,9 +372,56 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
     const renderDocumentContent = () => {
         if (!url) return null;
 
+        if (layoutMode === 'horizontal') {
+            return (
+                <Document
+                    options={pdfOptions}
+                    file={url}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                    loading={
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
+                            <CircularProgress />
+                        </Box>
+                    }>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexWrap: 'nowrap',
+                        overflowX: 'auto',
+                        gap: 2,
+                        p: 2,
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start'
+                    }}>
+                        {Array.from(new Array(numPages), (el, index) => (
+                            <Box
+                                key={`page_${index + 1}`}
+                                sx={{
+                                    flex: '0 0 auto',
+                                    boxShadow: theme.shadows[2],
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    backgroundColor: 'white'
+                                }}
+                            >
+                                <Page
+                                    pageNumber={index + 1}
+                                    width={getPageWidth(index + 1)}
+                                    rotate={rotation}
+                                    onLoadSuccess={(page) => onPageLoadSuccess(page, index)}
+                                />
+                            </Box>
+                        ))}
+                    </Box>
+                </Document>
+            );
+        }
+
+        // Vertical layout (default)
         return (
             <Document
-                options={options}
+                options={pdfOptions}
                 file={url}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={onDocumentLoadError}
@@ -327,29 +430,26 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                         <CircularProgress />
                     </Box>
                 }>
-                <AnimatePresence mode="wait" custom={pageDirection}>
-                    <motion.div
-                        key={page}
-                        custom={pageDirection}
-                        initial={{
-                            opacity: 0,
-                            x: pageDirection === 1 ? 100 : pageDirection === -1 ? -100 : 0,
-                            scale: pageDirection !== 0 ? 0.95 : 1
-                        }}
-                        animate={{
-                            opacity: 1,
-                            x: 0,
-                            scale: 1
-                        }}
-                        exit={{
-                            opacity: 0,
-                            x: pageDirection === 1 ? -100 : pageDirection === -1 ? 100 : 0,
-                            scale: 0.95
-                        }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}>
-                        <Page pageNumber={page} />
-                    </motion.div>
-                </AnimatePresence>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    {Array.from(new Array(numPages), (el, index) => (
+                        <Box
+                            key={`page_${index + 1}`}
+                            sx={{
+                                boxShadow: theme.shadows[2],
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                backgroundColor: 'white'
+                            }}
+                        >
+                            <Page
+                                pageNumber={index + 1}
+                                width={getPageWidth(index + 1)}
+                                rotate={rotation}
+                                onLoadSuccess={(page) => onPageLoadSuccess(page, index)}
+                            />
+                        </Box>
+                    ))}
+                </Box>
             </Document>
         );
     };
@@ -360,10 +460,10 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
 
         return (
             <Document
+                options={pdfOptions}
                 file={url}
                 onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-            >
+                onLoadError={onDocumentLoadError}>
                 <AnimatePresence mode="wait" custom={pageDirection}>
                     <motion.div
                         key={page}
@@ -390,12 +490,11 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center'
-                        }}
-                    >
+                        }}>
                         <Page
                             pageNumber={page}
-                            width={window.innerWidth * 0.9}
-                            height={window.innerHeight * 0.9}
+                            {...getPresentationPageSize(page)}
+                            rotate={rotation}
                         />
                     </motion.div>
                 </AnimatePresence>
@@ -408,7 +507,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
             <Stack sx={{
                 height: "100%",
                 flex: 1,
-                bgcolor: "background.default",
                 overflow: 'hidden'
             }}>
                 {/* Enhanced Toolbar with animations */}
@@ -416,7 +514,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                     elevation={2}
                     sx={{
                         borderRadius: 0,
-                        borderBottom: `1px solid ${theme.palette.divider}`,
                         p: 1
                     }}
                     component={motion.div}
@@ -424,33 +521,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.3 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <Tooltip title="Halaman sebelumnya">
-                            <span>
-                                <IconButton
-                                    onClick={goToPreviousPage}
-                                    disabled={page <= 1}
-                                    size="small"
-                                    color="primary">
-                                    <ChevronLeft size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-
-                        <Typography variant="body2" sx={{ minWidth: 80, textAlign: 'center' }}>
-                            {page} / {totalPages || "…"}
-                        </Typography>
-
-                        <Tooltip title="Halaman berikutnya">
-                            <span>
-                                <IconButton
-                                    onClick={goToNextPage}
-                                    disabled={page >= totalPages}
-                                    size="small"
-                                    color="primary">
-                                    <ChevronRight size={20} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
 
                         <Box sx={{ width: 1, height: 24, mx: 1, bgcolor: 'divider' }} />
 
@@ -480,7 +550,15 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                             </span>
                         </Tooltip>
 
-                        <Box flex={1} />
+                        <Tooltip title="Putar halaman">
+                            <IconButton
+                                onClick={handleRotate}
+                                size="small">
+                                <RotateCw size={18} />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Box sx={{ width: 1, height: 24, mx: 1, bgcolor: 'divider' }} />
 
                         <Tooltip title="Mode presentasi">
                             <IconButton
@@ -494,19 +572,37 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                 </Paper>
 
                 {/* Viewer with enhanced loading states */}
-                <Stack
+                <Box
+                    ref={viewerRef}
                     flex={1}
-                    p={2}
                     className="no-scrollbar"
-                    overflow={"auto"}>
+                    overflow={"auto"}
+                    sx={{
+                        bgcolor: layoutMode === 'horizontal' ? 'grey.100' : 'background.default',
+                        ...(layoutMode === 'horizontal' && {
+                            '&::-webkit-scrollbar': {
+                                height: 8,
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                backgroundColor: 'grey.200',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                backgroundColor: 'grey.400',
+                                borderRadius: 2,
+                            },
+                        })
+                    }}
+                >
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
                             style={{
-                                alignSelf: 'center',
-                                justifySelf: 'center'
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                height: '100%'
                             }}>
                             <Paper sx={{ p: 3, textAlign: "center" }}>
                                 <Typography color="error" variant="body2">
@@ -520,20 +616,18 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                         <Box
                             ref={documentRef}
                             component={motion.div}
-                            initial={{ opacity: 0, scale: 1 }}
-                            animate={{
-                                opacity: 1,
-                                scale,
-                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             transition={{ duration: 0.4 }}
-                            style={{
-                                transformOrigin: scale < 1 ? "center center" : "top center",
-                                alignSelf: 'center'
-                            }}>
+                            sx={{
+                                p: layoutMode === 'horizontal' ? 0 : 2,
+                                minHeight: '100%'
+                            }}
+                        >
                             {renderDocumentContent()}
                         </Box>
                     )}
-                </Stack>
+                </Box>
 
             </Stack>
 

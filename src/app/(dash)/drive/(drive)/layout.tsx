@@ -5,6 +5,7 @@ export interface layoutProps {
     children?: ReactNode;
 }
 export default function layout({ children }: layoutProps) {
+    
     return (
         <DriveLayout>
             {children}

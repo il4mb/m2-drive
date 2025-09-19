@@ -99,6 +99,7 @@ export default function FileView<T = any>({
                     bgcolor: selected ? "action.hover" : '',
                     boxShadow: layout == "grid" ? 2 : 0,
                     borderRadius: layout == "grid" ? 2 : 0,
+                    overflow: "hidden",
                     // overflow: 'hidden',
                     "&:hover": {
                         bgcolor: "action.hover"
@@ -121,33 +122,35 @@ export default function FileView<T = any>({
                                 justifyContent={"center"}
                                 alignItems={"center"}>
                                 {!Boolean((file.meta as any)?.thumbnail) && (
-                                    <FileViewIcon file={file} size={45} />
+                                    <FileViewIcon file={file} size={45} showDocumentPreview />
                                 )}
 
                             </Stack>
-                            <Typography
-                                maxWidth="150px"
-                                fontSize={size - ((40 / 100) * size)}
-                                textAlign="center"
-                                sx={{
-                                    display: "-webkit-box",
-                                    overflow: "hidden",
-                                    WebkitBoxOrient: "vertical",
-                                    WebkitLineClamp: 2, // Max 2 lines
-                                    lineHeight: "1.2em",
-                                    wordBreak: 'break-word',
-                                }}>
-                                {file.name}
-                            </Typography>
+                            <Stack justifyContent={"center"} alignItems={"center"} position={"relative"} zIndex={100}>
+                                <Typography
+                                    maxWidth="150px"
+                                    fontSize={size - ((40 / 100) * size)}
+                                    textAlign="center"
+                                    sx={{
+                                        display: "-webkit-box",
+                                        overflow: "hidden",
+                                        WebkitBoxOrient: "vertical",
+                                        WebkitLineClamp: 2, // Max 2 lines
+                                        lineHeight: "1.2em",
+                                        wordBreak: 'break-word',
+                                    }}>
+                                    {file.name}
+                                </Typography>
 
-                            <Typography color='text.secondary' fontSize={10} textAlign={"center"} mb={0.4}>
-                                {file.type == "folder"
-                                    // @ts-ignore
-                                    ? `${file.meta?.itemCount || 0} items`
-                                    // @ts-ignore
-                                    : formatFileSize(file.meta?.size || 0)}
-                            </Typography>
+                                <Typography color='text.secondary' fontSize={10} textAlign={"center"} mb={0.4}>
+                                    {file.type == "folder"
+                                        // @ts-ignore
+                                        ? `${file.meta?.itemCount || 0} items`
+                                        // @ts-ignore
+                                        : formatFileSize(file.meta?.size || 0)}
+                                </Typography>
 
+                            </Stack>
                             <Box sx={{ position: 'absolute', top: 0, right: 0, m: 1 }}>
                                 {viewers.length > 0 && (
                                     <Stack direction={'row'} alignItems={"center"} ml={"auto"}>

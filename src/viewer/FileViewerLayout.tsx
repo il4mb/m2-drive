@@ -37,7 +37,6 @@ export default function FileViewerLayout({ children, pathList, pageEndpoint, end
         setCanGoBack(canGobackInitial || pathList.length > 1);
     }, [pathList, canGobackInitial]);
 
-
     useEffect(() => {
         return contextMenu?.addState({ folder: file });
     }, [file]);

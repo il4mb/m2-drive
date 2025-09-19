@@ -136,15 +136,7 @@ export default function UploadManager({ uploads = [] }: UploadManagerProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}>
-            <Stack
-                flex={1}
-                component={Paper}
-                elevation={0}
-                sx={{
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    borderRadius: 2,
-                    background: theme.palette.background.paper
-                }}>
+            <Stack flex={1}>
 
                 {/* Status Filter Chips */}
                 <Stack direction="row" spacing={1} mb={3} flexWrap="wrap" gap={1}>

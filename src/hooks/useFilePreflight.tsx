@@ -6,12 +6,17 @@ import { useState, useEffect } from 'react';
 // File preflight hook with improved error handling
 
 export const useFilePreflight = ({ fileId, subsId }: { fileId: string, subsId?: string[] }) => {
+   
     const [success, setSuccess] = useState<boolean>(false);
     const [error, setError] = useState<null | string>(null);
     const [loading, setLoading] = useState(true);
     const [file, setFile] = useState<File>();
 
     const sendPreflight = () => {
+        setLoading(true);
+        setFile(undefined);
+        setError(null);
+
         invokeFunction("filePreflight", { fileId, subsId })
             .then(response => {
                 if (!response.error) {
@@ -38,10 +43,8 @@ export const useFilePreflight = ({ fileId, subsId }: { fileId: string, subsId?: 
     };
 
     useEffect(() => {
-        setLoading(true);
         sendPreflight();
-        // file sengaja ditambahkan di depedency supaya guard di atas jalan
-    }, [fileId, subsId, file]);
+    }, [fileId, subsId]);
 
-    return { success, error, loading, file };
+    return { success, error, loading, file, refresh: sendPreflight };
 };

@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { Box, Stack } from "@mui/material";
 import Pattern from '@/components/icon/Pattern';
 import { Metadata } from "next";
+import IDBMProvider from "@/components/context/IDBMProvider";
 
 export const metadata: Metadata = {
     title: "M2 Drive",
@@ -19,39 +20,41 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
             <body>
                 <Theme>
                     <Suspense fallback={"Loading..."}>
-                        <SessionManager>
-                            <ActionsProvider>
-                                <Stack flex={1} overflow={"hidden"}>
-                                    <Stack
-                                        sx={{
-                                            position: 'relative',
-                                            zIndex: 2
-                                        }}
-                                        flex={1}
-                                        direction={"row"}
-                                        height={'100vh'}
-                                        overflow={"hidden"}>
-                                        {children}
+                        <IDBMProvider>
+                            <SessionManager>
+                                <ActionsProvider>
+                                    <Stack flex={1} overflow={"hidden"}>
+                                        <Stack
+                                            sx={{
+                                                position: 'relative',
+                                                zIndex: 2
+                                            }}
+                                            flex={1}
+                                            direction={"row"}
+                                            height={'100vh'}
+                                            overflow={"hidden"}>
+                                            {children}
+                                        </Stack>
+                                        <Box
+                                            sx={{
+                                                position: "fixed",
+                                                top: 0,
+                                                left: 0,
+                                                width: '100vw',
+                                                height: '100vh',
+                                                zIndex: 1,
+                                                pointerEvents: 'none',
+                                                filter: 'blur(4px)'
+                                            }}>
+                                            <Pattern
+                                                width={'100%'}
+                                                height={'100%'}
+                                                opacity={0.8} />
+                                        </Box>
                                     </Stack>
-                                    <Box
-                                        sx={{
-                                            position: "fixed",
-                                            top: 0,
-                                            left: 0,
-                                            width: '100vw',
-                                            height: '100vh',
-                                            zIndex: 1,
-                                            pointerEvents: 'none',
-                                            filter: 'blur(4px)'
-                                        }}>
-                                        <Pattern
-                                            width={'100%'}
-                                            height={'100%'}
-                                            opacity={0.8} />
-                                    </Box>
-                                </Stack>
-                            </ActionsProvider>
-                        </SessionManager>
+                                </ActionsProvider>
+                            </SessionManager>
+                        </IDBMProvider>
                     </Suspense>
                 </Theme>
             </body>

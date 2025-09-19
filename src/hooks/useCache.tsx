@@ -18,7 +18,7 @@ export default function useCache(key?: string): [Cache | null, (v: Omit<Cache, "
 
     // Load initial value from IndexedDB
     useEffect(() => {
-        if (!key) return;
+        if (!key || !db) return;
         (async () => {
             const cached = await db.get({ key });
             setValue(cached || null);

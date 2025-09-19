@@ -1,10 +1,22 @@
 import { File } from '@/entities/File';
 import { Folder } from 'lucide-react';
 import { FileIcon } from '@untitledui/file-icons';
+import { usePresignUrlWith } from '@/hooks/usePresignUrl';
+import { Box, Stack } from '@mui/material';
+import { Document, Page } from 'react-pdf';
+import { pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+).toString();
 
 export interface FileIconProps {
     file: File;
     size?: number;
+    showDocumentPreview?: boolean;
 }
 
 // MIME type to FileIcon type mapping
@@ -117,7 +129,14 @@ const getValidIconType = (type: string): string => {
     return supportedTypes.includes(type) ? type : 'empty';
 };
 
-export default function FileViewIcon({ file, size = 18 }: FileIconProps) {
+export default function FileViewIcon({ file, size = 18, showDocumentPreview = false }: FileIconProps) {
+
+    const pdfPresign = usePresignUrlWith({ fileId: file.id, metaKey: 'pdfObjectKey' });
+
+    if (pdfPresign && showDocumentPreview) {
+        return <ContentIcon url={pdfPresign} file={file} />
+    }
+
     if (file.type === "folder") {
         return <Folder size={size} />;
     }
@@ -136,8 +155,45 @@ export default function FileViewIcon({ file, size = 18 }: FileIconProps) {
     );
 }
 
+const ContentIcon = ({ url, file }: { url: string; file: File }) => {
+
+    // @ts-ignore
+    const mimeType = file.meta?.mimeType || "application/octet-stream";
+    const resolvedType = mimeTypeToIconType(mimeType);
+    const validType = getValidIconType(resolvedType);
+
+    return (
+        <Box
+            sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: 0.7
+            }}>
+            <Box sx={{
+                position: 'absolute',
+                top: 10,
+                left: 10,
+                zIndex: 10
+            }}>
+                <FileIcon
+                    size={18}
+                    type={validType}
+                    variant={"solid"}
+                />
+            </Box>
+            <Document key={file.id} file={url} loading={null} error={"Failed load preview"}>
+                <Page pageNumber={1} width={200} />
+            </Document>
+        </Box>
+    );
+}
+
+
 // Optional: Utility function to get icon type from MIME type
 export const getFileIconType = (mimeType: string): string => {
     const resolvedType = mimeTypeToIconType(mimeType);
     return getValidIconType(resolvedType);
-};
+}

@@ -164,6 +164,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
         layout: layout as "grid" | "list",
     }), [handleOpen, layout]);
 
+    // add action menu
     useEffect(() => {
         const removers = [
             addAction("search", {
@@ -189,7 +190,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
             removers.map(e => e());
         }
     }, [initialQuery]);
-
+    // update action menu
     useEffect(() => {
         updateActionProps("search", { value: keyword });
         updateActionProps("layout", { layout });

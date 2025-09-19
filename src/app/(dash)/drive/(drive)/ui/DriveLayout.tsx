@@ -89,10 +89,7 @@ export default function DriveLayout({ children }: layoutProps) {
                                 </Stack>
                             </Stack>
                         </StickyHeader>
-
-                        <Paper sx={{ display: 'flex', flexDirection: 'column', flex: 1, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)' }}>
-                            {children}
-                        </Paper>
+                        {children}
                     </StickyHeaderManager>
                 </Container>
             </Stack>

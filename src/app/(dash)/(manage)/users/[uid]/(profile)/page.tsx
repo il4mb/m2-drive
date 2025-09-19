@@ -45,7 +45,7 @@ export default function page() {
                     maxWidth: 1200,
                     flexBasis: 900,
                     mx: 'auto',
-                    boxShadow: 2
+                    background: 'transparent'
                 }}>
                 <Typography mb={2} fontSize={26}>
                     Statistik Drive <strong>{user?.name}</strong>

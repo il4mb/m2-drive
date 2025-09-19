@@ -2,13 +2,10 @@
 
 import Container from '@/components/Container';
 import useUser from '@/hooks/useUser';
-import { Stack, Typography, Button } from '@mui/material';
-import { Pen } from 'lucide-react';
+import { Stack, Typography } from '@mui/material';
 import { useParams } from 'next/navigation';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import StickyHeader from '@/components/navigation/StickyHeader';
-import Link from 'next/link';
-import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import UserAvatar from '@/components/ui/UserAvatar';
 
 export interface layoutProps {

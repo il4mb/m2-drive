@@ -166,7 +166,7 @@ export default function Page() {
                 </StickyHeader>
 
                 {/* Form */}
-                <Stack component={Paper} borderRadius={2} boxShadow={2}>
+                <Stack component={Paper} sx={{ background: 'transparent', backdropFilter: 'blur(10)' }}>
                     <Stack gap={2} p={[2, 2, 4]}>
                         {/* Permission warning */}
                         {!canEditUser && (

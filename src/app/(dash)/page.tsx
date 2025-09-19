@@ -18,7 +18,7 @@ export default function page() {
 
     return (
         <Container maxWidth={'xl'} scrollable>
-            <Stack component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2, mb: 4 }}>
+            <Stack p={4} sx={{ borderRadius: 2, mb: 4 }}>
                 <Stack mb={2}>
                     <Typography fontSize={26} fontWeight={800} mb={2}>
                         Selamat Datang di <strong>M2</strong> Drive
@@ -37,8 +37,8 @@ export default function page() {
             </Stack>
 
             <Stack direction={['column', 'column', 'column', 'row-reverse']} alignItems={'flex-start'} gap={3}>
-                <ActivitiesCard sx={{ boxShadow: 2, width: '100%', flexBasis: { lg: 400 } }} />
-                <Stack flex={1} component={Paper} p={4} sx={{ boxShadow: 2, borderRadius: 2, width: '100%', flexBasis: { lg: 800 } }}>
+                <ActivitiesCard sx={{ width: '100%', flexBasis: { lg: 400 } }} />
+                <Stack flex={1} p={4} sx={{ borderRadius: 2, width: '100%', flexBasis: { lg: 800 } }}>
                     <Stack direction={"row"} spacing={1} alignItems={"center"}>
                         <ChartArea />
                         <Typography mb={2} fontSize={26}>

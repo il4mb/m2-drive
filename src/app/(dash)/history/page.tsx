@@ -108,6 +108,7 @@ export default function Page() {
                         border: "1px solid",
                         borderColor: "divider",
                         mb: 1,
+                        background: 'transparent', backdropFilter: 'blur(10)',
                         "&:hover": {
                             backgroundColor: "action.hover",
                         },
@@ -262,7 +263,7 @@ export default function Page() {
             </StickyHeader>
 
             <Stack spacing={3} sx={{ minHeight: 'max(600px, 85vh)', pb: 4 }}>
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2, background: 'transparent', backdropFilter: 'blur(10)' }}>
                     <Stack spacing={1} mb={3}>
                         <Typography variant="h5" fontWeight={600}>
                             Aktivitas Terbaru

@@ -96,14 +96,16 @@ export default function FileView<T = any>({
                     position: 'relative',
                     cursor: 'pointer',
                     userSelect: 'none',
-                    bgcolor: selected ? "action.hover" : '',
+                    // bgcolor: selected ? "action.hover" : '',
                     boxShadow: layout == "grid" ? 2 : 0,
                     borderRadius: layout == "grid" ? 2 : 0,
                     overflow: "hidden",
+                    background: 'transparent',
+                    backdropFilter: 'blur(10px)',
                     // overflow: 'hidden',
-                    "&:hover": {
-                        bgcolor: "action.hover"
-                    },
+                    // "&:hover": {
+                    //     bgcolor: "action.hover"
+                    // },
                     // @ts-ignore
                     ...(layout == "grid" && file.meta?.thumbnail && {
                         // @ts-ignore
@@ -124,7 +126,6 @@ export default function FileView<T = any>({
                                 {!Boolean((file.meta as any)?.thumbnail) && (
                                     <FileViewIcon file={file} size={45} showDocumentPreview />
                                 )}
-
                             </Stack>
                             <Stack justifyContent={"center"} alignItems={"center"} position={"relative"} zIndex={100}>
                                 <Typography

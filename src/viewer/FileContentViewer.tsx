@@ -21,10 +21,10 @@ export default function FileContentViewer() {
     }
 
     return (
-        <Paper component={Stack} sx={{ flex: 1, overflow: 'hidden', mb: 1 }}>
+        <Paper component={Stack} sx={{ flex: 1, overflow: 'hidden', background: 'transparent' }}>
 
             {result.file ? (
-                <FileContentState file={result.file} onRefresh={handleRefresh}/>
+                <FileContentState file={result.file} onRefresh={handleRefresh} />
             ) : result.error ? (
                 <ErrorState
                     error={result.error || undefined}

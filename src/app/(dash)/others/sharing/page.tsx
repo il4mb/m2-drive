@@ -69,10 +69,11 @@ export default function Page() {
                 sx={{
                     p: 2,
                     borderRadius: 2,
-                    boxShadow: 2,
+                    boxShadow: 0,
                     minHeight: 'max(600px, 85vh)',
                     position: 'relative',
-                    bgcolor: 'background.paper'
+                    background: 'transparent',
+                    backdropFilter: 'blur(10)'
                 }}>
                 <Box>
                     <Typography fontSize={16} fontWeight={600}>

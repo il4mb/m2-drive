@@ -7,6 +7,7 @@ import { Box, Stack } from "@mui/material";
 import Pattern from '@/components/icon/Pattern';
 import { Metadata } from "next";
 import IDBMProvider from "@/components/context/IDBMProvider";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 export const metadata: Metadata = {
     title: "M2 Drive",
@@ -27,7 +28,7 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
                                         <Stack
                                             sx={{
                                                 position: 'relative',
-                                                zIndex: 2
+                                                zIndex: 4
                                             }}
                                             flex={1}
                                             direction={"row"}
@@ -44,12 +45,8 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
                                                 height: '100vh',
                                                 zIndex: 1,
                                                 pointerEvents: 'none',
-                                                filter: 'blur(4px)'
                                             }}>
-                                            <Pattern
-                                                width={'100%'}
-                                                height={'100%'}
-                                                opacity={0.8} />
+                                            <AnimatedBackground />
                                         </Box>
                                     </Stack>
                                 </ActionsProvider>

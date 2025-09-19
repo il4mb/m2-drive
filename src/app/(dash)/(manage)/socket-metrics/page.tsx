@@ -328,95 +328,87 @@ export default function SocketMetricsDashboard() {
             {metrics && (
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Users2} color="primary" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Connections
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {formatNumber(metrics.activeConnections)}
+                        <Box sx={{ background: 'rgba(143, 143, 143, 0.07)', backdropFilter: 'blur(10)', borderRadius: 2, overflow: 'hidden', p: 2, boxShadow: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Box component={Users2} color="primary" sx={{ mr: 1 }} />
+                                <Typography color="textSecondary" gutterBottom>
+                                    Connections
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Active / {formatNumber(metrics.totalConnections)} Total
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Max: {formatNumber(metrics.maxConcurrentConnections)}
-                                </Typography>
-                            </CardContent>
-                        </Card>
+                            </Box>
+                            <Typography variant="h4" component="div">
+                                {formatNumber(metrics.activeConnections)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                Active / {formatNumber(metrics.totalConnections)} Total
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                Max: {formatNumber(metrics.maxConcurrentConnections)}
+                            </Typography>
+                        </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={BarChart} color="secondary" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Operations
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {formatNumber(metrics.functionInvocations + metrics.queryExecutions)}
+                        <Box sx={{ background: 'rgba(143, 143, 143, 0.07)', backdropFilter: 'blur(10)', borderRadius: 2, overflow: 'hidden', p: 2, boxShadow: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Box component={BarChart} color="secondary" sx={{ mr: 1 }} />
+                                <Typography color="textSecondary" gutterBottom>
+                                    Operations
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {formatNumber(metrics.functionInvocations)} Functions
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {formatNumber(metrics.queryExecutions)} Queries
-                                </Typography>
-                            </CardContent>
-                        </Card>
+                            </Box>
+                            <Typography variant="h4" component="div">
+                                {formatNumber(metrics.functionInvocations + metrics.queryExecutions)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                {formatNumber(metrics.functionInvocations)} Functions
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                {formatNumber(metrics.queryExecutions)} Queries
+                            </Typography>
+                        </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Tv} color="warning" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Subscriptions
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {formatNumber(metrics.subscriptions)}
+                        <Box sx={{ background: 'rgba(143, 143, 143, 0.07)', backdropFilter: 'blur(10)', borderRadius: 2, overflow: 'hidden', p: 2, boxShadow: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Box component={Tv} color="warning" sx={{ mr: 1 }} />
+                                <Typography color="textSecondary" gutterBottom>
+                                    Subscriptions
                                 </Typography>
-                                <Button
-                                    size="small"
-                                    color="warning"
-                                    onClick={handleClearSubscriptions}
-                                    sx={{ mt: 1 }}>
-                                    Clear All
-                                </Button>
-                            </CardContent>
-                        </Card>
+                            </Box>
+                            <Typography variant="h4" component="div">
+                                {formatNumber(metrics.subscriptions)}
+                            </Typography>
+                            <Button
+                                size="small"
+                                color="warning"
+                                onClick={handleClearSubscriptions}
+                                sx={{ mt: 1 }}>
+                                Clear All
+                            </Button>
+                        </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box component={Eye} color="info" sx={{ mr: 1 }} />
-                                    <Typography color="textSecondary" gutterBottom>
-                                        Viewers
-                                    </Typography>
-                                </Box>
-                                <Typography variant="h4" component="div">
-                                    {formatNumber(metrics.viewers)}
+                        <Box height={'100%'} sx={{ background: 'rgba(143, 143, 143, 0.07)', backdropFilter: 'blur(10px)', borderRadius: 2, overflow: 'hidden', p: 2, boxShadow: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <Box component={Eye} color="info" sx={{ mr: 1 }} />
+                                <Typography color="textSecondary" gutterBottom>
+                                    Viewers
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Tracking {formatNumber(viewers.length)} active viewers
-                                </Typography>
-                            </CardContent>
-                        </Card>
+                            </Box>
+                            <Typography variant="h4" component="div">
+                                {formatNumber(metrics.viewers)}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                Tracking {formatNumber(viewers.length)} active viewers
+                            </Typography>
+                        </Box>
                     </Grid>
                 </Grid>
             )}
 
             {/* Tabs for different sections */}
-            <Stack component={Paper} flex={1} sx={{ width: '100%' }}>
+            <Stack component={Paper} flex={1} sx={{ width: '100%', background: 'transparent', backdropFilter: 'blur(10px)' }}>
                 <Tabs
                     value={selectedTab}
                     onChange={(_, newValue) => setSelectedTab(newValue)}

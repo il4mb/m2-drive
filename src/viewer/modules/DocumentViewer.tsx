@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, X, Presentation, Play, Pause, RotateCw, Layout, Grid } from "lucide-react"
+import { FileText, ZoomIn, ZoomOut, X, Presentation, Play, Pause, RotateCw } from "lucide-react"
 import {
     Box,
     Stack,
@@ -11,11 +11,7 @@ import {
     Paper,
     Tooltip,
     LinearProgress,
-    Chip,
-    Dialog,
-    Slide,
-    ToggleButtonGroup,
-    ToggleButton
+    Chip
 } from "@mui/material";
 import { usePresignUrlWith } from "@/hooks/usePresignUrl";
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -25,17 +21,30 @@ import { Task } from "@/entities/Task";
 import { onSnapshot } from "@/libs/websocket/SnapshotManager";
 import { getOne, Json } from "@/libs/websocket/query";
 import { motion, AnimatePresence } from "framer-motion";
-import { TransitionProps } from '@mui/material/transitions';
 import { enqueueSnackbar } from "notistack";
 import CloseSnackbar from "@/components/ui/CloseSnackbar";
 import { Document, Page, pdfjs } from 'react-pdf';
 import { pdfOptions } from "@/components/context/ContextInjector";
+import { useActionsProvider } from "@/components/navigation/ActionsProvider";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url
 ).toString();
+
+
+export const usePdfWorkerReady = (): boolean => {
+    const [isReady, setIsReady] = useState(false);
+
+    useEffect(() => {
+        setIsReady(true);
+    }, []);
+
+    return isReady;
+};
+
+
 
 const supportedMimes = new Set([
     // Word
@@ -69,15 +78,6 @@ export const isConvertable = (mime: string) => supportedMimes.has(mime);
 interface DocumentViewerProps {
     file: File<'file'>;
 }
-
-const Transition = React.forwardRef(function Transition(
-    props: TransitionProps & {
-        children: React.ReactElement;
-    },
-    ref: React.Ref<unknown>,
-) {
-    return <Slide direction="up" ref={ref} {...props} />;
-});
 
 const DocumentViewerWithTask: React.FC<DocumentViewerProps> = ({ file }) => {
     const [task, setTask] = useState<Task | null>(null);
@@ -136,6 +136,9 @@ interface DocumentViewerComponentProps extends DocumentViewerProps {
 }
 
 export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = ({ file, task }) => {
+
+    const isPdfWorkerReady = usePdfWorkerReady();
+    const { addAction } = useActionsProvider();
     const url = usePresignUrlWith({
         fileId: file.id,
         metaKey: isConvertable(file.meta?.mimeType || '') ? "pdfObjectKey" : "Key"
@@ -155,6 +158,7 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
     const theme = useTheme();
     const documentRef = useRef<HTMLDivElement>(null);
     const viewerRef = useRef<HTMLDivElement>(null);
+    const presentationRef = useRef<HTMLDivElement>(null);
 
     const totalPages = numPages;
 
@@ -180,18 +184,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         });
     }, []);
 
-    const handleDownload = useCallback(() => {
-        if (!url) return;
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name || 'document';
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, [url, file.name]);
-
     const handleZoomIn = useCallback(() => {
         setScale(prev => Math.min(prev + 0.2, 3));
     }, []);
@@ -204,35 +196,23 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         setRotation(prev => (prev + 90) % 360);
     }, []);
 
-    const handleLayoutChange = useCallback((event: React.MouseEvent<HTMLElement>, newLayout: 'vertical' | 'horizontal') => {
-        if (newLayout !== null) {
-            setLayoutMode(newLayout);
-        }
-    }, []);
-
     const handlePresentationMode = useCallback(() => {
+
+        if (!presentationRef.current) return;
         enqueueSnackbar("Gunakan tombol panah untuk navigasi • Esc untuk keluar", {
             variant: "info",
             action: CloseSnackbar
         });
-
-        // Request fullscreen
-        const presentationContainer = document.documentElement;
-        if (presentationContainer.requestFullscreen) {
-            presentationContainer.requestFullscreen().catch(err => {
-                console.error('Error attempting to enable fullscreen:', err);
-            });
-        }
-
         setPresentationMode(true);
+        if (presentationRef.current && presentationRef.current.requestFullscreen) {
+            presentationRef.current.requestFullscreen();
+        }
     }, []);
 
     const handleClosePresentation = useCallback(() => {
         // Exit fullscreen
         if (document.fullscreenElement) {
-            document.exitFullscreen().catch(err => {
-                console.error('Error attempting to exit fullscreen:', err);
-            });
+            document.exitFullscreen();
         }
 
         // Stop autoplay if active
@@ -241,8 +221,8 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
             autoplayIntervalRef.current = null;
         }
         setIsAutoplay(false);
-
         setPresentationMode(false);
+
     }, []);
 
     const toggleAutoplay = useCallback(() => {
@@ -368,57 +348,26 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         }
     }, [pageDirection]);
 
+
+    useEffect(() => {
+        return addAction("presentation", {
+            component: () => (
+                <Tooltip title="Mode presentasi">
+                    <IconButton
+                        onClick={handlePresentationMode}
+                        color="primary">
+                        <Presentation size={18} />
+                    </IconButton>
+                </Tooltip>
+            )
+        })
+    }, []);
+
+
     // Render the document content with page transitions
     const renderDocumentContent = () => {
         if (!url) return null;
 
-        if (layoutMode === 'horizontal') {
-            return (
-                <Document
-                    options={pdfOptions}
-                    file={url}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={onDocumentLoadError}
-                    loading={
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-                            <CircularProgress />
-                        </Box>
-                    }>
-                    <Box sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        flexWrap: 'nowrap',
-                        overflowX: 'auto',
-                        gap: 2,
-                        p: 2,
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start'
-                    }}>
-                        {Array.from(new Array(numPages), (el, index) => (
-                            <Box
-                                key={`page_${index + 1}`}
-                                sx={{
-                                    flex: '0 0 auto',
-                                    boxShadow: theme.shadows[2],
-                                    borderRadius: 1,
-                                    overflow: 'hidden',
-                                    backgroundColor: 'white'
-                                }}
-                            >
-                                <Page
-                                    pageNumber={index + 1}
-                                    width={getPageWidth(index + 1)}
-                                    rotate={rotation}
-                                    onLoadSuccess={(page) => onPageLoadSuccess(page, index)}
-                                />
-                            </Box>
-                        ))}
-                    </Box>
-                </Document>
-            );
-        }
-
-        // Vertical layout (default)
         return (
             <Document
                 options={pdfOptions}
@@ -438,13 +387,15 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                                 boxShadow: theme.shadows[2],
                                 borderRadius: 1,
                                 overflow: 'hidden',
-                                backgroundColor: 'white'
-                            }}
-                        >
+                                minWidth: 240,
+                                minHeight: 400
+                            }}>
                             <Page
                                 pageNumber={index + 1}
                                 width={getPageWidth(index + 1)}
                                 rotate={rotation}
+                                loading={null}
+                                error={null}
                                 onLoadSuccess={(page) => onPageLoadSuccess(page, index)}
                             />
                         </Box>
@@ -493,6 +444,8 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                         }}>
                         <Page
                             pageNumber={page}
+                            loading={null}
+                            error={null}
                             {...getPresentationPageSize(page)}
                             rotate={rotation}
                         />
@@ -502,6 +455,9 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
         );
     };
 
+
+    if (!isPdfWorkerReady) return null;
+
     return (
         <>
             <Stack sx={{
@@ -509,67 +465,60 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                 flex: 1,
                 overflow: 'hidden'
             }}>
-                {/* Enhanced Toolbar with animations */}
-                <Paper
-                    elevation={2}
+
+
+                <Stack
+                    // component={Paper}
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
                     sx={{
-                        borderRadius: 0,
-                        p: 1
-                    }}
-                    component={motion.div}
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3 }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-
-                        <Box sx={{ width: 1, height: 24, mx: 1, bgcolor: 'divider' }} />
-
-                        <Tooltip title="Perkecil">
-                            <span>
-                                <IconButton
-                                    onClick={handleZoomOut}
-                                    disabled={scale <= 0.5}
-                                    size="small">
-                                    <ZoomOut size={18} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-
-                        <Typography variant="body2" sx={{ minWidth: 40, textAlign: 'center' }}>
-                            {Math.round(scale * 100)}%
-                        </Typography>
-
-                        <Tooltip title="Perbesar">
-                            <span>
-                                <IconButton
-                                    onClick={handleZoomIn}
-                                    disabled={scale >= 3}
-                                    size="small">
-                                    <ZoomIn size={18} />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-
-                        <Tooltip title="Putar halaman">
+                        position: 'fixed',
+                        bottom: '10px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 999,
+                        px: 1,
+                        py: 0.4,
+                        borderRadius: 4,
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 4,
+                        color: '#000'
+                    }}>
+                    <Tooltip title="Perkecil">
+                        <span>
                             <IconButton
-                                onClick={handleRotate}
+                                onClick={handleZoomOut}
+                                disabled={scale <= 0.5}
                                 size="small">
-                                <RotateCw size={18} />
+                                <ZoomOut size={18} />
                             </IconButton>
-                        </Tooltip>
+                        </span>
+                    </Tooltip>
 
-                        <Box sx={{ width: 1, height: 24, mx: 1, bgcolor: 'divider' }} />
+                    <Typography variant="body2" sx={{ minWidth: 40, textAlign: 'center' }}>
+                        {Math.round(scale * 100)}%
+                    </Typography>
 
-                        <Tooltip title="Mode presentasi">
+                    <Tooltip title="Perbesar">
+                        <span>
                             <IconButton
-                                onClick={handlePresentationMode}
-                                size="small"
-                                color="primary">
-                                <Presentation size={18} />
+                                onClick={handleZoomIn}
+                                disabled={scale >= 3}
+                                size="small">
+                                <ZoomIn size={18} />
                             </IconButton>
-                        </Tooltip>
-                    </Stack>
-                </Paper>
+                        </span>
+                    </Tooltip>
+
+                    <Tooltip title="Putar halaman">
+                        <IconButton
+                            onClick={handleRotate}
+                            size="small">
+                            <RotateCw size={18} />
+                        </IconButton>
+                    </Tooltip>
+                </Stack>
 
                 {/* Viewer with enhanced loading states */}
                 <Box
@@ -578,7 +527,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                     className="no-scrollbar"
                     overflow={"auto"}
                     sx={{
-                        bgcolor: layoutMode === 'horizontal' ? 'grey.100' : 'background.default',
                         ...(layoutMode === 'horizontal' && {
                             '&::-webkit-scrollbar': {
                                 height: 8,
@@ -591,8 +539,7 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                                 borderRadius: 2,
                             },
                         })
-                    }}
-                >
+                    }}>
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
@@ -622,8 +569,7 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                             sx={{
                                 p: layoutMode === 'horizontal' ? 0 : 2,
                                 minHeight: '100%'
-                            }}
-                        >
+                            }}>
                             {renderDocumentContent()}
                         </Box>
                     )}
@@ -632,16 +578,15 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
             </Stack>
 
             {/* Presentation Mode Dialog - Only renders when active */}
-            <Dialog
-                fullScreen
-                open={presentationMode}
-                onClose={handleClosePresentation}
-                TransitionComponent={Transition}
+            <Box ref={presentationRef}
                 sx={{
-                    '& .MuiDialog-container': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                        backdropFilter: 'blur(4px)',
-                    }
+                    display: presentationMode ? 'block' : 'none',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 99999
                 }}>
                 <Box
                     sx={{
@@ -690,25 +635,28 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                     </motion.div>
 
                     {/* Page indicator */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        style={{
-                            position: 'absolute',
-                            bottom: 16,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 10,
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                            borderRadius: 8,
-                            padding: '8px 12px',
-                            color: 'white'
-                        }}>
-                        <Typography variant="body2">
-                            {page} / {totalPages}
-                        </Typography>
-                    </motion.div>
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 10,
+                    }}>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                            style={{
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                borderRadius: 8,
+                                padding: '8px 12px',
+                                color: 'white'
+                            }}>
+                            <Typography variant="body2">
+                                {page} / {totalPages}
+                            </Typography>
+                        </motion.div>
+                    </Box>
 
                     {/* Document in presentation mode */}
                     <motion.div
@@ -725,7 +673,7 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                         {renderPresentationContent()}
                     </motion.div>
                 </Box>
-            </Dialog>
+            </Box>
         </>
     );
 };

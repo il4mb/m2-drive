@@ -5,6 +5,7 @@ import { useStickyHeaderManager } from './StickyHeaderManager';
 import ActionView from './ActionView';
 import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import useDarkMode from '@/hooks/useDarkMode';
 
 export interface StickyHeaderProps {
     children?: ReactNode;
@@ -16,6 +17,7 @@ export interface StickyHeaderProps {
 
 export default function StickyHeader({ children, sx, loading = false, actions, canGoBack = false }: StickyHeaderProps) {
 
+    const dark = useDarkMode();
     const router = useRouter();
     const manager = useStickyHeaderManager();
 
@@ -36,8 +38,10 @@ export default function StickyHeader({ children, sx, loading = false, actions, c
                     position: ['static', 'static', 'sticky'],
                     top: 17,
                     zIndex: 10,
-                    boxShadow: 4,
+                    boxShadow: dark ? 4 : 2,
                     borderRadius: 2,
+                    background: 'transparent',
+                    backdropFilter: 'blur(10px)',
                     ...(sx as any)
                 }}>
                 <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>

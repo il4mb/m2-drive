@@ -2,7 +2,6 @@
 
 import Container from '@/components/Container';
 import StickyHeader from '@/components/navigation/StickyHeader';
-import PermissionSuspense from '@/components/PermissionSuspense';
 import CloseSnackbar from '@/components/ui/CloseSnackbar';
 import { formatDuration, formatNumber } from '@/libs/utils';
 import { invokeFunction } from '@/libs/websocket/invokeFunction';
@@ -13,16 +12,12 @@ import {
     Badge,
     Button,
     Grid,
-    LinearProgress,
-    FormControlLabel,
-    Switch,
-    Box
+    LinearProgress
 } from '@mui/material';
 import {
     Cpu, Clock, CheckCircle, XCircle,
     RefreshCw,
     ListTree,
-    BrushCleaning,
     BarChart3
 } from 'lucide-react';
 import { enqueueSnackbar } from 'notistack';
@@ -30,7 +25,6 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import TaskTimelineChart, { HourlyStat } from './ui/TaskTimelineChart';
 import TaskItem from './ui/TaskItem';
 import InfiniteScroll from '@/components/InfiniteScroll';
-import { useOption } from '@/hooks/useOption';
 import AutoCleaner from './ui/AutoCleaner';
 
 type Summary = {
@@ -215,7 +209,7 @@ export default function TaskQueuePage() {
 
             <Stack spacing={3} mt={2}>
                 {/* Performance Metrics */}
-                <Paper sx={{ p: 3, borderRadius: 3 }}>
+                <Paper sx={{ p: 3, borderRadius: 3, background: 'transparent' }}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={3}>
                         <BarChart3 size={24} color={theme.palette.primary.main} />
                         <Typography variant="h6" fontWeight={600}>
@@ -255,7 +249,7 @@ export default function TaskQueuePage() {
                 {/* Main Content */}
                 <Grid container spacing={3} flexWrap={"wrap-reverse"}>
                     <Grid size={{ xs: 12, lg: 8 }}>
-                        <Paper sx={{ p: 2, borderRadius: 3 }}>
+                        <Paper sx={{ p: 2, borderRadius: 3, background: 'transparent' }}>
 
                             <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} mb={1}>
                                 <StatusChip

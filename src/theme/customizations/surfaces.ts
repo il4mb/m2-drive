@@ -55,6 +55,12 @@ export const surfacesCustomizations: Components<Theme> = {
         defaultProps: {
             elevation: 0,
         },
+        styleOverrides: {
+            root: {
+                // background: 'transparent',
+                backdropFilter: 'blur(10px)'
+            }
+        }
     },
     MuiCard: {
         styleOverrides: {

@@ -74,7 +74,8 @@ export default function UsersDrive({ }: UsersDriveProps) {
                         size="small"
                         sx={(theme) => ({
                             "& thead th": {
-                                backgroundColor: theme.palette.grey[100],
+                                backgroundColor: 'transparent',
+                                backdropFilter: 'blur(10px)',
                                 fontWeight: 700,
                                 fontSize: "0.875rem",
                             },
@@ -82,11 +83,6 @@ export default function UsersDrive({ }: UsersDriveProps) {
                                 backgroundColor: theme.palette.action.hover,
                                 transition: "background-color 0.2s ease-in-out",
                             },
-                            ...theme.applyStyles("dark", {
-                                "& thead th": {
-                                    backgroundColor: alpha(theme.palette.grey[100], 0.1)
-                                },
-                            })
                         })}>
                         <TableHead>
                             <TableRow>

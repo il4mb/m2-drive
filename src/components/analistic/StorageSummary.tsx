@@ -332,7 +332,7 @@ export default function StorageSummary() {
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <motion.div variants={itemVariants}>
-                        <Card sx={{ height: '100%', borderRadius: 2 }}>
+                        <Card sx={{ height: '100%', borderRadius: 2, background: 'transparent' }}>
                             <CardContent>
                                 <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
                                     <HardDrive size={20} color={theme.palette.success.main} />
@@ -399,7 +399,7 @@ export default function StorageSummary() {
                 {/* Storage Distribution Pie Chart */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 3, borderRadius: 2, height: 400 }}>
+                        <Paper sx={{ p: 3, borderRadius: 2, height: 400, background: 'transparent' }}>
                             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                                 <PieChartIcon size={18} color={theme.palette.primary.main} />
                                 <Typography variant="h6" fontWeight={600}>
@@ -438,7 +438,7 @@ export default function StorageSummary() {
                 {/* File Type Breakdown */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 3, borderRadius: 2, height: 400 }}>
+                        <Paper sx={{ p: 3, borderRadius: 2, height: 400, background: 'transparent' }}>
                             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                                 <BarChart3 size={18} color={theme.palette.secondary.main} />
                                 <Typography variant="h6" fontWeight={600}>
@@ -474,7 +474,7 @@ export default function StorageSummary() {
             <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 3, borderRadius: 2 }}>
+                        <Paper sx={{ p: 3, borderRadius: 2, background: 'transparent' }}>
                             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                                 <Clock size={18} color={theme.palette.warning.main} />
                                 <Typography variant="h6" fontWeight={600}>
@@ -525,7 +525,7 @@ export default function StorageSummary() {
                 {/* Garbage Items */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 3, borderRadius: 2 }}>
+                        <Paper sx={{ p: 3, borderRadius: 2, background: 'transparent' }}>
                             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                                 <Trash2 size={18} color={theme.palette.error.main} />
                                 <Typography variant="h6" fontWeight={600}>

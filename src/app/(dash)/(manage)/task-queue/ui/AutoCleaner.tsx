@@ -59,7 +59,7 @@ export default function AutoCleaner({ children }: AutoCleanerProps) {
     }
 
     return (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, background: 'transparent' }}>
 
             {isTaskActive && (
                 <motion.div

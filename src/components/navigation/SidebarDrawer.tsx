@@ -251,14 +251,16 @@ export default function SidebarDrawer() {
             <Stack
                 component={Paper}
                 flex={1}
-                sx={{
+                sx={(theme) => ({
                     height: '100%',
                     overflow: 'hidden',
                     maxHeight: '100dvh',
                     display: 'flex',
                     borderRadius: 0,
                     boxShadow: 2,
-                }}
+                    backdropFilter: 'blur(10px)',
+                    background: 'rgba(255, 255, 255, 0.07)',
+                })}
                 elevation={1}>
 
                 <Stack flex={1} overflow={"auto"} className='no-scrollbar'>
@@ -266,8 +268,6 @@ export default function SidebarDrawer() {
                         <Stack
                             px={2}
                             py={1}
-                            component={Paper}
-                            elevation={1}
                             boxShadow={0}
                             direction="row"
                             alignItems="center"

@@ -31,7 +31,7 @@ export default function page() {
                 </Stack>
             </Stack>
 
-            <Stack component={Paper} borderRadius={2} flex={1}>
+            <Stack component={Paper} borderRadius={2} flex={1} sx={{ background: 'transparent' }}>
 
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">

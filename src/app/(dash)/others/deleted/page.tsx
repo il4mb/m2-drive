@@ -105,7 +105,7 @@ export default function Page() {
 
                     </StickyHeader>
 
-                    <Paper component={Stack} sx={{ p: 2, borderRadius: 2, boxShadow: 2, minHeight: 'max(600px, 85vh)', position: 'relative' }}>
+                    <Paper component={Stack} sx={{ p: 2, borderRadius: 2, boxShadow: 0, minHeight: 'max(600px, 85vh)', position: 'relative',  background: 'transparent', backdropFilter: 'blur(10)' }}>
 
                         {!loading && files.length == 0 ? (
                             <Stack flex={1} justifyContent={"center"} alignItems={"center"}>

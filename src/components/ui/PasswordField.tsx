@@ -6,7 +6,8 @@ import {
     TextField,
     Typography,
     LinearProgress,
-    useTheme
+    useTheme,
+    TextFieldProps
 } from '@mui/material';
 import { Eye, EyeOff } from 'lucide-react';
 import { RefObject, useMemo, useState } from 'react';
@@ -21,6 +22,7 @@ export interface PasswordFieldProps {
     inputRef?: RefObject<HTMLInputElement | null>;
     disabled?: boolean;
     autoFocus?: boolean;
+    textFieldProps?: TextFieldProps;
 }
 
 export default function PasswordField({
@@ -32,7 +34,8 @@ export default function PasswordField({
     autoFocus = false,
     showable = false,
     progressable = false,
-    disabled = false
+    disabled = false,
+    textFieldProps
 }: PasswordFieldProps) {
     const [visible, setVisible] = useState(false);
     const theme = useTheme();
@@ -82,6 +85,7 @@ export default function PasswordField({
     return (
         <Box sx={{ width: '100%' }}>
             <TextField
+                {...textFieldProps}
                 inputRef={inputRef}
                 label={label}
                 type={visible ? 'text' : 'password'}

@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { ChartArea, FolderRoot, Settings, Users2 } from "lucide-react";
 import Container from "@/components/Container";
-import { useState } from "react";
 import StickyHeader from "@/components/navigation/StickyHeader";
 import PermissionSuspense from "@/components/PermissionSuspense";
 import StorageSummary from "@/components/analistic/StorageSummary";
@@ -40,9 +39,15 @@ export default function Page() {
                 </Stack>
             </StickyHeader>
 
-            <Stack component={Paper} borderRadius={2} sx={{ minHeight: '100dvh', p: 2 }}>
+            <Stack component={Paper} borderRadius={2} sx={{ minHeight: '100dvh', p: 2, background: 'transparent', backdropFilter: 'blur(10px)' }}>
 
-                <Box>
+                <Box sx={{
+                    backgroundColor: 'rgba(141, 141, 141, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 1,
+                    boxShadow: 2,
+                    pt: 1
+                }}>
                     <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                         <Tab label={<ChartArea size={20} />} value={1} sx={{ px: 2 }} />
                         <Tab label={<Users2 size={20} />} value={2} sx={{ px: 2 }} />

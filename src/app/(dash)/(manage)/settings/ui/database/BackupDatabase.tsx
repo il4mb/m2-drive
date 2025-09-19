@@ -198,7 +198,7 @@ export default function BackupDatabase({ }: BackupDatabaseProps) {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
                                     transition={{ duration: 0.3, delay: 0.2 * i }}>
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                                    <Paper sx={{ p: 2, background: 'transparent', borderRadius: 2, border: '2px solid rgba(0, 102, 255, 0.27)' }}>
                                         <Stack spacing={2}>
                                             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                                                 <Stack spacing={0.5}>

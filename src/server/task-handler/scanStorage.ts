@@ -1,5 +1,6 @@
 import { getConnection } from "@/data-source";
 import { File } from "@/entities/File";
+import Storage from "@/entities/Storage";
 import User from "@/entities/User";
 import { bucketName, s3Client } from "@/libs/s3-storage";
 import { currentTime } from "@/libs/utils";

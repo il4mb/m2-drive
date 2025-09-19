@@ -10,8 +10,6 @@ import {
     Typography,
     Box,
     Grid,
-    Card,
-    CardContent,
     Chip,
     Alert,
     CircularProgress,
@@ -24,7 +22,6 @@ import {
     IconButton,
     Collapse,
     useTheme,
-    useMediaQuery,
     LinearProgress,
     List,
     ListItem,
@@ -42,8 +39,6 @@ import {
     Info,
     ChevronDown,
     ChevronUp,
-    Database,
-    HardDrive,
     Clock,
     File
 } from 'lucide-react';
@@ -316,7 +311,7 @@ export default function DriveCleanerPage() {
                     {/* Storage Visualization */}
                     {storageData && (
                         <motion.div variants={itemVariants}>
-                            <Paper sx={{ p: 3, borderRadius: 2, mb: 3, boxShadow: 2 }}>
+                            <Paper sx={{ p: 3, borderRadius: 2, mb: 3, background: 'transparent' }}>
                                 <Stack direction="row" alignItems="center" spacing={1} mb={3}>
                                     <Info size={18} color={theme.palette.info.main} />
                                     <Typography variant="h6" fontWeight={600}>
@@ -402,7 +397,7 @@ export default function DriveCleanerPage() {
 
                     {/* Cleaner Action Section */}
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 2 }}>
+                        <Paper sx={{ p: 3, borderRadius: 2, background: 'transparent' }}>
                             <Stack spacing={3}>
                                 <Box>
                                     <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -462,7 +457,7 @@ export default function DriveCleanerPage() {
                     {/* Detailed Information */}
                     {storageData && (storageData.garbageItems.length > 0 || storageData.oldMultipartUploads.length > 0) && (
                         <motion.div variants={itemVariants}>
-                            <Paper sx={{ p: 3, borderRadius: 2, mt: 3, boxShadow: 2 }}>
+                            <Paper sx={{ p: 3, borderRadius: 2, mt: 3, background: 'transparent' }}>
                                 <Stack
                                     direction="row"
                                     alignItems="center"

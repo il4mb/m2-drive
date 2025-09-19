@@ -107,7 +107,7 @@ export default function page() {
                 </Stack>
             </StickyHeader>
 
-            <Stack component={Paper} p={2} flex={1} borderRadius={2}>
+            <Stack component={Paper} p={2} flex={1} sx={{ background: 'transparent', backdropFilter: 'blur(10)' }}>
                 <Stack p={2} flex={1}>
 
                     {!canListuser && (

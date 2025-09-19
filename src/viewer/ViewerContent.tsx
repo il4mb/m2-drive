@@ -3,6 +3,7 @@ import { RefreshCw, ChevronDown, Check } from 'lucide-react';
 import { ViewerModule } from './ModuleViewerManager';
 import { useEffect, useState } from 'react';
 import { File } from '@/entities/File';
+import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 
 interface ViewerContentProps {
     viewerModule: ViewerModule;
@@ -15,6 +16,7 @@ interface ViewerContentProps {
 export function ViewerContent({ viewerModule, file, supportedViewers, onViewerChange, onRefresh }: ViewerContentProps) {
 
 
+    const { addAction } = useActionsProvider();
     const [viewerMenuAnchor, setViewerMenuAnchor] = useState<null | HTMLElement>(null);
     const ViewerComponent = viewerModule.component;
 
@@ -26,33 +28,22 @@ export function ViewerContent({ viewerModule, file, supportedViewers, onViewerCh
         setViewerMenuAnchor(null);
     };
 
-    return (
-        <Box component={Stack} sx={{ flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-            {/* Viewer header with controls */}
-            <Paper
-                elevation={2}
-                sx={{
-                    p: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderRadius: 0,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    boxShadow: 0
-                }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    {viewerModule.icon && (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {viewerModule.icon}
-                        </Box>
-                    )}
-                    <Typography variant="subtitle2">
-                        {viewerModule.name}
-                    </Typography>
-                </Stack>
 
-                <Stack direction="row" alignItems={"center"} spacing={0.5}>
+    useEffect(() => {
+        if (viewerModule.name.toLowerCase() == "folder") return;
+        return addAction("viewer", {
+            component: () => (
+                <Stack>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        {viewerModule.icon && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                {viewerModule.icon}
+                            </Box>
+                        )}
+                        <Typography variant="subtitle2">
+                            {viewerModule.name}
+                        </Typography>
+                    </Stack>
                     {supportedViewers.length > 1 && (
                         <Chip
                             label={`Buka dengan`}
@@ -63,15 +54,13 @@ export function ViewerContent({ viewerModule, file, supportedViewers, onViewerCh
                             onDelete={handleViewerMenuOpen}
                         />
                     )}
-                    <Tooltip title="Refresh">
-                        <IconButton size="small" onClick={onRefresh}>
-                            <RefreshCw size={18} />
-                        </IconButton>
-                    </Tooltip>
                 </Stack>
-            </Paper>
+            )
+        })
+    }, []);
 
-            {/* Viewer menu */}
+    return (
+        <Box component={Stack} sx={{ flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
             <Menu
                 anchorEl={viewerMenuAnchor}
                 open={Boolean(viewerMenuAnchor)}
@@ -103,7 +92,7 @@ export function ViewerContent({ viewerModule, file, supportedViewers, onViewerCh
             </Menu>
 
             {/* Viewer content */}
-            <Box component={Stack} sx={{ flex: 1, height: 'calc(100% - 48px)', overflow: 'hidden' }}>
+            <Box component={Stack} sx={{ flex: 1, height: 'calc(100% - 40px)', overflow: 'hidden' }}>
                 <ViewerComponent file={file} />
             </Box>
         </Box>

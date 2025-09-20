@@ -185,23 +185,26 @@ export function currentTime(mod?: string): number {
 
 
 export function formatNumber(num: number, max?: number): string {
-	
-	if (typeof max === "number" && num > max) {
-		return `${max}+`;
-	}
+    if (typeof max === "number" && num > max) {
+        return `${max}+`;
+    }
 
-	if (num < 1000) return num.toString();
+    let result: string;
 
-	if (num < 1_000_000) {
-		return (num / 1000).toFixed(2).replace(/\.0$/, '') + 'K';
-	}
+    if (num < 1000) {
+        result = num.toString();
+    } else if (num < 1_000_000) {
+        result = (num / 1000).toFixed(2) + 'K';
+    } else if (num < 1_000_000_000) {
+        result = (num / 1_000_000).toFixed(2) + 'M';
+    } else {
+        result = (num / 1_000_000_000).toFixed(2) + 'B';
+    }
 
-	if (num < 1_000_000_000) {
-		return (num / 1_000_000).toFixed(2).replace(/\.0$/, '') + 'M';
-	}
-
-	return (num / 1_000_000_000).toFixed(2).replace(/\.0$/, '') + 'B';
+    // Hapus trailing zeros & titik kalau tidak perlu
+    return result.replace(/(\.\d*?[1-9])0+/, '$1').replace(/\.0+([KMB])/, '$1');
 }
+
 
 
 export function generateKey(length = 16) {

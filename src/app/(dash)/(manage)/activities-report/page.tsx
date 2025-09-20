@@ -245,61 +245,71 @@ export default function PageComponent() {
                         onResult={({ total }) => setTotal(total)}
                         renderItem={({ item: activity }) => (
                             <ActivityView activity={activity}>
-                                {activity.folder && (
-                                    <Stack mt={1} p={1}>
-                                        <Stack
-                                            direction={"row"}
-                                            spacing={1}
-                                            alignItems={"center"}>
-                                            {activity.folder.type == "folder"
-                                                ? <FolderOpen size={26} />
-                                                : <FileIcon
-                                                    variant='solid'
-                                                    size={26}
-                                                    // @ts-ignore
-                                                    type={activity.folder.meta.mimeType || "empty"} />
-                                            }
-                                            <Stack>
-                                                <Typography>{activity.folder.name}</Typography>
-                                                <Typography variant='caption' color='text.secondary' fontSize={10}>
-                                                    {activity.folder.type == "folder"
-                                                        // @ts-ignore
-                                                        ? activity.folder.meta.itemCount + ' items'
-                                                        // @ts-ignore
-                                                        : formatFileSize(activity.folder.meta.size || 0)}
-                                                </Typography>
-                                            </Stack>
-                                        </Stack>
-                                    </Stack>
-                                )}
 
-                                {activity.file && (
-                                    <Stack mt={0} p={1}>
-                                        <Stack
-                                            direction={"row"}
-                                            spacing={1}
-                                            alignItems={"center"}>
-                                            {activity.file.type == "folder"
-                                                ? <FolderOpen size={26} />
-                                                : <FileIcon
-                                                    variant='solid'
-                                                    size={26}
-                                                    // @ts-ignore
-                                                    type={activity.file.meta.mimeType || "empty"} />
-                                            }
-                                            <Stack>
-                                                <Typography>{activity.file.name}</Typography>
-                                                <Typography variant='caption' color='text.secondary' fontSize={10}>
-                                                    {activity.file.type == "folder"
+                                {// @ts-ignore
+                                    activity.folder && (
+                                        <Stack mt={1} p={1}>
+                                            <Stack
+                                                direction={"row"}
+                                                spacing={1}
+                                                alignItems={"center"}>
+                                                {// @ts-ignore
+                                                    activity.folder.type == "folder"
+                                                        ? <FolderOpen size={26} />
+                                                        : <FileIcon
+                                                            variant='solid'
+                                                            size={26}
+                                                            // @ts-ignore
+                                                            type={activity.folder.meta.mimeType || "empty"} />
+                                                }
+                                                <Stack>
+                                                    <Typography>{
                                                         // @ts-ignore
-                                                        ? activity.file.meta.itemCount + ' items'
-                                                        // @ts-ignore
-                                                        : formatFileSize(activity.file.meta.size || 0)}
-                                                </Typography>
+                                                        activity.folder.name}</Typography>
+                                                    <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                        {// @ts-ignore
+                                                            activity.folder.type == "folder"
+                                                                // @ts-ignore
+                                                                ? activity.folder.meta.itemCount + ' items'
+                                                                // @ts-ignore
+                                                                : formatFileSize(activity.folder.meta.size || 0)}
+                                                    </Typography>
+                                                </Stack>
                                             </Stack>
                                         </Stack>
-                                    </Stack>
-                                )}
+                                    )}
+
+                                {// @ts-ignore
+                                    activity.file && (
+                                        <Stack mt={0} p={1}>
+                                            <Stack
+                                                direction={"row"}
+                                                spacing={1}
+                                                alignItems={"center"}>
+                                                {// @ts-ignore
+                                                    activity.file.type == "folder"
+                                                        ? <FolderOpen size={26} />
+                                                        : <FileIcon
+                                                            variant='solid'
+                                                            size={26}
+                                                            // @ts-ignore
+                                                            type={activity.file.meta.mimeType || "empty"} />
+                                                }
+                                                <Stack>
+                                                    <Typography>{// @ts-ignore
+                                                        activity.file.name}</Typography>
+                                                    <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                        {// @ts-ignore
+                                                            activity.file.type == "folder"
+                                                                // @ts-ignore
+                                                                ? activity.file.meta.itemCount + ' items'
+                                                                // @ts-ignore
+                                                                : formatFileSize(activity.file.meta.size || 0)}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                        </Stack>
+                                    )}
 
                             </ActivityView>
                         )}

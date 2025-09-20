@@ -387,8 +387,6 @@ export const DocumentViewerComponent: React.FC<DocumentViewerComponentProps> = (
                                 boxShadow: theme.shadows[2],
                                 borderRadius: 1,
                                 overflow: 'hidden',
-                                minWidth: 240,
-                                minHeight: 400
                             }}>
                             <Page
                                 pageNumber={index + 1}

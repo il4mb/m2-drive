@@ -36,6 +36,7 @@ export interface ContextMenuProps<T> {
     enableKeyboardNavigation?: boolean;
     backdropBlur?: boolean;
     animationDuration?: number;
+    onContextMenu?: () => void;
 }
 
 // Default values
@@ -84,7 +85,8 @@ export default function ContextMenu<T>({
     submenuOffset = DEFAULT_SUBMENU_OFFSET,
     enableKeyboardNavigation = true,
     backdropBlur = false,
-    animationDuration = DEFAULT_ANIMATION_DURATION
+    animationDuration = DEFAULT_ANIMATION_DURATION,
+    onContextMenu: handleOnContextMenu
 }: ContextMenuProps<T>) {
 
     const [additionalPortalRender, setAdditionalPortalRender] = useState<Map<string, ReactNode>>(new Map());
@@ -128,6 +130,7 @@ export default function ContextMenu<T>({
         setPosition({ x: e.clientX, y: e.clientY });
         setFocusedIndex(-1);
         setActiveSubmenu(null);
+        handleOnContextMenu?.();
     }, [disabled, menu]);
 
     const onClose = useCallback(() => {

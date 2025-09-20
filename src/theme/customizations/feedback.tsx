@@ -9,10 +9,14 @@ export const feedbackCustomizations: Components<Theme> = {
 		styleOverrides: {
 			root: ({ theme }) => ({
 				'& .MuiDialog-paper': {
-					borderRadius: '10px',
+					borderRadius: '20px',
 					border: '1px solid',
 					// @ts-ignore
 					borderColor: (theme.vars || theme).palette.divider,
+					boxShadow: `0px 0px 1px ${alpha(gray[600], 1)}, 0px 0px 4px ${alpha(gray[600], 0.5)}`,
+					...theme.applyStyles('dark', {
+						boxShadow: `0px 0px 1px 1px ${alpha(gray[900], 1)}, 1px 4px 4px ${alpha(gray[900], 0.5)}`,
+					}),
 				},
 			}),
 		},

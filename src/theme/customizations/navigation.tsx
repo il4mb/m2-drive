@@ -163,10 +163,19 @@ export const navigationCustomizations: Components<Theme> = {
   },
   MuiDrawer: {
     styleOverrides: {
-      paper: ({ theme }) => ({
-        // @ts-ignore
-        backgroundColor: (theme.vars || theme).palette.background.default,
-      }),
+      root: ({ theme }) => ({
+        "& > .MuiBackdrop-root": {
+          backdropFilter: 'blur(3px)'
+        },
+        "& > .MuiPaper-root": {
+          background: '#fffA',
+          backgroundColor: '#fffA',
+          ...theme.applyStyles("dark", {
+            background: '#000A',
+            backgroundColor: '#000A',
+          })
+        }
+      })
     },
   },
   MuiPaginationItem: {

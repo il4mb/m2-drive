@@ -57,7 +57,6 @@ export const surfacesCustomizations: Components<Theme> = {
         },
         styleOverrides: {
             root: {
-                // background: 'transparent',
                 backdropFilter: 'blur(10px)'
             }
         }

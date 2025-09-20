@@ -32,6 +32,7 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
     const [files, setFiles] = useState<File[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { addAction, updateActionProps } = useActionsProvider()!;
+    const [selected, setSelected] = useState<File|null>(null);
 
     // Memoize context menu state to prevent unnecessary re-renders
     const contextMenuState = useMemo(() => ({
@@ -263,6 +264,8 @@ export const CustomFolderViewerComponent = ({ handleOpen, query: initialQuery }:
                             <FileView
                                 {...fileViewProps}
                                 file={file}
+                                selected={file.id == selected?.id}
+                                onSelect={setSelected}
                             />
                         </Box>
                     ))}

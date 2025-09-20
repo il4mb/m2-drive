@@ -2,9 +2,7 @@
 
 import { File } from '@/entities/File';
 import { formatFileSize, formatNumber } from '@/libs/utils';
-import { Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
-import { FileIcon } from '@untitledui/file-icons';
-import { Folder } from 'lucide-react';
+import { alpha, Avatar, Box, Paper, Stack, Tooltip, Typography } from '@mui/material';
 import { FC, MouseEvent } from 'react';
 import ContextMenu from '../context-menu/ContextMenu';
 import { ContextMenuItemProps, contextMenuStack } from '../context-menu/ContextMenuItem';
@@ -21,6 +19,7 @@ import ActionOpenWith from '../menu-actions/ActionOpenWith';
 import { useFileViewersByFile } from '../file-viewers/FileViewersProvider';
 import ActionLabel from '../menu-actions/ActionLabel';
 import FileViewIcon from './FileViewIcon';
+import { getColor } from '@/theme/colors';
 
 export type FileMenuState = {
     file: File;
@@ -83,7 +82,7 @@ export default function FileView<T = any>({
     const viewers = useFileViewersByFile(file.id);
 
     return (
-        <ContextMenu state={menuState} menu={customMenu || menuItem} maxWidth={230}>
+        <ContextMenu state={menuState} menu={customMenu || menuItem} maxWidth={230} onContextMenu={handleClick}>
             <Stack
                 component={Paper}
                 direction={layout == "list" ? "row" : "column"}
@@ -93,19 +92,22 @@ export default function FileView<T = any>({
                 sx={{
                     px: layout == "list" ? 2 : 0,
                     py: layout == "list" ? 1 : 0,
+                    mb:  layout == "list" ? 1 : 0,
                     position: 'relative',
                     cursor: 'pointer',
                     userSelect: 'none',
-                    // bgcolor: selected ? "action.hover" : '',
+                    outline: '2px solid',
+                    outlineColor: selected ? `${getColor('primary')[400]}` : 'transparent',
                     boxShadow: layout == "grid" ? 2 : 0,
-                    borderRadius: layout == "grid" ? 2 : 0,
+                    outlineRadius: layout == "grid" ? 2 : 0,
                     overflow: "hidden",
                     background: 'transparent',
                     backdropFilter: 'blur(10px)',
-                    // overflow: 'hidden',
-                    // "&:hover": {
-                    //     bgcolor: "action.hover"
-                    // },
+                    transition: 'all .2s ease',
+                    "&:hover": {
+                        bgcolor: "action.hover",
+                        outlineColor: selected ? `${getColor('primary')[400]}` : `${alpha(getColor('primary')[400], 0.5)}`,
+                    },
                     // @ts-ignore
                     ...(layout == "grid" && file.meta?.thumbnail && {
                         // @ts-ignore

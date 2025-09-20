@@ -245,7 +245,7 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
             </Grid>
 
             {/* Tabs for different visualizations */}
-            <Paper sx={{ mb: 2 }}>
+            <Paper sx={{ mb: 2, background: 'transparent' }}>
                 <Stack direction="row" spacing={1} p={1}>
                     {['Daily Activity', 'By Type', 'By User', 'By Browser'].map((tab, index) => (
                         <Chip
@@ -269,7 +269,7 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}>
-                        <Paper sx={{ p: 2, height: isMobile ? 300 : 400, "& > *:focus-visible, & > *:focus": { outline: "none" } }}>
+                        <Paper sx={{ background: 'transparent', p: 2, height: isMobile ? 300 : 400, "& > *:focus-visible, & > *:focus": { outline: "none" } }}>
                             <Typography variant="h6" gutterBottom>
                                 {activeTab === 0 && 'Activities Per Day'}
                                 {activeTab === 1 && 'Activities By Type'}
@@ -337,7 +337,7 @@ const ActivitySummary: React.FC<ActivitySummaryProps> = ({ }) => {
                 {/* Sidebar with additional info */}
                 <Grid size={{ xs: 12, lg: 4 }}>
                     <motion.div variants={itemVariants}>
-                        <Paper sx={{ p: 2, height: isMobile ? 'auto' : 400, overflow: 'auto' }}>
+                        <Paper sx={{ background: 'transparent', p: 2, height: isMobile ? 'auto' : 400, overflow: 'auto' }}>
                             <Typography variant="h6" gutterBottom>
                                 Details
                             </Typography>

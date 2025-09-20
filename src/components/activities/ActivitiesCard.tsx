@@ -55,7 +55,7 @@ export default function ActivitiesCard({ sx, userId }: ActivityCardProps) {
     }, [userId]);
 
     return (
-        <Paper sx={{ borderRadius: 2, p: 3, flex: 1, minWidth: 300, ...sx }}>
+        <Paper sx={{ borderRadius: 2, p: 3, flex: 1, minWidth: 300, background: 'transparent', ...sx }}>
             <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"} mb={2}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Users size={20} />

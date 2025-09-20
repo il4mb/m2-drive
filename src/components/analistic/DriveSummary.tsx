@@ -141,91 +141,83 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                 <Grid container spacing={2}>
                     {/* Overview Card */}
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <Card
-                            sx={{
-                                p: 3,
-                                height: '100%',
-                                bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-                            }}>
-                            <Stack spacing={2}>
-                                <Typography variant="h6" color="primary.main" fontWeight="bold">
-                                    Storage Overview
-                                </Typography>
+                        <Stack spacing={2} p={3}>
+                            <Typography variant="h6" color="primary.main" fontWeight="bold">
+                                Storage Overview
+                            </Typography>
 
-                                <Box>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Total Files
-                                        </Typography>
-                                        <Chip
-                                            label={totalFiles.toLocaleString()}
-                                            size="small"
-                                            color="primary"
-                                            variant="outlined"
-                                        />
-                                    </Stack>
+                            <Box>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Total Files
+                                    </Typography>
+                                    <Chip
+                                        label={totalFiles.toLocaleString()}
+                                        size="small"
+                                        color="primary"
+                                        variant="outlined"
+                                    />
+                                </Stack>
 
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Folders
-                                        </Typography>
-                                        <Chip
-                                            label={folderCount.toLocaleString()}
-                                            size="small"
-                                            color="secondary"
-                                            variant="outlined"
-                                        />
-                                    </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Folders
+                                    </Typography>
+                                    <Chip
+                                        label={folderCount.toLocaleString()}
+                                        size="small"
+                                        color="secondary"
+                                        variant="outlined"
+                                    />
+                                </Stack>
 
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Total Size
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Total Size
+                                    </Typography>
+                                    <Chip
+                                        label={formatFileSize(totalSize)}
+                                        size="small"
+                                        color={usagePercentage > 90 ? "error" : "success"}
+                                        variant="filled"
+                                    />
+                                </Stack>
+                            </Box>
+
+                            {driveSizeLimit && (
+                                <Box mt={2}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                                            Storage Used
                                         </Typography>
-                                        <Chip
-                                            label={formatFileSize(totalSize)}
-                                            size="small"
-                                            color={usagePercentage > 90 ? "error" : "success"}
-                                            variant="filled"
-                                        />
+                                        <Typography
+                                            variant="caption"
+                                            fontWeight="bold"
+                                            color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}>
+                                            {usagePercentage.toFixed(1)}%
+                                        </Typography>
                                     </Stack>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min(usagePercentage, 100)}
+                                        color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}
+                                        sx={{
+                                            height: 8,
+                                            borderRadius: 4,
+                                            mb: 1
+                                        }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary">
+                                        {formatFileSize(totalSize)} of {formatFileSize(driveSizeLimit)}
+                                    </Typography>
                                 </Box>
-
-                                {driveSizeLimit && (
-                                    <Box mt={2}>
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                                            <Typography variant="caption" color="text.secondary" fontWeight="medium">
-                                                Storage Used
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                fontWeight="bold"
-                                                color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}>
-                                                {usagePercentage.toFixed(1)}%
-                                            </Typography>
-                                        </Stack>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={Math.min(usagePercentage, 100)}
-                                            color={usagePercentage > 90 ? "error" : usagePercentage > 75 ? "warning" : "primary"}
-                                            sx={{
-                                                height: 8,
-                                                borderRadius: 4,
-                                                mb: 1
-                                            }}
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {formatFileSize(totalSize)} of {formatFileSize(driveSizeLimit)}
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </Card>
+                            )}
+                        </Stack>
                     </Grid>
 
                     {/* Chart Card */}
                     <Grid size={{ xs: 12, md: 8 }}>
-                        <Card sx={{ p: 3, height: '100%', position: 'relative' }}>
+                        <Stack spacing={2} p={3}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                                 <Typography variant="h6" fontWeight="bold">
                                     File Type Distribution
@@ -323,12 +315,12 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                                     </Typography>
                                 </Box>
                             )}
-                        </Card>
+                        </Stack>
                     </Grid>
                 </Grid>
 
                 {/* Additional Stats Card */}
-                <Card sx={{ p: 3 }}>
+                <Stack p={3} boxShadow={2} borderRadius={2} sx={{ backdropFilter: 'blur(10px)'}}>
                     <Typography variant="h6" gutterBottom fontWeight="bold">
                         Additional Information
                     </Typography>
@@ -387,7 +379,7 @@ export default function DriveSummary({ user }: DriveSummaryProps) {
                             </Stack>
                         </Grid>
                     </Grid>
-                </Card>
+                </Stack>
             </Stack>
         </Box>
     );

@@ -3,6 +3,7 @@
 import ActivityView from '@/components/activities/ActivityView';
 import ActivitySummary from '@/components/analistic/ActivitiesSummary';
 import Container from '@/components/Container';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import { useActionsProvider } from '@/components/navigation/ActionsProvider';
 import StickyHeader from '@/components/navigation/StickyHeader';
 import PermissionSuspense from '@/components/PermissionSuspense';
@@ -16,7 +17,7 @@ import { FileIcon } from '@untitledui/file-icons';
 import { Activity as ActivityIcon, FolderOpen, Settings } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 const LIMIT = 4;
 type DetailActivity = Activity & {
@@ -37,61 +38,71 @@ export default function PageComponent() {
     const [loading, setLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+    const query = useMemo(() => {
+        const query = getMany("activity")
+            .relations(['user'])
+            .join("file", "file.id = metadata->>'fileId'")
+            .join(["file", "folder"], "folder.id = metadata->>'folderId'")
+            .orderBy("createdAt", "DESC")
+        return query;
+    }, []);
+
+
     const loadMore = useCallback(async () => {
         if (isLoadingMore || activities.length >= total) return;
         setIsLoadingMore(true);
         setPage(prev => prev + 1);
     }, [isLoadingMore, activities.length, total]);
 
-    useEffect(() => {
-        if (!mounted) return;
-        setLoading(true);
+    // useEffect(() => {
+    //     if (!mounted) return;
+    //     setLoading(true);
 
-        const unsubscribe = onSnapshot(
-            getMany("activity")
-                .debug()
-                .relations(['user'])
-                .join("file", "file.id = metadata->>'fileId'")
-                .join(["file", "folder"], "folder.id = metadata->>'folderId'")
-                .orderBy("createdAt", "DESC")
-                .limit(page * LIMIT),
-            (data) => {
-                setActivities(data.rows as any);
-                setTotal(data.total);
-                setLoading(false);
-                setIsLoadingMore(false);
-            },
-            {
-                onError: (error) => {
-                    console.error('Error loading activities:', error);
-                    setLoading(false);
-                    setIsLoadingMore(false);
-                }
-            }
-        );
+    //     const unsubscribe = onSnapshot(
+    //         getMany("activity")
+    //             .debug()
+    //             .relations(['user'])
+    //             .join("file", "file.id = metadata->>'fileId'")
+    //             .join(["file", "folder"], "folder.id = metadata->>'folderId'")
+    //             .orderBy("createdAt", "DESC")
+    //             .limit(page * LIMIT),
+    //         (data) => {
+    //             setActivities(data.rows as any);
+    //             setTotal(data.total);
+    //             setLoading(false);
+    //             setIsLoadingMore(false);
+    //         },
+    //         {
+    //             onError: (error) => {
+    //                 console.error('Error loading activities:', error);
+    //                 setLoading(false);
+    //                 setIsLoadingMore(false);
+    //             }
+    //         }
+    //     );
 
-        return unsubscribe;
-    }, [page, mounted]);
+    //     return unsubscribe;
+    // }, [page, mounted]);
 
-    useEffect(() => {
-        if (!mounted || !scrollRef.current || loading || isLoadingMore || activities.length >= total) return;
+    // useEffect(() => {
+    //     if (!mounted || !scrollRef.current || loading || isLoadingMore || activities.length >= total) return;
 
-        const checkFill = () => {
-            const el = scrollRef.current;
-            if (!el) return;
+    //     const checkFill = () => {
+    //         const el = scrollRef.current;
+    //         if (!el) return;
 
-            // Only auto-fill if we have less than a page of content
-            const needsMoreContent = el.scrollHeight <= el.clientHeight && activities.length < total;
+    //         // Only auto-fill if we have less than a page of content
+    //         const needsMoreContent = el.scrollHeight <= el.clientHeight && activities.length < total;
 
-            if (needsMoreContent) {
-                loadMore();
-            }
-        };
+    //         if (needsMoreContent) {
+    //             loadMore();
+    //         }
+    //     };
 
-        // Wait for the DOM to update before checking
-        const timeoutId = setTimeout(checkFill, 100);
-        return () => clearTimeout(timeoutId);
-    }, [activities, loading, isLoadingMore, total, mounted, loadMore]);
+    //     // Wait for the DOM to update before checking
+    //     const timeoutId = setTimeout(checkFill, 100);
+    //     return () => clearTimeout(timeoutId);
+    // }, [activities, loading, isLoadingMore, total, mounted, loadMore]);
 
     useEffect(() => {
         if (!mounted || !bottomObserverRef.current || !scrollRef.current) return;
@@ -217,11 +228,7 @@ export default function PageComponent() {
                 p={[2, 2, 4]}
                 borderRadius={2}
                 flex={1}
-                spacing={1}
-                sx={{
-                    backgroundColor: 'background.paper',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                }}>
+                spacing={1}>
 
                 <ActivitySummary />
 
@@ -229,10 +236,75 @@ export default function PageComponent() {
                 <Stack flex={1} p={2}>
                     <Stack direction={"row"} justifyContent={"space-between"}>
                         <Typography fontSize={16} mb={3}>Aktivitas Terbaru</Typography>
-
                     </Stack>
 
-                    {/* Initial loading */}
+                    <InfiniteScroll
+                        sx={{ flex: 1, minHeight: 700, gap: 3 }}
+                        scrollRef={scrollRef}
+                        query={query}
+                        onResult={({ total }) => setTotal(total)}
+                        renderItem={({ item: activity }) => (
+                            <ActivityView activity={activity}>
+                                {activity.folder && (
+                                    <Stack mt={1} p={1}>
+                                        <Stack
+                                            direction={"row"}
+                                            spacing={1}
+                                            alignItems={"center"}>
+                                            {activity.folder.type == "folder"
+                                                ? <FolderOpen size={26} />
+                                                : <FileIcon
+                                                    variant='solid'
+                                                    size={26}
+                                                    // @ts-ignore
+                                                    type={activity.folder.meta.mimeType || "empty"} />
+                                            }
+                                            <Stack>
+                                                <Typography>{activity.folder.name}</Typography>
+                                                <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                    {activity.folder.type == "folder"
+                                                        // @ts-ignore
+                                                        ? activity.folder.meta.itemCount + ' items'
+                                                        // @ts-ignore
+                                                        : formatFileSize(activity.folder.meta.size || 0)}
+                                                </Typography>
+                                            </Stack>
+                                        </Stack>
+                                    </Stack>
+                                )}
+
+                                {activity.file && (
+                                    <Stack mt={0} p={1}>
+                                        <Stack
+                                            direction={"row"}
+                                            spacing={1}
+                                            alignItems={"center"}>
+                                            {activity.file.type == "folder"
+                                                ? <FolderOpen size={26} />
+                                                : <FileIcon
+                                                    variant='solid'
+                                                    size={26}
+                                                    // @ts-ignore
+                                                    type={activity.file.meta.mimeType || "empty"} />
+                                            }
+                                            <Stack>
+                                                <Typography>{activity.file.name}</Typography>
+                                                <Typography variant='caption' color='text.secondary' fontSize={10}>
+                                                    {activity.file.type == "folder"
+                                                        // @ts-ignore
+                                                        ? activity.file.meta.itemCount + ' items'
+                                                        // @ts-ignore
+                                                        : formatFileSize(activity.file.meta.size || 0)}
+                                                </Typography>
+                                            </Stack>
+                                        </Stack>
+                                    </Stack>
+                                )}
+
+                            </ActivityView>
+                        )}
+                    />
+                    {/*
                     {loading && activities.length === 0 && (
                         <Box>
                             {Array.from({ length: LIMIT }).map((_, index) => (
@@ -241,7 +313,6 @@ export default function PageComponent() {
                         </Box>
                     )}
 
-                    {/* Current activities */}
                     <AnimatePresence mode="popLayout">
                         {activities.map((activity, index) => {
                             const isNew = index >= (page - 1) * LIMIT;
@@ -326,7 +397,6 @@ export default function PageComponent() {
                         })}
                     </AnimatePresence>
 
-                    {/* Next page loading */}
                     {isLoadingMore && (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -340,10 +410,8 @@ export default function PageComponent() {
                         </motion.div>
                     )}
 
-                    {/* Bottom sentinel */}
                     <div ref={bottomObserverRef} style={{ height: 1 }} />
 
-                    {/* Empty state */}
                     {!loading && activities.length === 0 && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -369,7 +437,6 @@ export default function PageComponent() {
                         </motion.div>
                     )}
 
-                    {/* All loaded message */}
                     {!isLoadingMore && activities.length > 0 && activities.length >= total && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
@@ -382,6 +449,7 @@ export default function PageComponent() {
                             </Box>
                         </motion.div>
                     )}
+                    */}
                 </Stack>
             </Stack>
         </Container>

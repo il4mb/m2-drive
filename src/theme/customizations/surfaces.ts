@@ -68,14 +68,12 @@ export const surfacesCustomizations: Components<Theme> = {
                 return {
                     padding: 0,
                     transition: 'all 100ms ease',
-                    backgroundColor: gray[50],
+                    backgroundColor: alpha(gray[50], 0.2),
                     borderRadius: 8,
-                    // border: `1px solid`,
-                    // borderColor: gray[800],
+                    boxShadow: `0px 0px 1px ${alpha(gray[400], 1)}, 1px 4px 4px ${alpha(gray[400], 0.5)}`,
                     ...theme.applyStyles('dark', {
-                        backgroundColor: gray[800],
-                        // borderColor: gray[400],
-
+                        backgroundColor: alpha(gray[800], 0.2),
+                        boxShadow: `0px 0px 1px 1px ${alpha(gray[800], 1)}, 1px 4px 4px ${alpha(gray[800], 0.5)}`,
                     }),
                     variants: [
                         {
